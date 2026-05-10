@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Store, ShoppingBag, Heart, Tag, GraduationCap } from 'lucide-react';
+import { ShoppingBag, Heart, Tag, GraduationCap } from 'lucide-react';
+import logoImage from '../assets/logo.jpg';
 import './Splash.css';
 
 const SPRING = { type: 'spring', stiffness: 120, damping: 14 };
@@ -38,17 +39,8 @@ export default function Splash() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ ...SPRING, delay: 0.2 }}
         >
-          <Store size={36} strokeWidth={2.4} color="#fff" />
+          <img src={logoImage} alt="sBay Logo" className="splash-logo-img" />
         </motion.div>
-
-        <motion.h1
-          className="splash-word"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...SPRING, delay: 0.35 }}
-        >
-          sBay
-        </motion.h1>
 
         <motion.p
           className="splash-tagline"

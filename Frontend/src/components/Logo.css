@@ -7,4 +7,5 @@
 .sbay-logo-image {
   display: block;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }

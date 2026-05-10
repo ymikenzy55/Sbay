@@ -1,0 +1,149 @@
+/* ===========================================================
+   sBay — Global Design System
+   Primary: #0A7E3E (Deep Ghana Green)
+   Secondary: #F5A623 (Warm Gold)
+   =========================================================== */
+:root {
+  /* Brand */
+  --primary: #0A7E3E;
+  --primary-dark: #086530;
+  --primary-50: #E8F3EC;
+  --primary-100: #D4E9DB;
+  --secondary: #F5A623;
+  --secondary-dark: #D88E12;
+  --error: #D32F2F;
+  --success: #0A7E3E;
+
+  /* Surfaces */
+  --bg: #F4F8EE;          /* page background (subtle kente cream) */
+  --surface: #FFFFFF;
+  --surface-2: #F7FBF3;
+  --border: #E2E8DA;
+  --border-strong: #C9D4BD;
+
+  /* Text */
+  --text: #1B2419;
+  --text-muted: #5C6B5A;
+  --text-soft: #8B9789;
+
+  /* Effects */
+  --shadow-sm: 0 1px 2px rgba(10, 60, 30, 0.06);
+  --shadow-md: 0 4px 14px rgba(10, 60, 30, 0.08);
+  --shadow-lg: 0 12px 32px rgba(10, 60, 30, 0.12);
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Type */
+  --sans: 'Urbanist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Urbanist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  min-height: 100svh;
+  background: var(--bg);
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+img { max-width: 100%; display: block; }
+
+h1, h2, h3, h4 {
+  font-family: var(--heading);
+  color: var(--text);
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0; }
+
+/* Kente diamond pattern used by Splash & subtle backgrounds */
+.kente-bg {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(135deg, rgba(10,126,62,0.06) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(10,126,62,0.06) 25%, transparent 25%),
+    linear-gradient(45deg,  rgba(10,126,62,0.06) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(10,126,62,0.06) 25%, transparent 25%);
+  background-position: 20px 0, 20px 0, 0 0, 0 0;
+  background-size: 40px 40px;
+  background-repeat: repeat;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary {
+  background: var(--secondary);
+  color: #2A1F00;
+}
+.btn-secondary:hover { background: var(--secondary-dark); }
+.btn-ghost {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #fff;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+

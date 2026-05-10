@@ -1,0 +1,117 @@
+.profile-hero {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 22px 6px;
+}
+.profile-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background-size: cover; background-position: center;
+  border: 3px solid #fff; box-shadow: 0 0 0 3px var(--primary);
+}
+.profile-info h2 { font-size: 1.15rem; font-weight: 800; }
+.profile-info p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.stat-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+.stat-card strong { font-size: 1.05rem; color: var(--primary); font-weight: 800; }
+.stat-card span   { font-size: 0.78rem; color: var(--text-muted); }
+
+.spend-card {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  border: none;
+}
+.spend-card h4   { color: #fff; font-size: 1rem; }
+.spend-card p    { color: rgba(255,255,255,0.8); font-size: 0.82rem; margin-top: 2px; }
+.spend-card .big-num { font-size: 1.55rem; font-weight: 800; }
+
+.link-list {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.link-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  transition: background .15s ease;
+}
+.link-row:last-child { border-bottom: none; }
+.link-row:hover { background: var(--surface-2); }
+.link-icon {
+  width: 36px; height: 36px;
+  background: var(--primary-50);
+  color: var(--primary);
+  border-radius: 10px;
+  display: grid; place-items: center;
+}
+.link-label { flex: 1; font-weight: 600; font-size: 0.95rem; }
+.link-row.danger .link-icon { background: #fff5f5; color: var(--error); }
+.link-row.danger .link-label { color: var(--error); }
+
+.seller-banner {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--primary-50);
+  border: 1px solid rgba(10,126,62,0.2);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.seller-banner:hover { background: var(--primary-100); }
+.seller-banner strong { font-weight: 800; color: var(--primary); }
+
+.dash-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--border); }
+.dash-tab {
+  padding: 12px 4px; font-weight: 700;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+}
+.dash-tab.active { color: var(--primary); border-color: var(--primary); }
+
+.orders-list { display: flex; flex-direction: column; gap: 10px; }
+.order-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 12px;
+  display: grid; grid-template-columns: 80px 1fr auto; gap: 14px; align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+.order-card .thumb {
+  width: 80px; height: 80px; border-radius: var(--r-md);
+  background-size: cover; background-position: center;
+}
+.order-card h4 { font-size: 0.95rem; font-weight: 700; }
+.order-card .price { color: var(--primary); font-weight: 800; display: block; margin-top: 4px; }
+
+.order-side { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.order-side .btn { padding: 8px 14px; font-size: 0.82rem; }
+.order-side .btn.small { padding: 6px 12px; font-size: 0.78rem; }
+
+.status {
+  font-size: 0.7rem; font-weight: 800; letter-spacing: .06em;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  text-transform: uppercase;
+}
+.status.in_escrow { background: #fff5e6; color: #B97A0A; }
+.status.completed { background: var(--primary-50); color: var(--primary); }
+
+.wishlist-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .order-card { grid-template-columns: 70px 1fr; }
+  .order-side { grid-column: span 2; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .wishlist-grid { grid-template-columns: 1fr 1fr; }
+}

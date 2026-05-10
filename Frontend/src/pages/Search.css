@@ -1,0 +1,59 @@
+.search-top {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: rgba(244, 248, 238, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(10,126,62,0.06);
+}
+.search-top .back-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #fff; border: 1px solid var(--border); color: var(--text);
+}
+.search-input-wrap {
+  flex: 1; position: relative;
+  display: flex; align-items: center;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0 12px 0 40px;
+}
+.search-input-wrap .leading {
+  position: absolute; left: 14px; color: var(--text-soft);
+}
+.search-input-wrap input {
+  flex: 1; border: none; outline: none; padding: 12px 0;
+  font-size: 0.95rem; background: transparent; color: var(--text);
+}
+.search-input-wrap .mic, .search-input-wrap .clear {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  color: var(--text-muted); border-radius: 50%;
+}
+.search-input-wrap .mic:hover { color: var(--primary); }
+.search-input-wrap .clear:hover { background: var(--primary-50); color: var(--primary); }
+
+.filter-row {
+  display: flex; gap: 8px; padding: 12px 18px 6px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.result-card {
+  background: #fff; border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: var(--shadow-sm); cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.result-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.result-img { height: 140px; background-size: cover; background-position: center; }
+.result-body {
+  padding: 10px 12px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+@media (max-width: 960px) { .results-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) { .results-grid { grid-template-columns: repeat(2, 1fr); } }

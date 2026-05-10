@@ -1,0 +1,78 @@
+.co-items { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.co-item {
+  display: flex; gap: 12px; align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.co-item:last-child { border-bottom: none; }
+.co-item .thumb {
+  width: 50px; height: 50px; border-radius: var(--r-md);
+  background-size: cover; background-position: center;
+}
+.co-item h4 { font-size: 0.9rem; font-weight: 700; }
+.co-item .price { font-weight: 700; color: var(--primary); }
+
+.method-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-top: 14px;
+}
+.method-card {
+  position: relative;
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.method-card:hover { border-color: var(--primary); }
+.method-card.active {
+  border-color: var(--primary);
+  background: var(--primary-50);
+  box-shadow: 0 8px 22px rgba(10,126,62,0.18);
+}
+.method-card .m-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: var(--primary); color: #fff;
+  display: grid; place-items: center;
+}
+.method-card h4 {
+  font-size: 1rem; font-weight: 800;
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.method-card .rec {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: #2A1F00;
+  background: var(--secondary);
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+}
+.method-card .rec.ghost {
+  background: var(--surface-2);
+  color: var(--primary);
+}
+.method-card p { font-size: 0.86rem; color: var(--text-muted); }
+.m-list { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 4px; }
+.m-list li { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text); }
+
+.m-check {
+  position: absolute; top: 12px; right: 12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  display: grid; place-items: center;
+}
+
+.co-totals { display: flex; flex-direction: column; gap: 8px; }
+.co-totals .row { display: flex; justify-content: space-between; }
+.co-totals .row.total { font-size: 1.05rem; }
+.co-totals .row.total strong { color: var(--primary); }
+
+@media (max-width: 720px) {
+  .method-grid { grid-template-columns: 1fr; }
+}

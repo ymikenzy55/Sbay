@@ -1,0 +1,38 @@
+.ps-page {
+  min-height: 100svh;
+  display: grid; place-items: center;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.ps-card {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  padding: 36px 30px;
+  border-radius: 26px;
+  text-align: center;
+  width: 100%; max-width: 420px;
+  box-shadow: var(--shadow-lg);
+}
+.ps-check {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: grid; place-items: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 12px 30px rgba(10,126,62,0.4);
+}
+.ps-card h2 { font-size: 1.3rem; font-weight: 800; }
+.ps-card p { margin-top: 6px; font-size: 0.92rem; }
+.ps-actions {
+  display: flex; gap: 10px; margin-top: 20px;
+}
+.ps-actions .btn { flex: 1; }
+
+.confetti {
+  position: absolute;
+  top: 0;
+  width: 8px; height: 14px;
+  border-radius: 2px;
+}

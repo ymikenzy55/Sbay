@@ -1,0 +1,24 @@
+.group-label { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .08em; }
+.notif-list { display: flex; flex-direction: column; gap: 8px; }
+.notif-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: #fff;
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: background .15s ease;
+}
+.notif-row:hover { background: var(--surface-2); }
+.notif-row.read { opacity: 0.6; }
+.notif-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+}
+.notif-body h4 { font-size: 0.95rem; font-weight: 700; }
+.notif-body p { font-size: 0.85rem; margin-top: 2px; }
+.notif-time { font-size: 0.78rem; }

@@ -1,0 +1,86 @@
+.bs-page { padding-bottom: 50px; }
+.bs-card {
+  position: relative;
+  z-index: 2;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.bs-head { text-align: center; margin-bottom: 14px; }
+.bs-head h2 { font-size: 1.35rem; font-weight: 800; }
+
+.bs-progress {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 18px 0 22px;
+  gap: 6px;
+}
+.bs-step {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.bs-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  display: grid; place-items: center;
+  font-weight: 700; color: var(--text-muted);
+  font-size: 0.82rem;
+  transition: all .2s ease;
+}
+.bs-step.done .bs-circle { background: var(--primary); border-color: var(--primary); color: #fff; }
+.bs-step.current .bs-circle { transform: scale(1.08); box-shadow: 0 0 0 5px rgba(10,126,62,0.15); }
+.bs-lbl { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+.bs-step.done .bs-lbl { color: var(--primary); }
+
+.bs-body { min-height: 200px; }
+.small { font-size: 0.85rem; }
+
+.file-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 22px;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  cursor: pointer; font-weight: 600;
+  transition: all .15s ease;
+}
+.file-drop:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-50); }
+
+.terms-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.terms-box h4 { font-size: 0.95rem; font-weight: 800; }
+.terms-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.terms-scroll strong { color: var(--text); }
+
+.agree-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.agree-row input { margin-top: 4px; accent-color: var(--primary); }
+
+.bs-actions {
+  display: flex; gap: 10px; align-items: center;
+  margin-top: 22px;
+}

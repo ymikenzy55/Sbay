@@ -1,0 +1,46 @@
+.cf-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(10, 60, 30, 0.45);
+  backdrop-filter: blur(6px);
+  display: grid; place-items: center;
+  z-index: 100;
+  padding: 20px;
+}
+.cf-dialog {
+  position: relative;
+  background: #fff;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 22px;
+  padding: 28px 24px 22px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.cf-close {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--text-muted);
+  transition: all .15s ease;
+}
+.cf-close:hover { background: var(--surface-2); color: var(--text); }
+.cf-icon {
+  width: 56px; height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: var(--primary-50);
+  color: var(--primary);
+  display: grid; place-items: center;
+}
+.cf-icon.danger { background: #fde6e6; color: var(--error); }
+.cf-title { font-size: 1.1rem; font-weight: 800; }
+.cf-body  { color: var(--text-muted); font-size: 0.92rem; margin-top: 6px; }
+.cf-actions {
+  display: flex; gap: 10px; margin-top: 20px;
+}
+.cf-actions .btn { flex: 1; }
+.btn-danger {
+  background: var(--error); color: #fff;
+  box-shadow: 0 6px 16px rgba(211,47,47,0.3);
+}
+.btn-danger:hover { filter: brightness(0.95); }

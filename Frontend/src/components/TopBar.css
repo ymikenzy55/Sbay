@@ -1,0 +1,121 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 14px 22px;
+  background: rgba(244, 248, 238, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(10, 126, 62, 0.06);
+}
+.topbar-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: all .15s ease;
+}
+.back-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  padding: 11px 16px 11px 40px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.search-wrap:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(10, 126, 62, 0.08);
+}
+.search-wrap .search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+}
+.search-wrap .search-input {
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  transition: all .15s ease;
+}
+.icon-btn:hover { color: var(--primary); border-color: var(--primary); }
+.icon-btn .dot {
+  position: absolute;
+  top: 8px; right: 9px;
+  width: 8px; height: 8px;
+  background: var(--secondary);
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+.icon-btn .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--secondary);
+  color: #2A1F00;
+  font-size: 0.66rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--bg);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px var(--primary);
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .topbar { gap: 10px; padding: 12px 14px; }
+  .topbar .sbay-logo-word { display: none; }
+  .topbar-actions .icon-btn:nth-child(1) { display: none; }
+}

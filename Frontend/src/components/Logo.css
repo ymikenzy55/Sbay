@@ -1,0 +1,26 @@
+.sbay-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.sbay-logo-mark {
+  background: var(--primary);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 18px rgba(10, 126, 62, 0.28);
+}
+.sbay-logo-word {
+  font-family: var(--heading);
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+}
+.sbay-logo.size-sm .sbay-logo-word { font-size: 1.1rem; }
+.sbay-logo.size-md .sbay-logo-word { font-size: 1.55rem; }
+.sbay-logo.size-lg .sbay-logo-word { font-size: 2.4rem; }
+
+/* Variant for splash: stacked logo */
+.sbay-logo.variant-stack {
+  flex-direction: column;
+  gap: 14px;
+}

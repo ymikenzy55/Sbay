@@ -1,0 +1,50 @@
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ShoppingBag } from 'lucide-react';
+import { useCart } from '../store/CartContext';
+import './FloatingCart.css';
+
+// Routes that already show cart prominently or where the FAB would clash.
+const HIDE_ON = ['/cart', '/checkout', '/payment-success', '/login', '/signup', '/'];
+
+export default function FloatingCart() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { count, subtotal } = useCart();
+
+  const hidden = count === 0 || HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + '/'));
+
+  return (
+    <AnimatePresence>
+      {!hidden && (
+        <motion.button
+          className="fab-cart"
+          onClick={() => navigate('/cart')}
+          initial={{ y: 60, opacity: 0, scale: 0.85 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 60, opacity: 0, scale: 0.85 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+          whileTap={{ scale: 0.94 }}
+          aria-label={`View cart (${count} items)`}
+        >
+          <span className="fab-icon">
+            <ShoppingBag size={20} />
+            <motion.span
+              key={count}
+              className="fab-badge"
+              initial={{ scale: 0.4 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 14 }}
+            >
+              {count}
+            </motion.span>
+          </span>
+          <span className="fab-text">
+            <strong>View Cart</strong>
+            <span>GH₵ {subtotal.toLocaleString()}</span>
+          </span>
+        </motion.button>
+      )}
+    </AnimatePresence>
+  );
+}

@@ -132,9 +132,9 @@ export default function ProductDetail() {
         {added && (
           <motion.div
             className="toast"
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            exit={{ opacity: 0, y: -20 }}
           >
             <Check size={16} /> Added to cart!
           </motion.div>

@@ -253,6 +253,88 @@
 
 .heart-btn.saved { color: var(--error); background: #fff; }
 
+/* Horizontal trending scroller */
+.section-controls { display: flex; align-items: center; gap: 8px; }
+.scroll-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--border);
+  display: grid; place-items: center;
+  color: var(--text-muted);
+  transition: all .15s ease;
+}
+.scroll-btn:hover { color: var(--primary); border-color: var(--primary); }
+
+.trend-scroller {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.trend-scroller::-webkit-scrollbar { height: 6px; }
+.trend-scroller::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.trend-scroller .trend-card {
+  flex: 0 0 300px;
+  scroll-snap-align: start;
+}
+@media (min-width: 961px) {
+  .trend-scroller .trend-card { flex-basis: 340px; }
+}
+@media (max-width: 520px) {
+  .trend-scroller .trend-card { flex-basis: 82%; }
+}
+
+/* Featured sellers on home (only 2) */
+.sellers-featured {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.seller-big {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.seller-big:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--primary); }
+.seller-avatar.xl {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background-size: cover; background-position: center;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.seller-big h4 {
+  font-size: 1rem; font-weight: 800;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.seller-big .seller-rating {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.85rem; margin-top: 4px;
+}
+.seller-chev { color: var(--text-muted); flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .sellers-featured { grid-template-columns: 1fr; }
+}
+
+/* Desktop layout: wider content, centered columns */
+@media (min-width: 961px) {
+  .home-main { max-width: 1400px; margin: 0 auto; padding: 10px 28px 60px; }
+  .uni-chips { max-width: 1400px; margin: 10px auto 0; padding: 0 28px; }
+  .recent-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
 .filter-panel {
   margin: 4px 22px 0;
   background: #fff;

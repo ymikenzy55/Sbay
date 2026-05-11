@@ -115,7 +115,31 @@
 }
 
 @media (max-width: 720px) {
-  .topbar { gap: 10px; padding: 12px 14px; }
+  .topbar { gap: 8px; padding: 10px 14px; }
   .topbar .sbay-logo-word { display: none; }
+  .topbar-actions { gap: 8px; }
   .topbar-actions .icon-btn:nth-child(1) { display: none; }
+  .search-wrap {
+    flex: 0 1 auto;
+    width: 150px;
+    max-width: 180px;
+    padding: 9px 14px 9px 34px;
+    font-size: 0.85rem;
+  }
+  .search-wrap .search-icon { left: 11px; }
+}
+
+/* Hide TopBar on desktop unless it's carrying a back button for sub-pages. */
+@media (min-width: 961px) {
+  .topbar:not(.has-back) { display: none; }
+  .topbar.has-back {
+    position: static;
+    background: transparent;
+    border-bottom: none;
+    padding: 22px 28px 6px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .topbar.has-back .search-wrap,
+  .topbar.has-back .topbar-actions { display: none; }
 }

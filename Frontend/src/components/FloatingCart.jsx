@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
@@ -11,21 +12,34 @@ export default function FloatingCart() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { count, subtotal } = useCart();
+  const draggedRef = useRef(false);
 
   const hidden = count === 0 || HIDE_ON.some((p) => pathname === p || pathname.startsWith(p + '/'));
+
+  const handleClick = () => {
+    // Suppress tap-to-open when the user just finished dragging.
+    if (draggedRef.current) { draggedRef.current = false; return; }
+    navigate('/cart');
+  };
 
   return (
     <AnimatePresence>
       {!hidden && (
         <motion.button
           className="fab-cart"
-          onClick={() => navigate('/cart')}
+          onClick={handleClick}
+          drag
+          dragMomentum={false}
+          dragElastic={0.15}
+          dragConstraints={{ top: -400, bottom: 0, left: -window.innerWidth + 120, right: 0 }}
+          onDragStart={() => { draggedRef.current = true; }}
           initial={{ y: 60, opacity: 0, scale: 0.85 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 60, opacity: 0, scale: 0.85 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
           whileTap={{ scale: 0.94 }}
-          aria-label={`View cart (${count} items)`}
+          whileDrag={{ scale: 1.08, cursor: 'grabbing' }}
+          aria-label={`View cart (${count} items). Drag to move.`}
         >
           <span className="fab-icon">
             <ShoppingBag size={20} />

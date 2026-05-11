@@ -5,6 +5,7 @@ import { ConfirmProvider } from './store/ConfirmContext';
 import RequireAuth from './components/RequireAuth';
 import ScrollToTop from './components/ScrollToTop';
 import FloatingCart from './components/FloatingCart';
+import DesktopNav from './components/DesktopNav';
 
 import Splash          from './pages/Splash';
 import Home            from './pages/Home';
@@ -23,6 +24,9 @@ import Login           from './pages/Login';
 import Signup          from './pages/Signup';
 import BecomeSeller    from './pages/BecomeSeller';
 import SellerDashboard from './pages/SellerDashboard';
+import Categories      from './pages/Categories';
+import Trending        from './pages/Trending';
+import AllSellers      from './pages/AllSellers';
 
 export default function App() {
   return (
@@ -31,6 +35,7 @@ export default function App() {
         <CartProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <DesktopNav />
             <FloatingCart />
             <Routes>
               {/* Public — anyone can browse */}
@@ -40,6 +45,13 @@ export default function App() {
               <Route path="/product/:id"  element={<ProductDetail />} />
               <Route path="/seller/:id"   element={<SellerProfile />} />
               <Route path="/cart"         element={<Cart />} />
+
+              {/* Browse by category & trending */}
+              <Route path="/categories"        element={<Categories />} />
+              <Route path="/category/:catId"   element={<Categories />} />
+              <Route path="/trending"          element={<Trending />} />
+              <Route path="/sellers"           element={<AllSellers />} />
+              <Route path="/sellers/:id"       element={<AllSellers />} />
 
               {/* Auth */}
               <Route path="/login"        element={<Login />} />

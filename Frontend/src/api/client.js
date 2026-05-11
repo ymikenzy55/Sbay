@@ -58,12 +58,27 @@ const TRENDING = [
   },
 ];
 
+const CATEGORIES = [
+  { id: 'all',         label: 'All Items',   icon: '🛍️', count: 1204 },
+  { id: 'electronics', label: 'Electronics', icon: '💻', count: 342 },
+  { id: 'fashion',     label: 'Fashion',     icon: '👟', count: 218 },
+  { id: 'books',       label: 'Books',       icon: '📚', count: 176 },
+  { id: 'sports',      label: 'Sports',      icon: '⚽', count: 98  },
+  { id: 'beauty',      label: 'Beauty',      icon: '💄', count: 141 },
+  { id: 'home',        label: 'Home',        icon: '🏠', count: 112 },
+  { id: 'music',       label: 'Music',       icon: '🎧', count: 67  },
+  { id: 'gaming',      label: 'Gaming',      icon: '🎮', count: 89  },
+  { id: 'food',        label: 'Food',        icon: '🍔', count: 43  },
+];
+
 const SELLERS = [
   {
     id: 's1',
     name: 'Kofi Gadgets',
     rating: 4.9,
     reviews: 120,
+    verified: true,
+    tagline: 'Phones · Laptops · Accessories',
     avatar:
       'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&auto=format&fit=crop&q=80',
   },
@@ -72,8 +87,40 @@ const SELLERS = [
     name: "Ama's Boutique",
     rating: 4.8,
     reviews: 85,
+    verified: true,
+    tagline: 'Afro-chic fashion for students',
     avatar:
       'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&auto=format&fit=crop&q=80',
+  },
+  {
+    id: 's3',
+    name: 'Yaw Electronics',
+    rating: 4.7,
+    reviews: 62,
+    verified: false,
+    tagline: 'Headphones, speakers & more',
+    avatar:
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',
+  },
+  {
+    id: 's4',
+    name: 'Legon Book Nook',
+    rating: 4.6,
+    reviews: 47,
+    verified: true,
+    tagline: 'Textbooks, novels & past papers',
+    avatar:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80',
+  },
+  {
+    id: 's5',
+    name: 'Sneaker Spot GH',
+    rating: 4.9,
+    reviews: 98,
+    verified: true,
+    tagline: 'Authentic sneakers delivered on campus',
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
   },
 ];
 
@@ -116,11 +163,22 @@ const RECENT = [
   },
 ];
 
+// Assign each product a category & seller so we can filter.
+const PRODUCT_CATEGORIES = {
+  t1: 'electronics', t2: 'electronics', t3: 'electronics',
+  r1: 'fashion',     r2: 'electronics', r3: 'electronics', r4: 'electronics',
+};
+const PRODUCT_SELLERS = {
+  t1: 's1', t2: 's1', t3: 's3',
+  r1: 's5', r2: 's3', r3: 's1', r4: 's1',
+};
+
 const ALL_PRODUCTS = [...TRENDING, ...RECENT].map((p) => ({
   ...p,
+  categoryId: PRODUCT_CATEGORIES[p.id] || 'electronics',
+  sellerId: PRODUCT_SELLERS[p.id] || 's1',
   description:
     'Carefully kept by a fellow student on campus. Ready for pickup or campus meet-up. Negotiation welcome — DM the seller via chat below.',
-  sellerId: 's1',
   images: [p.image, p.image, p.image],
 }));
 
@@ -183,9 +241,16 @@ const NOTIFICATIONS = {
 
 export const sbay = {
   async getUniversities() { await wait(); return UNIVERSITIES; },
+  async getCategories()   { await wait(); return CATEGORIES; },
   async getTrending()     { await wait(); return TRENDING; },
   async getSellers()      { await wait(); return SELLERS; },
   async getRecent()       { await wait(); return RECENT; },
+  async getAllProducts()  { await wait(); return ALL_PRODUCTS; },
+  async getProductsByCategory(catId) {
+    await wait();
+    if (!catId || catId === 'all') return ALL_PRODUCTS;
+    return ALL_PRODUCTS.filter((p) => p.categoryId === catId);
+  },
   async getProduct(id)    { await wait(); return ALL_PRODUCTS.find((p) => p.id === id) || ALL_PRODUCTS[0]; },
   async getSeller(id)     {
     await wait();
@@ -193,9 +258,9 @@ export const sbay = {
     return {
       ...seller,
       university: 'University of Ghana, Legon',
-      verified: true,
-      bio: 'Selling lightly used campus gadgets since 2023. DM for fastest reply.',
-      listings: ALL_PRODUCTS.slice(0, 6),
+      verified: seller.verified ?? true,
+      bio: seller.tagline || 'Selling lightly used campus gadgets since 2023.',
+      listings: ALL_PRODUCTS.filter((p) => p.sellerId === seller.id),
     };
   },
   async searchProducts(q) {

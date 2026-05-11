@@ -16,8 +16,9 @@ export default function ChatList() {
   useEffect(() => { sbay.getChats().then(setChats); }, []);
 
   const loading = chats === null;
-
-  const filtered = chats.filter((c) => c.name.toLowerCase().includes(q.toLowerCase()));
+  const filtered = (chats || []).filter((c) =>
+    c.name.toLowerCase().includes(q.toLowerCase())
+  );
 
   return (
     <div className="page">
@@ -27,6 +28,8 @@ export default function ChatList() {
           <Search size={16} />
           <input placeholder="Search conversations..." value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
+
+        {loading && <SkeletonList count={5} />}
 
         <div className="chat-list">
           {filtered.map((c) => (

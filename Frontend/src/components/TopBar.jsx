@@ -16,7 +16,7 @@ export default function TopBar({ showBack = false, title, showSearch = true }) {
   const { count } = useCart();
 
   return (
-    <header className="topbar">
+    <header className={`topbar ${showBack ? 'has-back' : ''}`}>
       {showBack ? (
         <button className="back-btn" onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
@@ -34,7 +34,7 @@ export default function TopBar({ showBack = false, title, showSearch = true }) {
           onClick={() => navigate('/search')}
         >
           <Search size={18} className="search-icon" />
-          <span className="search-input">Search campus deals...</span>
+          <span className="search-input">Search...</span>
         </button>
       )}
 

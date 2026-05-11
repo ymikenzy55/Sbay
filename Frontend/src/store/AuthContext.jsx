@@ -51,10 +51,13 @@ export function AuthProvider({ children }) {
   const upgradeToSeller = (sellerInfo) =>
     setUser((u) => ({ ...(u || {}), ...sellerInfo, role: 'seller' }));
 
+  const updateUser = (patch) =>
+    setUser((u) => (u ? { ...u, ...patch } : u));
+
   const logout = () => setUser(null);
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, upgradeToSeller }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, upgradeToSeller, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

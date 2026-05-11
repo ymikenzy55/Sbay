@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Heart, Share2, Star, ShoppingCart, MessageCircle, Check, Shield,
+  ArrowLeft, Heart, Share2, Star, ShoppingCart, Check, Shield, BookmarkPlus, BookmarkCheck,
 } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useCart } from '../store/CartContext';
@@ -51,9 +51,9 @@ export default function ProductDetail() {
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
   };
-  const handleChat = () => {
-    if (requireAuth(`/chat/c1`)) return;
-    navigate('/chat/c1');
+  const handleWishlist = () => {
+    if (requireAuth(`/product/${id}`)) return;
+    setSaved((s) => !s);
   };
 
   return (
@@ -110,8 +110,11 @@ export default function ProductDetail() {
                 <Star size={12} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews}) · {seller.university}
               </p>
             </div>
-            <button className="btn btn-ghost" onClick={(e) => { e.stopPropagation(); handleChat(); }}>
-              <MessageCircle size={16} /> Chat
+            <button
+              className="btn btn-ghost"
+              onClick={(e) => { e.stopPropagation(); navigate(`/sellers/${seller.id}`); }}
+            >
+              View profile
             </button>
           </section>
         )}
@@ -119,8 +122,13 @@ export default function ProductDetail() {
 
       {/* Sticky bottom action bar */}
       <div className="pdp-actions">
-        <button className="btn btn-ghost" onClick={handleChat}>
-          <MessageCircle size={18} /> Chat
+        <button
+          className={`btn btn-ghost ${saved ? 'is-saved' : ''}`}
+          onClick={handleWishlist}
+          aria-pressed={saved}
+        >
+          {saved ? <BookmarkCheck size={18} /> : <BookmarkPlus size={18} />}
+          {saved ? 'Saved' : 'Wishlist'}
         </button>
         <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAdd}>
           <ShoppingCart size={18} /> Add to Cart

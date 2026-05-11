@@ -58,17 +58,18 @@ const TRENDING = [
   },
 ];
 
+// Icon names map to lucide-react icons; resolved by the UI.
 const CATEGORIES = [
-  { id: 'all',         label: 'All Items',   icon: '🛍️', count: 1204 },
-  { id: 'electronics', label: 'Electronics', icon: '💻', count: 342 },
-  { id: 'fashion',     label: 'Fashion',     icon: '👟', count: 218 },
-  { id: 'books',       label: 'Books',       icon: '📚', count: 176 },
-  { id: 'sports',      label: 'Sports',      icon: '⚽', count: 98  },
-  { id: 'beauty',      label: 'Beauty',      icon: '💄', count: 141 },
-  { id: 'home',        label: 'Home',        icon: '🏠', count: 112 },
-  { id: 'music',       label: 'Music',       icon: '🎧', count: 67  },
-  { id: 'gaming',      label: 'Gaming',      icon: '🎮', count: 89  },
-  { id: 'food',        label: 'Food',        icon: '🍔', count: 43  },
+  { id: 'all',         label: 'All Items',   icon: 'ShoppingBag', count: 1204 },
+  { id: 'electronics', label: 'Electronics', icon: 'Laptop',      count: 342  },
+  { id: 'fashion',     label: 'Fashion',     icon: 'Shirt',       count: 218  },
+  { id: 'books',       label: 'Books',       icon: 'BookOpen',    count: 176  },
+  { id: 'sports',      label: 'Sports',      icon: 'Dumbbell',    count: 98   },
+  { id: 'beauty',      label: 'Beauty',      icon: 'Sparkles',    count: 141  },
+  { id: 'home',        label: 'Home',        icon: 'Home',        count: 112  },
+  { id: 'music',       label: 'Music',       icon: 'Headphones',  count: 67   },
+  { id: 'gaming',      label: 'Gaming',      icon: 'Gamepad2',    count: 89   },
+  { id: 'food',        label: 'Food',        icon: 'UtensilsCrossed', count: 43 },
 ];
 
 const SELLERS = [

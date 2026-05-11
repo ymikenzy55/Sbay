@@ -136,23 +136,41 @@
 
 .as-reviews { display: flex; flex-direction: column; gap: 10px; }
 
-/* Mobile: collapse sidebar to a horizontal scroll strip */
+/* Mobile: keep the sidebar visible on the left (no horizontal swipe). */
 @media (max-width: 860px) {
   .as-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 130px 1fr;
+    gap: 0;
+    padding: 0;
     height: auto;
-    gap: 12px;
+    min-height: calc(100svh - 90px);
   }
   .as-sidebar {
-    position: static; height: auto; max-height: none; padding: 10px;
+    position: sticky;
+    top: 0;
+    height: auto;
+    max-height: 100svh;
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid var(--border);
+    padding: 8px 6px;
+    box-shadow: none;
   }
-  .as-list {
-    display: flex; flex-direction: row; gap: 8px;
-    overflow-x: auto;
+  .as-search { display: none; }
+  .as-seller-row { padding: 10px 8px; grid-template-columns: 36px 1fr; gap: 8px; }
+  .as-avatar { width: 36px; height: 36px; }
+  .as-info h4 { font-size: 0.82rem; }
+  .as-main {
+    padding: 12px 14px 30px;
+    height: auto;
+    overflow: visible;
+    gap: 16px;
   }
-  .as-list li { flex: 0 0 auto; min-width: 200px; }
-  .as-main { height: auto; overflow: visible; }
-  .as-hero { flex-direction: column; text-align: center; }
+  .as-hero { flex-direction: column; text-align: center; padding: 18px; }
   .as-hero-actions { justify-content: center; }
   .as-products { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .as-layout { grid-template-columns: 110px 1fr; }
+  .as-info .small { font-size: 0.7rem; }
 }

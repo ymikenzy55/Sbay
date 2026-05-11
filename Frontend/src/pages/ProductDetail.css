@@ -73,6 +73,12 @@
   z-index: 40;
 }
 
+.pdp-actions .btn-ghost.is-saved {
+  background: var(--primary-50);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
 .toast {
   position: fixed;
   top: calc(14px + env(safe-area-inset-top, 0px));

@@ -1,70 +1,111 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Search, Bell, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '../store/CartContext';
 import './TopBar.css';
 
 /**
  * Sticky app top bar.
- * Props:
+ *
+ * Props
  *  - showBack: render a back arrow instead of the logo
- *  - title: optional title shown when showBack is true
+ *  - title:    optional title shown when showBack is true
  *  - showSearch (default true): render the search input
+ *  - searchValue / onSearchChange: when provided, render an actual <input>
+ *    so typing filters the current page in-place. Otherwise the search is a
+ *    button that navigates to the dedicated search page.
+ *  - searchPlaceholder: placeholder text inside the search box
+ *  - hideActions: hide the bell / cart / avatar cluster (used on Home where
+ *    the search bar should fill the available width)
  */
-export default function TopBar({ showBack = false, title, showSearch = true }) {
+export default function TopBar({
+  showBack = false,
+  title,
+  showSearch = true,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'Search...',
+  hideActions = false,
+}) {
   const navigate = useNavigate();
   const { count } = useCart();
+  const isLive = typeof onSearchChange === 'function';
 
   return (
-    <header className={`topbar ${showBack ? 'has-back' : ''}`}>
+    <header className={`topbar ${showBack ? 'has-back' : ''} ${hideActions ? 'no-actions' : ''}`}>
       {showBack ? (
         <button className="back-btn" onClick={() => navigate(-1)} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
       ) : (
-        <Link to="/home"><Logo size="md" /></Link>
+        <Link to="/home" className="topbar-brand"><Logo size="md" /></Link>
       )}
 
       {title && <h2 className="topbar-title">{title}</h2>}
 
       {showSearch && (
-        <button
-          type="button"
-          className="search-wrap"
-          onClick={() => navigate('/search')}
-        >
-          <Search size={18} className="search-icon" />
-          <span className="search-input">Search...</span>
-        </button>
+        isLive ? (
+          <div className="search-wrap is-live">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              className="search-input"
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
+              aria-label="Search"
+            />
+            {searchValue && (
+              <button
+                className="search-clear"
+                onClick={() => onSearchChange('')}
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="search-wrap"
+            onClick={() => navigate('/search')}
+          >
+            <Search size={18} className="search-icon" />
+            <span className="search-input">{searchPlaceholder}</span>
+          </button>
+        )
       )}
 
-      <div className="topbar-actions">
-        <button
-          className="icon-btn"
-          aria-label="Notifications"
-          onClick={() => navigate('/notifications')}
-        >
-          <Bell size={20} />
-          <span className="dot" />
-        </button>
-        <button
-          className="icon-btn"
-          aria-label="Cart"
-          onClick={() => navigate('/cart')}
-        >
-          <ShoppingCart size={20} />
-          {count > 0 && <span className="badge">{count}</span>}
-        </button>
-        <button
-          className="avatar"
-          onClick={() => navigate('/profile')}
-          aria-label="Profile"
-          style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&q=80)',
-          }}
-        />
-      </div>
+      {!hideActions && (
+        <div className="topbar-actions">
+          <button
+            className="icon-btn"
+            aria-label="Notifications"
+            onClick={() => navigate('/notifications')}
+          >
+            <Bell size={20} />
+            <span className="dot" />
+          </button>
+          <button
+            className="icon-btn"
+            aria-label="Cart"
+            onClick={() => navigate('/cart')}
+          >
+            <ShoppingCart size={20} />
+            {count > 0 && <span className="badge">{count}</span>}
+          </button>
+          <button
+            className="avatar"
+            onClick={() => navigate('/profile')}
+            aria-label="Profile"
+            style={{
+              backgroundImage:
+                'url(https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&q=80)',
+            }}
+          />
+        </div>
+      )}
     </header>
   );
 }

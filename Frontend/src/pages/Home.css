@@ -253,6 +253,63 @@
 
 .heart-btn.saved { color: var(--error); background: #fff; }
 
+/* New: campus + hall row under product */
+.prod-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.prod-loc span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Verified pill */
+.verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  margin-left: 6px;
+  background: var(--primary-50);
+  color: var(--primary);
+  border-radius: var(--r-pill);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Home filter row */
+.home-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 22px 0;
+  flex-wrap: wrap;
+}
+.filter-clear {
+  background: transparent;
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+.filter-clear:hover { text-decoration: underline; }
+.filter-hint { margin-left: auto; }
+
+.empty-inline {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  width: 100%;
+}
+
 /* Horizontal trending scroller */
 .section-controls { display: flex; align-items: center; gap: 8px; }
 .scroll-btn {

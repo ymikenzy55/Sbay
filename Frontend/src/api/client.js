@@ -33,6 +33,8 @@ const TRENDING = [
     price: 4500,
     condition: 'Excellent Condition',
     campus: 'UG Legon',
+    universityId: 'ug',
+    location: 'Akuafo Hall',
     badge: 'HOTTEST',
     image:
       'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=900&auto=format&fit=crop&q=70',
@@ -43,6 +45,8 @@ const TRENDING = [
     price: 3800,
     condition: 'Slightly Used',
     campus: 'KNUST',
+    universityId: 'knust',
+    location: 'Unity Hall',
     badge: 'TRENDING',
     image:
       'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=900&auto=format&fit=crop&q=70',
@@ -53,6 +57,8 @@ const TRENDING = [
     price: 1200,
     condition: 'Brand New',
     campus: 'UCC',
+    universityId: 'ucc',
+    location: 'Casford Hall',
     image:
       'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=900&auto=format&fit=crop&q=70',
   },
@@ -131,7 +137,9 @@ const RECENT = [
     title: 'Nike Air Max Red',
     price: 650,
     tag: 'USED · LIKE NEW',
-    posted: '2h ago',
+    campus: 'UG Legon',
+    universityId: 'ug',
+    location: 'Volta Hall',
     image:
       'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&auto=format&fit=crop&q=70',
   },
@@ -140,7 +148,9 @@ const RECENT = [
     title: 'Beats Solo 3 Wireless',
     price: 1200,
     tag: 'BRAND NEW',
-    posted: '3h ago',
+    campus: 'UPSA',
+    universityId: 'upsa',
+    location: 'Main Campus',
     image:
       'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900&auto=format&fit=crop&q=70',
   },
@@ -149,7 +159,9 @@ const RECENT = [
     title: 'MacBook Pro 2019',
     price: 7500,
     tag: 'USED · FAIR',
-    posted: '5h ago',
+    campus: 'KNUST',
+    universityId: 'knust',
+    location: 'Republic Hall',
     image:
       'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=900&auto=format&fit=crop&q=70',
   },
@@ -158,7 +170,9 @@ const RECENT = [
     title: 'Sony Alpha A6400',
     price: 5200,
     tag: 'REFURBISHED',
-    posted: '1d ago',
+    campus: 'UG Legon',
+    universityId: 'ug',
+    location: 'Commonwealth Hall',
     image:
       'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=900&auto=format&fit=crop&q=70',
   },

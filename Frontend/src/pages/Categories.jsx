@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import * as Lucide from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import FilterDrawer from '../components/FilterDrawer';
 import { Skeleton } from '../components/Skeleton';
 import { sbay } from '../api/client';
 import './pages.css';
 import './Categories.css';
 
-/** Resolve a string icon name from the API into a lucide component. */
+const FILTER_DEFAULT = { universities: [], priceMin: 0, priceMax: 10000 };
+
 function CatIcon({ name, size = 18 }) {
   const Icon = Lucide[name] || Lucide.Tag;
   return <Icon size={size} />;
@@ -21,10 +23,10 @@ export default function Categories() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [products, setProducts]     = useState(null);
+  const [filter, setFilter]         = useState(FILTER_DEFAULT);
   const activeId = catId || 'all';
 
   useEffect(() => { sbay.getCategories().then(setCategories); }, []);
-
   useEffect(() => {
     setProducts(null);
     sbay.getProductsByCategory(activeId).then(setProducts);
@@ -32,32 +34,39 @@ export default function Categories() {
 
   const activeCat = categories.find((c) => c.id === activeId);
 
-  // Build "panels" similar to the reference image — multiple labelled
-  // sections per category. We slice the same product list to fake sub-groups.
+  const filtered = useMemo(() => {
+    if (!products) return null;
+    return products.filter((p) => {
+      if (filter.universities.length && !filter.universities.includes(p.universityId)) return false;
+      if (p.price < filter.priceMin || p.price > filter.priceMax) return false;
+      return true;
+    });
+  }, [products, filter]);
+
   const panels = useMemo(() => {
-    if (!products) return [];
-    if (products.length === 0) return [];
+    if (!filtered) return [];
+    if (filtered.length === 0) return [];
     const chunks = [];
     const labels = ['Top Picks', 'New Arrivals', 'Under GH₵ 1,000', 'Most Loved'];
     let i = 0;
-    let label = 0;
-    while (i < products.length && label < labels.length) {
-      const next = products.slice(i, i + 6);
+    let l = 0;
+    while (i < filtered.length && l < labels.length) {
+      const next = filtered.slice(i, i + 6);
       if (next.length === 0) break;
-      chunks.push({ label: labels[label], items: next });
+      chunks.push({ label: labels[l], items: next });
       i += 6;
-      label += 1;
+      l += 1;
     }
-    if (chunks.length === 0) chunks.push({ label: 'All items', items: products });
+    if (chunks.length === 0) chunks.push({ label: 'All items', items: filtered });
     return chunks;
-  }, [products]);
+  }, [filtered]);
 
   return (
     <div className="page cat-page">
       <TopBar showBack title="Categories" />
 
       <div className="cat-layout">
-        {/* Sidebar — vertical on every screen size */}
+        {/* Independently-scrolling sidebar */}
         <aside className="cat-sidebar" aria-label="Categories">
           {categories.length === 0 ? (
             <div className="cat-side-skel">
@@ -84,14 +93,15 @@ export default function Categories() {
 
         {/* Main */}
         <main className="cat-main">
-          {/* Top "All Products" header card */}
-          <button
-            className="cat-all-card"
-            onClick={() => navigate('/search')}
-          >
-            <span>{activeCat ? `${activeCat.label} · All Products` : 'All Products'}</span>
-            <ChevronRight size={18} />
-          </button>
+          <div className="cat-toolbar">
+            <h2 className="cat-title">{activeCat ? activeCat.label : 'All Products'}</h2>
+            <FilterDrawer
+              value={filter}
+              onApply={setFilter}
+              onReset={() => setFilter(FILTER_DEFAULT)}
+              label="Filter"
+            />
+          </div>
 
           {products === null ? (
             <div className="panel-skel">
@@ -102,11 +112,14 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-          ) : products.length === 0 ? (
+          ) : filtered?.length === 0 ? (
             <div className="empty">
               <div className="emo">📦</div>
-              <h3>No items in this category yet</h3>
-              <p>Check back soon or browse another category.</p>
+              <h3>No items match your filters</h3>
+              <p className="muted">Try clearing your school or price range filters.</p>
+              <button className="btn btn-ghost" onClick={() => setFilter(FILTER_DEFAULT)}>
+                Reset filters
+              </button>
             </div>
           ) : (
             panels.map((panel) => (
@@ -132,6 +145,10 @@ export default function Categories() {
                     >
                       <div className="cell-thumb" style={{ backgroundImage: `url(${p.image})` }} />
                       <span className="cell-label">{p.title}</span>
+                      <span className="cell-price">GH₵ {p.price.toLocaleString()}</span>
+                      <span className="cell-loc">
+                        <MapPin size={10} /> {p.campus}
+                      </span>
                     </motion.button>
                   ))}
                 </div>

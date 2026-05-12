@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, ArrowRight, Heart, Shield } from 'lucide-react';
+import { Star, ArrowRight, Heart, Shield, MapPin } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import FilterDrawer from '../components/FilterDrawer';
 import { sbay } from '../api/client';
 import { SkeletonGrid, Skeleton } from '../components/Skeleton';
 import './Home.css';
+
+const FILTER_DEFAULT = { universities: [], priceMin: 0, priceMax: 10000 };
 
 export default function Home() {
   const navigate = useNavigate();
@@ -14,9 +17,9 @@ export default function Home() {
   const [trending, setTrending] = useState([]);
   const [sellers,  setSellers]  = useState([]);
   const [recent,   setRecent]   = useState([]);
-  const [activeUni, setActiveUni] = useState('ug');
   const [saved, setSaved] = useState({});
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState(FILTER_DEFAULT);
 
   useEffect(() => {
     Promise.all([
@@ -34,16 +37,29 @@ export default function Home() {
     setSaved((p) => ({ ...p, [id]: !p[id] }));
   };
 
-  // Live in-page filtering — search results replace the regular sections.
+  // Apply both filter chips and the search query to a product list.
+  const applyFilters = (list) => list.filter((p) => {
+    if (filter.universities.length && !filter.universities.includes(p.universityId)) return false;
+    if (p.price < filter.priceMin || p.price > filter.priceMax) return false;
+    return true;
+  });
+
   const q = query.trim().toLowerCase();
+  const filteredTrending = useMemo(() => applyFilters(trending), [trending, filter]);
+  const filteredRecent   = useMemo(() => applyFilters(recent),   [recent,   filter]);
+
   const matches = useMemo(() => {
     if (!q) return null;
-    return [...trending, ...recent].filter((p) =>
+    return applyFilters([...trending, ...recent]).filter((p) =>
       p.title.toLowerCase().includes(q)
     );
-  }, [q, trending, recent]);
+  }, [q, trending, recent, filter]);
 
   const featuredSellers = sellers.slice(0, 2);
+  const filterActiveCount =
+    filter.universities.length +
+    (filter.priceMin !== FILTER_DEFAULT.priceMin ? 1 : 0) +
+    (filter.priceMax !== FILTER_DEFAULT.priceMax ? 1 : 0);
 
   return (
     <div className="home">
@@ -54,20 +70,26 @@ export default function Home() {
         searchPlaceholder="Search phones, books, sneakers, snacks..."
       />
 
-      {/* University filter chips (hidden while searching to keep focus on results) */}
-      {!q && (
-        <div className="uni-chips">
-          {universities.map((u) => (
-            <button
-              key={u.id}
-              className={`chip ${activeUni === u.id ? 'active' : ''}`}
-              onClick={() => setActiveUni(u.id)}
-            >
-              {u.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Filter row */}
+      <div className="home-filter-row">
+        <FilterDrawer
+          value={filter}
+          onApply={setFilter}
+          onReset={() => setFilter(FILTER_DEFAULT)}
+          label="Filter"
+        />
+        {filterActiveCount > 0 && (
+          <button className="filter-clear" onClick={() => setFilter(FILTER_DEFAULT)}>
+            Clear filters
+          </button>
+        )}
+        <span className="filter-hint muted small">
+          {filter.universities.length > 0 &&
+            `${filter.universities.length} school${filter.universities.length === 1 ? '' : 's'}`}
+          {filter.priceMax !== FILTER_DEFAULT.priceMax &&
+            ` · up to GH₵ ${filter.priceMax.toLocaleString()}`}
+        </span>
+      </div>
 
       <main className="home-main">
         {/* Search results take over when there's a query */}
@@ -82,32 +104,26 @@ export default function Home() {
               <div className="empty">
                 <div className="emo">🔍</div>
                 <h3>Nothing matched your search</h3>
-                <p className="muted">Try a different keyword or campus.</p>
+                <p className="muted">Try a different keyword or remove some filters.</p>
               </div>
             ) : (
               <div className="recent-grid">
                 {matches.map((p, i) => (
-                  <motion.article
+                  <ProductCard
                     key={p.id}
-                    className="recent-card"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
+                    p={p}
+                    i={i}
+                    saved={saved[p.id]}
+                    toggleSave={toggleSave}
                     onClick={() => navigate(`/product/${p.id}`)}
-                  >
-                    <div className="recent-img" style={{ backgroundImage: `url(${p.image})` }} />
-                    <div className="recent-body">
-                      <h4 className="prod-title">{p.title}</h4>
-                      <span className="price">GH₵ {p.price.toLocaleString()}</span>
-                    </div>
-                  </motion.article>
+                  />
                 ))}
               </div>
             )}
           </section>
         ) : (
           <>
-            {/* Trending — horizontal scroll, no arrow buttons */}
+            {/* Trending */}
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trending on Campus</h2>
@@ -118,7 +134,7 @@ export default function Home() {
 
               {trending.length === 0 && <SkeletonGrid count={3} />}
               <div className="trend-scroller">
-                {trending.map((p, i) => (
+                {filteredTrending.map((p, i) => (
                   <motion.article
                     key={p.id}
                     className="trend-card"
@@ -140,14 +156,19 @@ export default function Home() {
                         <h3 className="prod-title">{p.title}</h3>
                         <span className="price">GH₵ {p.price.toLocaleString()}</span>
                       </div>
-                      <p className="prod-meta">{p.condition} · {p.campus}</p>
+                      <p className="prod-meta">
+                        <MapPin size={12} /> {p.campus}{p.location ? ` · ${p.location}` : ''}
+                      </p>
                     </div>
                   </motion.article>
                 ))}
+                {filteredTrending.length === 0 && trending.length > 0 && (
+                  <div className="empty-inline">No trending items match your filters.</div>
+                )}
               </div>
             </section>
 
-            {/* Trusted Campus Sellers — only 2 + View more */}
+            {/* Sellers */}
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trusted Campus Sellers</h2>
@@ -167,7 +188,11 @@ export default function Home() {
                     <div className="seller-info">
                       <h4>
                         {s.name}
-                        {s.verified && <Shield size={14} color="#0A7E3E" />}
+                        {s.verified && (
+                          <span className="verified-pill" title="Verified seller">
+                            <Shield size={11} /> Verified
+                          </span>
+                        )}
                       </h4>
                       <p className="muted small">{s.tagline}</p>
                       <p className="seller-rating">
@@ -194,35 +219,19 @@ export default function Home() {
               {recent.length === 0 && <SkeletonGrid count={4} />}
 
               <div className="recent-grid">
-                {recent.map((p, i) => (
-                  <motion.article
+                {filteredRecent.map((p, i) => (
+                  <ProductCard
                     key={p.id}
-                    className="recent-card"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.3 }}
-                    whileTap={{ scale: 0.97 }}
+                    p={p}
+                    i={i}
+                    saved={saved[p.id]}
+                    toggleSave={toggleSave}
                     onClick={() => navigate(`/product/${p.id}`)}
-                  >
-                    <div className="recent-img" style={{ backgroundImage: `url(${p.image})` }}>
-                      <button
-                        className={`heart-btn ${saved[p.id] ? 'saved' : ''}`}
-                        onClick={(e) => toggleSave(e, p.id)}
-                        aria-label="Save"
-                      >
-                        <Heart size={16} fill={saved[p.id] ? '#D32F2F' : 'none'} />
-                      </button>
-                    </div>
-                    <div className="recent-body">
-                      <span className="tag">{p.tag}</span>
-                      <h4 className="prod-title">{p.title}</h4>
-                      <div className="recent-row">
-                        <span className="price">GH₵ {p.price.toLocaleString()}</span>
-                        <span className="posted">{p.posted}</span>
-                      </div>
-                    </div>
-                  </motion.article>
+                  />
                 ))}
+                {filteredRecent.length === 0 && recent.length > 0 && (
+                  <div className="empty-inline">No recent items match your filters.</div>
+                )}
               </div>
             </section>
           </>
@@ -231,5 +240,40 @@ export default function Home() {
 
       <BottomNav />
     </div>
+  );
+}
+
+/** Card showing campus + hall location and a save heart. */
+function ProductCard({ p, i, saved, toggleSave, onClick }) {
+  return (
+    <motion.article
+      className="recent-card"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.04, duration: 0.3 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+    >
+      <div className="recent-img" style={{ backgroundImage: `url(${p.image})` }}>
+        <button
+          className={`heart-btn ${saved ? 'saved' : ''}`}
+          onClick={(e) => toggleSave(e, p.id)}
+          aria-label="Save"
+        >
+          <Heart size={16} fill={saved ? '#D32F2F' : 'none'} />
+        </button>
+      </div>
+      <div className="recent-body">
+        {p.tag && <span className="tag">{p.tag}</span>}
+        <h4 className="prod-title">{p.title}</h4>
+        <div className="recent-row">
+          <span className="price">GH₵ {p.price.toLocaleString()}</span>
+        </div>
+        <p className="prod-loc">
+          <MapPin size={12} />
+          <span>{p.campus}{p.location ? ` · ${p.location}` : ''}</span>
+        </p>
+      </div>
+    </motion.article>
   );
 }

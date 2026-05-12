@@ -25,7 +25,7 @@ export default function TopBar({
   searchValue,
   onSearchChange,
   searchPlaceholder = 'Search...',
-  hideActions = false,
+  hideActions = true, // Default: unified appearance with the Home navbar.
 }) {
   const navigate = useNavigate();
   const { count } = useCart();

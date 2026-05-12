@@ -7,8 +7,10 @@
   background: #fff;
   border-top: 1px solid var(--border);
   box-shadow: 0 -6px 24px rgba(10, 60, 30, 0.06);
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* Flex distributes evenly for buyer (5) or seller (4) item counts. */
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
   padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 40;
 }

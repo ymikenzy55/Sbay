@@ -8,10 +8,18 @@ import './BottomNav.css';
  * The Sell button is a raised gold CTA — NOT a selectable tab, so it never
  * appears "active".
  */
-const ITEMS = [
+const BUYER_ITEMS = [
   { id: 'home',       label: 'Home',       path: '/home',       icon: Home },
   { id: 'categories', label: 'Categories', path: '/categories', icon: LayoutGrid },
   { id: 'sell',       label: 'Sell',       path: '/sell',       icon: Plus, center: true },
+  { id: 'chat',       label: 'Chat',       path: '/chats',      icon: MessageCircle },
+  { id: 'profile',    label: 'Profile',    path: '/profile',    icon: User },
+];
+
+// Sellers don't need the Sell CTA — they manage everything from their dashboard.
+const SELLER_ITEMS = [
+  { id: 'home',       label: 'Home',       path: '/home',       icon: Home },
+  { id: 'categories', label: 'Categories', path: '/categories', icon: LayoutGrid },
   { id: 'chat',       label: 'Chat',       path: '/chats',      icon: MessageCircle },
   { id: 'profile',    label: 'Profile',    path: '/profile',    icon: User },
 ];
@@ -20,6 +28,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const items = user?.role === 'seller' ? SELLER_ITEMS : BUYER_ITEMS;
 
   const handleClick = (item) => {
     if (item.id === 'sell') {
@@ -34,7 +43,7 @@ export default function BottomNav() {
 
   return (
     <nav className="bottom-nav">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const { id, label, path, icon: Icon, center } = item;
         // Center button never highlights as "active" — it's a standalone CTA.
         const active = !center && (

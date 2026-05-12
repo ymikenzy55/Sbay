@@ -52,10 +52,10 @@ export default function Trending() {
                 <div className="result-body">
                   <h4 className="prod-title">{p.title}</h4>
                   <span className="price">GH₵ {p.price.toLocaleString()}</span>
-                  {(p.campus || p.location) && (
+                  {(p.school || p.city) && (
                     <p className="prod-loc">
                       <MapPin size={12} />
-                      <span>{p.campus}{p.location ? ` · ${p.location}` : ''}</span>
+                      <span>{p.school}{p.city ? `, ${p.city}` : ''}</span>
                     </p>
                   )}
                 </div>

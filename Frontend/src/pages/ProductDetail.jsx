@@ -143,7 +143,7 @@ export default function ProductDetail() {
           </div>
           <div className="pdp-meta">
             <span className="badge-soft"><Check size={12} /> {product.condition || 'Brand New'}</span>
-            <span className="badge-soft">{product.campus || 'UG · Legon'}</span>
+            <span className="badge-soft">{product.school || 'University of Ghana'}{product.city ? `, ${product.city}` : ''}</span>
           </div>
         </section>
 
@@ -191,10 +191,10 @@ export default function ProductDetail() {
                   <div className="pdp-similar-body">
                     <h4>{s.title}</h4>
                     <span className="price">GH₵ {s.price.toLocaleString()}</span>
-                    {(s.campus || s.location) && (
+                    {(s.school || s.city) && (
                       <p className="pdp-similar-loc">
                         <MapPin size={12} />
-                        <span>{s.campus}{s.location ? ` · ${s.location}` : ''}</span>
+                        <span>{s.school}{s.city ? `, ${s.city}` : ''}</span>
                       </p>
                     )}
                   </div>

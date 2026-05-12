@@ -72,11 +72,20 @@ const CATEGORIES = [
   { id: 'books',       label: 'Books',       icon: 'BookOpen',    count: 176  },
   { id: 'sports',      label: 'Sports',      icon: 'Dumbbell',    count: 98   },
   { id: 'beauty',      label: 'Beauty',      icon: 'Sparkles',    count: 141  },
-  { id: 'home',        label: 'Home',        icon: 'Home',        count: 112  },
   { id: 'music',       label: 'Music',       icon: 'Headphones',  count: 67   },
   { id: 'gaming',      label: 'Gaming',      icon: 'Gamepad2',    count: 89   },
   { id: 'food',        label: 'Food',        icon: 'UtensilsCrossed', count: 43 },
 ];
+
+/* Used to render the 'school, city' label on product cards and the
+   Categories school-tree sidebar. */
+const SCHOOL_INFO = {
+  ug:     { school: 'University of Ghana',             city: 'Accra' },
+  knust:  { school: 'Kwame Nkrumah University',        city: 'Kumasi' },
+  ucc:    { school: 'University of Cape Coast',        city: 'Cape Coast' },
+  upsa:   { school: 'UPSA',                             city: 'Accra' },
+  asuesi: { school: 'ASUESI',                           city: 'Accra' },
+};
 
 const SELLERS = [
   {
@@ -188,14 +197,19 @@ const PRODUCT_SELLERS = {
   r1: 's5', r2: 's3', r3: 's1', r4: 's1',
 };
 
-const ALL_PRODUCTS = [...TRENDING, ...RECENT].map((p) => ({
-  ...p,
-  categoryId: PRODUCT_CATEGORIES[p.id] || 'electronics',
-  sellerId: PRODUCT_SELLERS[p.id] || 's1',
-  description:
-    'Carefully kept by a fellow student on campus. Ready for pickup or campus meet-up. Negotiation welcome — DM the seller via chat below.',
-  images: [p.image, p.image, p.image],
-}));
+const ALL_PRODUCTS = [...TRENDING, ...RECENT].map((p) => {
+  const info = SCHOOL_INFO[p.universityId] || { school: 'Other', city: '' };
+  return {
+    ...p,
+    school: info.school,
+    city: info.city,
+    categoryId: PRODUCT_CATEGORIES[p.id] || 'electronics',
+    sellerId: PRODUCT_SELLERS[p.id] || 's1',
+    description:
+      'Carefully kept by a fellow student on campus. Ready for pickup or campus meet-up. Negotiation welcome — DM the seller via chat below.',
+    images: [p.image, p.image, p.image],
+  };
+});
 
 const CHATS = [
   {
@@ -203,7 +217,7 @@ const CHATS = [
     sellerId: 's1',
     name: 'Kofi Gadgets',
     avatar: SELLERS[0].avatar,
-    last: 'Yes, the iPad is still available 👌',
+    last: 'Yes, the iPad is still available.',
     time: '2m',
     unread: 2,
   },
@@ -222,7 +236,7 @@ const CHATS = [
     name: 'Yaw Electronics',
     avatar:
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',
-    last: 'Thanks for buying! 🙏',
+    last: 'Thanks for buying!',
     time: '1d',
     unread: 0,
   },
@@ -232,20 +246,20 @@ const MESSAGES = {
   c1: [
     { id: 1, from: 'them', text: 'Hello! Are you interested in the iPad?', time: '10:14' },
     { id: 2, from: 'me',   text: 'Yes, is it still available?',            time: '10:15' },
-    { id: 3, from: 'them', text: 'Yes, the iPad is still available 👌',    time: '10:16' },
+    { id: 3, from: 'them', text: 'Yes, the iPad is still available.',    time: '10:16' },
   ],
   c2: [
     { id: 1, from: 'me',   text: 'Hi! Where can we meet?', time: '09:00' },
     { id: 2, from: 'them', text: 'I can drop it at Night Market by 6pm', time: '09:05' },
   ],
   c3: [
-    { id: 1, from: 'them', text: 'Thanks for buying! 🙏', time: 'Yesterday' },
+    { id: 1, from: 'them', text: 'Thanks for buying!', time: 'Yesterday' },
   ],
 };
 
 const NOTIFICATIONS = {
   Today: [
-    { id: 'n1', type: 'order',   title: 'Order confirmed', body: 'Your iPad Pro order is on its way 🎉', time: '10m' },
+    { id: 'n1', type: 'order',   title: 'Order confirmed', body: 'Your iPad Pro order is on its way.', time: '10m' },
     { id: 'n2', type: 'price',   title: 'Price drop',      body: 'iPhone 13 dropped to GH₵ 3,800',       time: '2h' },
   ],
   Yesterday: [
@@ -277,6 +291,49 @@ export const sbay = {
       bio: seller.tagline || 'Selling lightly used campus gadgets since 2023.',
       listings: ALL_PRODUCTS.filter((p) => p.sellerId === seller.id),
     };
+  },
+  /* School tree used by the Categories sidebar:
+     [{ id, label, city, categories: [CATEGORY] }, ... , { id: 'others', label: 'Others', categories: [CATEGORY] }]
+     Categories under each school are derived from the products actually
+     listed by sellers in that school. An 'Others' entry always appears
+     at the end. */
+  async getSchoolTree() {
+    await wait();
+    const schoolIds = Object.keys(SCHOOL_INFO);
+    const tree = schoolIds.map((sid) => {
+      const items = ALL_PRODUCTS.filter((p) => p.universityId === sid);
+      const catIds = [...new Set(items.map((p) => p.categoryId))];
+      return {
+        id: sid,
+        label: SCHOOL_INFO[sid].school,
+        city: SCHOOL_INFO[sid].city,
+        categories: CATEGORIES.filter((c) => c.id !== 'all' && catIds.includes(c.id)),
+      };
+    });
+    const othersItems = ALL_PRODUCTS.filter((p) => !schoolIds.includes(p.universityId));
+    const otherCatIds = [...new Set(othersItems.map((p) => p.categoryId))];
+    tree.push({
+      id: 'others',
+      label: 'Others',
+      city: '',
+      categories: CATEGORIES.filter((c) => c.id !== 'all' && otherCatIds.includes(c.id)),
+    });
+    return tree;
+  },
+  async getProductsByScope({ schoolId, categoryId } = {}) {
+    await wait();
+    const schoolIds = Object.keys(SCHOOL_INFO);
+    return ALL_PRODUCTS.filter((p) => {
+      if (schoolId === 'others') {
+        if (schoolIds.includes(p.universityId)) return false;
+      } else if (schoolId) {
+        if (p.universityId !== schoolId) return false;
+      }
+      if (categoryId && categoryId !== 'all') {
+        if (p.categoryId !== categoryId) return false;
+      }
+      return true;
+    });
   },
   async searchProducts(q) {
     await wait(150);

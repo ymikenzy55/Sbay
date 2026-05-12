@@ -42,7 +42,7 @@ export default function SellerDashboard() {
         <section className="sd-hero">
           <div>
             <p className="muted">Welcome back,</p>
-            <h2>{user?.sellerProfile?.storeName || user?.name || 'Seller'} 👋</h2>
+            <h2>{user?.sellerProfile?.storeName || user?.name || 'Seller'}</h2>
           </div>
           <button className="btn btn-primary" onClick={() => navigate('/sell')}>
             <Plus size={16} /> New Listing

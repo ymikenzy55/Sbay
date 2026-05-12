@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search as SearchIcon, X, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import * as Lucide from 'lucide-react';
-import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import FilterDrawer from '../components/FilterDrawer';
+import Logo from '../components/Logo';
 import { Skeleton } from '../components/Skeleton';
 import { sbay } from '../api/client';
 import './pages.css';
 import './Categories.css';
-
-const FILTER_DEFAULT = { universities: [], priceMin: 0, priceMax: 10000 };
 
 function CatIcon({ name, size = 18 }) {
   const Icon = Lucide[name] || Lucide.Tag;
@@ -21,59 +18,122 @@ function CatIcon({ name, size = 18 }) {
 export default function Categories() {
   const { catId } = useParams();
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts]     = useState(null);
-  const [filter, setFilter]         = useState(FILTER_DEFAULT);
-  const activeId = catId || 'all';
+  const [tree, setTree] = useState([]);
+  const [expanded, setExpanded] = useState(null);
+  const [scope, setScope] = useState({ schoolId: null, categoryId: null });
+  const [products, setProducts] = useState(null);
+  const [query, setQuery] = useState('');
 
-  useEffect(() => { sbay.getCategories().then(setCategories); }, []);
+  // Load sidebar tree.
+  useEffect(() => { sbay.getSchoolTree().then(setTree); }, []);
+
+  // If the route carries a legacy /category/:catId, pre-select that category
+  // across all schools so the user still lands on relevant products.
+  useEffect(() => {
+    if (catId && catId !== 'all') {
+      setScope({ schoolId: null, categoryId: catId });
+    }
+  }, [catId]);
+
+  // Fetch products for the current scope (school + category).
   useEffect(() => {
     setProducts(null);
-    sbay.getProductsByCategory(activeId).then(setProducts);
-  }, [activeId]);
+    sbay.getProductsByScope(scope).then(setProducts);
+  }, [scope.schoolId, scope.categoryId]);
 
-  const activeCat = categories.find((c) => c.id === activeId);
+  const activeSchool = tree.find((s) => s.id === scope.schoolId);
+  const activeCat    = activeSchool?.categories.find((c) => c.id === scope.categoryId);
+
+  const heading = activeSchool
+    ? (activeCat ? `${activeCat.label} · ${activeSchool.label}` : activeSchool.label)
+    : (scope.categoryId ? scope.categoryId.replace(/^./, (c) => c.toUpperCase()) : 'All Products');
 
   const filtered = useMemo(() => {
     if (!products) return null;
-    return products.filter((p) => {
-      if (filter.universities.length && !filter.universities.includes(p.universityId)) return false;
-      if (p.price < filter.priceMin || p.price > filter.priceMax) return false;
-      return true;
-    });
-  }, [products, filter]);
+    const q = query.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter((p) => p.title.toLowerCase().includes(q));
+  }, [products, query]);
 
-  const panels = useMemo(() => {
-    if (!filtered || filtered.length === 0) return [];
-    return [{ label: 'Products', items: filtered }];
-  }, [filtered]);
+  const selectSchool = (sid) => {
+    setExpanded((cur) => (cur === sid ? null : sid));
+    setScope({ schoolId: sid, categoryId: null });
+  };
+  const selectCategory = (sid, cid) => {
+    setScope({ schoolId: sid, categoryId: cid });
+  };
 
   return (
     <div className="page cat-page">
-      <TopBar showBack title="Categories" />
+      {/* Custom top bar: logo + live-search input shifted left */}
+      <header className="cat-top">
+        <button className="cat-brand" onClick={() => navigate('/home')} aria-label="Home">
+          <Logo size="sm" />
+        </button>
+        <div className="cat-search">
+          <SearchIcon size={16} className="cat-search-ic" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search within this page..."
+            aria-label="Search within categories"
+          />
+          {query && (
+            <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </header>
 
       <div className="cat-layout">
-        {/* Independently-scrolling sidebar */}
-        <aside className="cat-sidebar" aria-label="Categories">
-          {categories.length === 0 ? (
+        {/* School tree sidebar */}
+        <aside className="cat-sidebar" aria-label="Schools">
+          {tree.length === 0 ? (
             <div className="cat-side-skel">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} h={36} r={6} style={{ display: 'block', margin: '6px 4px' }} />
               ))}
             </div>
           ) : (
-            <ul className="cat-list">
-              {categories.map((c) => (
-                <li key={c.id}>
-                  <button
-                    className={`cat-item ${activeId === c.id ? 'active' : ''}`}
-                    onClick={() => navigate(`/category/${c.id}`)}
-                  >
-                    <CatIcon name={c.icon} size={16} />
-                    <span className="cat-label">{c.label}</span>
-                  </button>
-                </li>
-              ))}
+            <ul className="school-list">
+              {tree.map((s) => {
+                const isOpen = expanded === s.id;
+                const isActiveSchool = scope.schoolId === s.id;
+                return (
+                  <li key={s.id} className={`school-item ${isActiveSchool ? 'active' : ''}`}>
+                    <button
+                      className="school-head"
+                      onClick={() => selectSchool(s.id)}
+                      aria-expanded={isOpen}
+                    >
+                      {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      <span className="school-label">{s.label}</span>
+                      {s.city && <span className="school-city">{s.city}</span>}
+                    </button>
+                    {isOpen && (
+                      <ul className="school-cats">
+                        {s.categories.length === 0 ? (
+                          <li className="cat-empty">No categories yet</li>
+                        ) : (
+                          s.categories.map((c) => (
+                            <li key={c.id}>
+                              <button
+                                className={`cat-sub ${scope.schoolId === s.id && scope.categoryId === c.id ? 'active' : ''}`}
+                                onClick={() => selectCategory(s.id, c.id)}
+                              >
+                                <CatIcon name={c.icon} size={14} />
+                                <span>{c.label}</span>
+                              </button>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </aside>
@@ -81,13 +141,15 @@ export default function Categories() {
         {/* Main */}
         <main className="cat-main">
           <div className="cat-toolbar">
-            <h2 className="cat-title">{activeCat ? activeCat.label : 'All Products'}</h2>
-            <FilterDrawer
-              value={filter}
-              onApply={setFilter}
-              onReset={() => setFilter(FILTER_DEFAULT)}
-              label="Filter"
-            />
+            <h2 className="cat-title">{heading}</h2>
+            {(scope.schoolId || scope.categoryId) && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setScope({ schoolId: null, categoryId: null }); setExpanded(null); }}
+              >
+                <X size={14} /> Clear
+              </button>
+            )}
           </div>
 
           {products === null ? (
@@ -101,46 +163,32 @@ export default function Categories() {
             </div>
           ) : filtered?.length === 0 ? (
             <div className="empty">
-              <div className="emo">📦</div>
-              <h3>No items match your filters</h3>
-              <p className="muted">Try clearing your school or price range filters.</p>
-              <button className="btn btn-ghost" onClick={() => setFilter(FILTER_DEFAULT)}>
-                Reset filters
-              </button>
+              <div className="emo"><Package size={44} /></div>
+              <h3>No items match</h3>
+              <p className="muted">Try a different school, category, or search term.</p>
             </div>
           ) : (
-            panels.map((panel) => (
-              <section key={panel.label} className="cat-panel">
-                <div className="panel-head">
-                  <h3>{panel.label}</h3>
-                  <button
-                    className="panel-see-all"
-                    onClick={() => navigate(`/search?cat=${activeId}`)}
+            <section className="cat-panel">
+              <div className="panel-grid">
+                {filtered.map((p, i) => (
+                  <motion.button
+                    key={p.id}
+                    className="panel-cell"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    onClick={() => navigate(`/product/${p.id}`)}
                   >
-                    See All
-                  </button>
-                </div>
-                <div className="panel-grid">
-                  {panel.items.map((p, i) => (
-                    <motion.button
-                      key={p.id}
-                      className="panel-cell"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => navigate(`/product/${p.id}`)}
-                    >
-                      <div className="cell-thumb" style={{ backgroundImage: `url(${p.image})` }} />
-                      <span className="cell-label">{p.title}</span>
-                      <span className="cell-price">GH₵ {p.price.toLocaleString()}</span>
-                      <span className="cell-loc">
-                        <MapPin size={10} /> {p.campus}
-                      </span>
-                    </motion.button>
-                  ))}
-                </div>
-              </section>
-            ))
+                    <div className="cell-thumb" style={{ backgroundImage: `url(${p.image})` }} />
+                    <span className="cell-label">{p.title}</span>
+                    <span className="cell-price">GH₵ {p.price.toLocaleString()}</span>
+                    <span className="cell-loc">
+                      <MapPin size={10} /> {p.school}{p.city ? `, ${p.city}` : ''}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </section>
           )}
         </main>
       </div>

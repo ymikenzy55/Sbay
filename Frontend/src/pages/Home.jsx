@@ -1,34 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, ArrowRight, Heart, Shield, MapPin } from 'lucide-react';
+import { Star, ArrowRight, Heart, Shield, MapPin, Search as SearchIcon, Flame } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import FilterDrawer from '../components/FilterDrawer';
 import { sbay } from '../api/client';
 import { SkeletonGrid, Skeleton } from '../components/Skeleton';
 import './Home.css';
 
-const FILTER_DEFAULT = { universities: [], priceMin: 0, priceMax: 10000 };
-
 export default function Home() {
   const navigate = useNavigate();
-  const [universities, setUniversities] = useState([]);
   const [trending, setTrending] = useState([]);
   const [sellers,  setSellers]  = useState([]);
   const [recent,   setRecent]   = useState([]);
   const [saved, setSaved] = useState({});
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState(FILTER_DEFAULT);
 
   useEffect(() => {
     Promise.all([
-      sbay.getUniversities(),
       sbay.getTrending(),
       sbay.getSellers(),
       sbay.getRecent(),
-    ]).then(([u, t, s, r]) => {
-      setUniversities(u); setTrending(t); setSellers(s); setRecent(r);
+    ]).then(([t, s, r]) => {
+      setTrending(t); setSellers(s); setRecent(r);
     });
   }, []);
 
@@ -37,29 +31,16 @@ export default function Home() {
     setSaved((p) => ({ ...p, [id]: !p[id] }));
   };
 
-  // Apply both filter chips and the search query to a product list.
-  const applyFilters = (list) => list.filter((p) => {
-    if (filter.universities.length && !filter.universities.includes(p.universityId)) return false;
-    if (p.price < filter.priceMin || p.price > filter.priceMax) return false;
-    return true;
-  });
-
   const q = query.trim().toLowerCase();
-  const filteredTrending = useMemo(() => applyFilters(trending), [trending, filter]);
-  const filteredRecent   = useMemo(() => applyFilters(recent),   [recent,   filter]);
 
   const matches = useMemo(() => {
     if (!q) return null;
-    return applyFilters([...trending, ...recent]).filter((p) =>
+    return [...trending, ...recent].filter((p) =>
       p.title.toLowerCase().includes(q)
     );
-  }, [q, trending, recent, filter]);
+  }, [q, trending, recent]);
 
   const featuredSellers = sellers.slice(0, 2);
-  const filterActiveCount =
-    filter.universities.length +
-    (filter.priceMin !== FILTER_DEFAULT.priceMin ? 1 : 0) +
-    (filter.priceMax !== FILTER_DEFAULT.priceMax ? 1 : 0);
 
   return (
     <div className="home">
@@ -69,27 +50,6 @@ export default function Home() {
         onSearchChange={setQuery}
         searchPlaceholder="Search phones, books, sneakers, snacks..."
       />
-
-      {/* Filter row */}
-      <div className="home-filter-row">
-        <FilterDrawer
-          value={filter}
-          onApply={setFilter}
-          onReset={() => setFilter(FILTER_DEFAULT)}
-          label="Filter"
-        />
-        {filterActiveCount > 0 && (
-          <button className="filter-clear" onClick={() => setFilter(FILTER_DEFAULT)}>
-            Clear filters
-          </button>
-        )}
-        <span className="filter-hint muted small">
-          {filter.universities.length > 0 &&
-            `${filter.universities.length} school${filter.universities.length === 1 ? '' : 's'}`}
-          {filter.priceMax !== FILTER_DEFAULT.priceMax &&
-            ` · up to GH₵ ${filter.priceMax.toLocaleString()}`}
-        </span>
-      </div>
 
       <main className="home-main">
         {/* Search results take over when there's a query */}
@@ -102,9 +62,9 @@ export default function Home() {
             </div>
             {matches.length === 0 ? (
               <div className="empty">
-                <div className="emo">🔍</div>
+                <div className="emo"><SearchIcon size={44} /></div>
                 <h3>Nothing matched your search</h3>
-                <p className="muted">Try a different keyword or remove some filters.</p>
+                <p className="muted">Try a different keyword.</p>
               </div>
             ) : (
               <div className="recent-grid">
@@ -134,7 +94,7 @@ export default function Home() {
 
               {trending.length === 0 && <SkeletonGrid count={3} />}
               <div className="trend-scroller">
-                {filteredTrending.map((p, i) => (
+                {trending.map((p, i) => (
                   <motion.article
                     key={p.id}
                     className="trend-card"
@@ -147,7 +107,7 @@ export default function Home() {
                     <div className="trend-img" style={{ backgroundImage: `url(${p.image})` }}>
                       {p.badge && (
                         <span className={`pill ${p.badge === 'TRENDING' ? 'pill-gold' : 'pill-red'}`}>
-                          {p.badge === 'TRENDING' ? '🔥 TRENDING' : 'HOTTEST'}
+                          {p.badge === 'TRENDING' ? <><Flame size={12} /> TRENDING</> : 'HOTTEST'}
                         </span>
                       )}
                     </div>
@@ -157,14 +117,11 @@ export default function Home() {
                         <span className="price">GH₵ {p.price.toLocaleString()}</span>
                       </div>
                       <p className="prod-meta">
-                        <MapPin size={12} /> {p.campus}{p.location ? ` · ${p.location}` : ''}
+                        <MapPin size={12} /> {p.school}{p.city ? `, ${p.city}` : ''}
                       </p>
                     </div>
                   </motion.article>
                 ))}
-                {filteredTrending.length === 0 && trending.length > 0 && (
-                  <div className="empty-inline">No trending items match your filters.</div>
-                )}
               </div>
             </section>
 
@@ -219,7 +176,7 @@ export default function Home() {
               {recent.length === 0 && <SkeletonGrid count={4} />}
 
               <div className="recent-grid">
-                {filteredRecent.map((p, i) => (
+                {recent.map((p, i) => (
                   <ProductCard
                     key={p.id}
                     p={p}
@@ -229,9 +186,6 @@ export default function Home() {
                     onClick={() => navigate(`/product/${p.id}`)}
                   />
                 ))}
-                {filteredRecent.length === 0 && recent.length > 0 && (
-                  <div className="empty-inline">No recent items match your filters.</div>
-                )}
               </div>
             </section>
           </>
@@ -271,7 +225,7 @@ function ProductCard({ p, i, saved, toggleSave, onClick }) {
         </div>
         <p className="prod-loc">
           <MapPin size={12} />
-          <span>{p.campus}{p.location ? ` · ${p.location}` : ''}</span>
+          <span>{p.school}{p.city ? `, ${p.city}` : ''}</span>
         </p>
       </div>
     </motion.article>

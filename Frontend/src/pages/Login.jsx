@@ -32,7 +32,7 @@ export default function Login() {
       <div className="auth-logo"><Logo size="lg" /></div>
 
       <form className="auth-card" onSubmit={submit}>
-        <h2>Welcome back 👋</h2>
+        <h2>Welcome back</h2>
         <p className="lede">Sign in to chat, checkout and manage your sBay activity.</p>
 
         <div className="field">

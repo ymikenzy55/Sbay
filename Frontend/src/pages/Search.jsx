@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search as SearchIcon, ArrowLeft, Mic, X } from 'lucide-react';
+import { Search as SearchIcon, ArrowLeft, Mic, X, PackageSearch } from 'lucide-react';
 import { sbay } from '../api/client';
 import BottomNav from '../components/BottomNav';
 import { SkeletonGrid } from '../components/Skeleton';
@@ -66,7 +66,7 @@ export default function SearchPage() {
           <SkeletonGrid count={8} />
         ) : results.length === 0 ? (
           <div className="empty">
-            <div className="emo">🤷🏾‍♂️</div>
+            <div className="emo"><PackageSearch size={44} /></div>
             <h3>No results found</h3>
             <p>Try a different keyword or campus.</p>
           </div>

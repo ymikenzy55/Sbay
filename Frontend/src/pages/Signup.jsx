@@ -42,12 +42,12 @@ export default function Signup() {
 
         <div className="role-grid">
           <button type="button" className={`role-card ${role === 'buyer' ? 'active' : ''}`} onClick={() => setRole('buyer')}>
-            <span className="role-emo">🛍️</span>
+            <span className="role-emo"><ShoppingBag size={22} /></span>
             <strong>Buyer</strong>
             <span>Shop campus deals</span>
           </button>
           <button type="button" className={`role-card ${role === 'seller' ? 'active' : ''}`} onClick={() => setRole('seller')}>
-            <span className="role-emo">🏪</span>
+            <span className="role-emo"><Store size={22} /></span>
             <strong>Seller</strong>
             <span>Earn on campus</span>
           </button>

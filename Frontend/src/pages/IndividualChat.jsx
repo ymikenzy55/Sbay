@@ -60,7 +60,7 @@ export default function IndividualChat() {
       setTyping(false);
       setMessages((m) => [
         ...m,
-        { id: Date.now() + 1, from: 'them', text: 'Got it 👌', time: 'now' },
+        { id: Date.now() + 1, from: 'them', text: 'Got it.', time: 'now' },
       ]);
     }, 1400);
   };

@@ -145,7 +145,7 @@ export default function Profile() {
         <TopBar showSearch={false} title="Profile" />
         <main className="page-main">
           <div className="empty">
-            <h3>You're browsing as a guest 👋</h3>
+            <h3>You're browsing as a guest</h3>
             <p>Sign in to track orders, save items, chat, and check out.</p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button className="btn btn-primary" onClick={() => navigate('/login')}>Sign In</button>
@@ -256,7 +256,7 @@ export default function Profile() {
                       <Star size={14} /> Leave Review
                     </button>
                   )}
-                  {o.reviewed && <span className="muted small">✓ Reviewed</span>}
+                  {o.reviewed && <span className="muted small"><Check size={12} /> Reviewed</span>}
                 </div>
               </motion.article>
             ))}

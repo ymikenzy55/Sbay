@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Shield, MapPin, MessageCircle, Send } from 'lucide-react';
+import { ArrowLeft, Star, Shield, MapPin, MessageCircle, Send, Zap, BadgeCheck, Trophy } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
@@ -69,9 +69,9 @@ export default function SellerProfile() {
         </div>
         <p className="sp-bio">{seller.bio}</p>
         <div className="sp-badges">
-          <span className="badge-soft">⚡ Fast replier</span>
-          <span className="badge-soft">✅ ID Verified</span>
-          <span className="badge-soft">🏆 Top Seller</span>
+          <span className="badge-soft"><Zap size={12} /> Fast replier</span>
+          <span className="badge-soft"><BadgeCheck size={12} /> ID Verified</span>
+          <span className="badge-soft"><Trophy size={12} /> Top Seller</span>
         </div>
       </div>
 

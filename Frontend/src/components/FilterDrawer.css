@@ -23,6 +23,7 @@
 .filter-btn svg {
   display: block;
   flex: 0 0 auto;
+  margin-top: 10px;
   transform: translateY(1px);
 }
 .filter-btn span {

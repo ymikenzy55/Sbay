@@ -23,6 +23,7 @@ export default function ProductDetail() {
   const [activeImg, setActiveImg] = useState(0);
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
     sbay.getProduct(id).then((p) => {
@@ -55,6 +56,32 @@ export default function ProductDetail() {
     if (requireAuth(`/product/${id}`)) return;
     setSaved((s) => !s);
   };
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 1800);
+  };
+  const handleShare = async () => {
+    const url = `${window.location.origin}/product/${id}`;
+    const data = {
+      title: product.title,
+      text: `Check out ${product.title} on sBay — GH₵ ${product.price.toLocaleString()}`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied to clipboard!');
+        return;
+      }
+      window.prompt('Copy this link:', url);
+    } catch (err) {
+      if (err?.name !== 'AbortError') showToast('Unable to share');
+    }
+  };
 
   return (
     <div className="page pdp">
@@ -66,7 +93,7 @@ export default function ProductDetail() {
             <button className="round-btn" onClick={() => setSaved(!saved)} aria-label="Save">
               <Heart size={18} fill={saved ? '#D32F2F' : 'none'} color={saved ? '#D32F2F' : 'currentColor'} />
             </button>
-            <button className="round-btn" aria-label="Share"><Share2 size={18} /></button>
+            <button className="round-btn" onClick={handleShare} aria-label="Share"><Share2 size={18} /></button>
           </div>
         </div>
         <div className="pdp-thumbs">
@@ -145,6 +172,16 @@ export default function ProductDetail() {
             exit={{ opacity: 0, y: -20 }}
           >
             <Check size={16} /> Added to cart!
+          </motion.div>
+        )}
+        {toastMsg && (
+          <motion.div
+            className="toast"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Share2 size={16} /> {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>

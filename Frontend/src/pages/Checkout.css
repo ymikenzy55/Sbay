@@ -76,3 +76,86 @@
 @media (max-width: 720px) {
   .method-grid { grid-template-columns: 1fr; }
 }
+
+/* Location collector */
+.co-location { display: flex; flex-direction: column; gap: 10px; }
+.co-loc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+}
+.co-loc-head .page-h2 {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0;
+}
+.co-loc-edit { display: flex; flex-direction: column; gap: 10px; }
+.co-loc-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--surface-2);
+  outline: none;
+  transition: border-color .15s ease;
+  box-sizing: border-box;
+}
+.co-loc-input:focus { border-color: var(--primary); background: #fff; }
+.co-loc-error { color: var(--error, #D32F2F); font-size: 0.82rem; margin: 0; }
+.co-loc-value {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 600; color: var(--text);
+  background: var(--primary-50);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  margin: 0;
+}
+
+/* Review before paying */
+.co-review-toggle {
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin-top: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+}
+.co-review-toggle:hover { background: var(--primary-50); border-color: var(--primary); }
+.co-review {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.co-review h4 { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+.co-review-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.co-review-list li {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 0.88rem;
+}
+.co-review-loc {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.co-review-loc p { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  min-height: 0;
+}

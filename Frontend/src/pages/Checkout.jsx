@@ -1,23 +1,48 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, MapPin, Check, MessageCircle, Lock, Coffee } from 'lucide-react';
+import { Shield, MapPin, Check, MessageCircle, Lock, Coffee, Edit3, ChevronDown, ChevronUp } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import { useCart } from '../store/CartContext';
+import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './Checkout.css';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
+  const { user, updateUser } = useAuth();
   const [method, setMethod] = useState('escrow');
+  const [location, setLocation] = useState(user?.location || '');
+  const [editingLoc, setEditingLoc] = useState(!user?.location);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [error, setError] = useState('');
 
   const fee = method === 'escrow' ? Math.round(subtotal * 0.05) : 0;
   const total = subtotal + fee;
 
+  const saveLocation = () => {
+    const v = location.trim();
+    if (!v) {
+      setError('Please enter a delivery / pickup location.');
+      return false;
+    }
+    setError('');
+    updateUser?.({ location: v });
+    setEditingLoc(false);
+    return true;
+  };
+
   const place = () => {
+    if (editingLoc && !saveLocation()) return;
+    if (!location.trim()) {
+      setError('Please set a delivery / pickup location first.');
+      setEditingLoc(true);
+      return;
+    }
+    updateUser?.({ location: location.trim() });
     clear();
-    navigate('/payment-success', { state: { method, total } });
+    navigate('/payment-success', { state: { method, total, location: location.trim() } });
   };
 
   if (items.length === 0) {
@@ -54,6 +79,39 @@ export default function Checkout() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Delivery / Pickup Location */}
+        <section className="card co-location">
+          <div className="co-loc-head">
+            <h3 className="page-h2"><MapPin size={16} /> Delivery / Pickup Location</h3>
+            {!editingLoc && location && (
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditingLoc(true)}>
+                <Edit3 size={14} /> Change
+              </button>
+            )}
+          </div>
+          {editingLoc ? (
+            <div className="co-loc-edit">
+              <p className="muted small">
+                Where should the seller meet you or drop off? We'll save this for future orders.
+              </p>
+              <input
+                type="text"
+                className="co-loc-input"
+                placeholder="e.g. University of Ghana, Night Market, Legon"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                autoFocus
+              />
+              {error && <p className="co-loc-error">{error}</p>}
+              <button className="btn btn-primary btn-sm" onClick={saveLocation}>
+                <Check size={14} /> Save location
+              </button>
+            </div>
+          ) : (
+            <p className="co-loc-value"><MapPin size={14} /> {location}</p>
+          )}
         </section>
 
         {/* Delivery method */}
@@ -104,7 +162,7 @@ export default function Checkout() {
           </div>
         </section>
 
-        {/* Totals */}
+        {/* Totals + Review */}
         <section className="card co-totals">
           <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
           <div className="row">
@@ -113,8 +171,41 @@ export default function Checkout() {
           </div>
           <div className="divider" />
           <div className="row total"><span>Total</span><strong>GH₵ {total.toLocaleString()}</strong></div>
+
+          <button
+            type="button"
+            className="co-review-toggle"
+            onClick={() => setReviewOpen((v) => !v)}
+          >
+            {reviewOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            Review order & shipping location before paying
+          </button>
+
+          {reviewOpen && (
+            <div className="co-review">
+              <h4>Your items</h4>
+              <ul className="co-review-list">
+                {items.map((it) => (
+                  <li key={it.id}>
+                    <span>{it.title} × {it.qty}</span>
+                    <strong>GH₵ {(it.qty * it.price).toLocaleString()}</strong>
+                  </li>
+                ))}
+              </ul>
+              <div className="co-review-loc">
+                <div>
+                  <p className="muted small">Shipping to</p>
+                  <p><MapPin size={14} /> {location || 'Not set yet'}</p>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditingLoc(true)}>
+                  <Edit3 size={14} /> Change location
+                </button>
+              </div>
+            </div>
+          )}
+
           <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={place}>
-            {method === 'escrow' ? <><Shield size={16} /> Pay with Escrow</> : <><MapPin size={16} /> Confirm Meet-up</>}
+            {method === 'escrow' ? <><Shield size={16} /> Confirm & Pay with Escrow</> : <><MapPin size={16} /> Confirm Meet-up</>}
           </button>
           <p className="muted small" style={{ textAlign: 'center', marginTop: 8 }}>
             Escrow powered by Paystack · Secured by sBay

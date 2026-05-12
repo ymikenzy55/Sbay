@@ -57,12 +57,14 @@ export default function App() {
               <Route path="/login"        element={<Login />} />
               <Route path="/signup"       element={<Signup />} />
 
+              {/* Chat is free — guests can message sellers too */}
+              <Route path="/chats"           element={<ChatList />} />
+              <Route path="/chat/:id"        element={<IndividualChat />} />
+
               {/* Sensitive — sign-in required */}
               <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
               <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
               <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
-              <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
-              <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
               <Route path="/profile"         element={<Profile />} />
 
               {/* Seller flow — auth + seller role */}

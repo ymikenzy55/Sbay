@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Heart, Share2, Star, ShoppingCart, Check, Shield, BookmarkPlus, BookmarkCheck,
+  Copy, X, MessageCircle, Facebook, Twitter, Send, Mail,
 } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useCart } from '../store/CartContext';
@@ -24,6 +25,7 @@ export default function ProductDetail() {
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     sbay.getProduct(id).then((p) => {
@@ -47,7 +49,6 @@ export default function ProductDetail() {
   }
 
   const handleAdd = () => {
-    if (requireAuth(`/product/${id}`)) return;
     addItem(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
@@ -60,24 +61,27 @@ export default function ProductDetail() {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 1800);
   };
-  const handleShare = async () => {
-    const url = `${window.location.origin}/product/${id}`;
-    const data = {
-      title: product.title,
-      text: `Check out ${product.title} on sBay — GH₵ ${product.price.toLocaleString()}`,
-      url,
-    };
+  const shareUrl = `${window.location.origin}/product/${id}`;
+  const shareText = product
+    ? `Check out ${product.title} on sBay — GH₵ ${product.price.toLocaleString()}`
+    : 'Check this out on sBay';
+  const copyLink = async () => {
     try {
-      if (navigator.share) {
-        await navigator.share(data);
-        return;
-      }
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        showToast('Link copied to clipboard!');
-        return;
-      }
-      window.prompt('Copy this link:', url);
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copied to clipboard!');
+    } catch {
+      window.prompt('Copy this link:', shareUrl);
+    }
+    setShareOpen(false);
+  };
+  const openShare = (href) => {
+    window.open(href, '_blank', 'noopener,noreferrer');
+    setShareOpen(false);
+  };
+  const nativeShare = async () => {
+    try {
+      await navigator.share({ title: product.title, text: shareText, url: shareUrl });
+      setShareOpen(false);
     } catch (err) {
       if (err?.name !== 'AbortError') showToast('Unable to share');
     }
@@ -93,7 +97,7 @@ export default function ProductDetail() {
             <button className="round-btn" onClick={() => setSaved(!saved)} aria-label="Save">
               <Heart size={18} fill={saved ? '#D32F2F' : 'none'} color={saved ? '#D32F2F' : 'currentColor'} />
             </button>
-            <button className="round-btn" onClick={handleShare} aria-label="Share"><Share2 size={18} /></button>
+            <button className="round-btn" onClick={() => setShareOpen(true)} aria-label="Share"><Share2 size={18} /></button>
           </div>
         </div>
         <div className="pdp-thumbs">
@@ -183,6 +187,80 @@ export default function ProductDetail() {
           >
             <Share2 size={16} /> {toastMsg}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share popover */}
+      <AnimatePresence>
+        {shareOpen && (
+          <>
+            <motion.div
+              className="share-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShareOpen(false)}
+            />
+            <motion.div
+              className="share-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+            >
+              <header className="share-head">
+                <h3>Share this item</h3>
+                <button onClick={() => setShareOpen(false)} aria-label="Close"><X size={20} /></button>
+              </header>
+              <div className="share-grid">
+                <button
+                  className="share-opt whatsapp"
+                  onClick={() => openShare(`https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`)}
+                >
+                  <span className="share-ic"><MessageCircle size={22} /></span>
+                  <span>WhatsApp</span>
+                </button>
+                <button
+                  className="share-opt twitter"
+                  onClick={() => openShare(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`)}
+                >
+                  <span className="share-ic"><Twitter size={22} /></span>
+                  <span>X / Twitter</span>
+                </button>
+                <button
+                  className="share-opt facebook"
+                  onClick={() => openShare(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`)}
+                >
+                  <span className="share-ic"><Facebook size={22} /></span>
+                  <span>Facebook</span>
+                </button>
+                <button
+                  className="share-opt telegram"
+                  onClick={() => openShare(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`)}
+                >
+                  <span className="share-ic"><Send size={22} /></span>
+                  <span>Telegram</span>
+                </button>
+                <button
+                  className="share-opt email"
+                  onClick={() => openShare(`mailto:?subject=${encodeURIComponent(product.title)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`)}
+                >
+                  <span className="share-ic"><Mail size={22} /></span>
+                  <span>Email</span>
+                </button>
+                <button className="share-opt copy" onClick={copyLink}>
+                  <span className="share-ic"><Copy size={22} /></span>
+                  <span>Copy link</span>
+                </button>
+                {typeof navigator !== 'undefined' && navigator.share && (
+                  <button className="share-opt more" onClick={nativeShare}>
+                    <span className="share-ic"><Share2 size={22} /></span>
+                    <span>More…</span>
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

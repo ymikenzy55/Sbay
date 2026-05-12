@@ -23,10 +23,7 @@ export default function SellerProfile() {
   const [reviews, setReviews] = useState(SEED_REVIEWS);
   const [draft, setDraft] = useState({ rating: 5, text: '' });
 
-  const onChat = () => {
-    if (!user) navigate('/login?next=' + encodeURIComponent('/chat/c1'));
-    else navigate('/chat/c1');
-  };
+  const onChat = () => navigate('/chat/c1');
 
   const submitReview = (e) => {
     e.preventDefault();

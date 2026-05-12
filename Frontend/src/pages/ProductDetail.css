@@ -98,3 +98,76 @@
   .pdp-hero { height: 280px; }
   .pdp-title, .pdp-price { font-size: 1.15rem; }
 }
+
+/* Share popover */
+.share-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 17, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+}
+.share-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  padding: 18px 22px calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 91;
+  max-width: 520px;
+  margin: 0 auto;
+  box-shadow: 0 -14px 38px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+}
+.share-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.share-head h3 { font-size: 1.1rem; font-weight: 800; }
+.share-head button {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface-2);
+  display: grid; place-items: center;
+  color: var(--text-muted);
+  border: none; cursor: pointer;
+}
+.share-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 420px) {
+  .share-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.share-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease;
+}
+.share-opt:hover { transform: translateY(-2px); border-color: var(--primary); }
+.share-ic {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff;
+  background: var(--primary);
+}
+.share-opt.whatsapp .share-ic { background: #25D366; }
+.share-opt.twitter .share-ic  { background: #0F1419; }
+.share-opt.facebook .share-ic { background: #1877F2; }
+.share-opt.telegram .share-ic { background: #229ED9; }
+.share-opt.email .share-ic    { background: #5C6B5A; }
+.share-opt.copy .share-ic     { background: #0A7E3E; }
+.share-opt.more .share-ic     { background: var(--secondary); color: #2A1F00; }

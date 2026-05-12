@@ -6,7 +6,6 @@ import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { SkeletonList, SkeletonGrid, Skeleton } from '../components/Skeleton';
 import { sbay } from '../api/client';
-import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './AllSellers.css';
 
@@ -19,7 +18,6 @@ const SAMPLE_REVIEWS = [
 export default function AllSellers() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [sellers, setSellers] = useState(null);
   const [seller, setSeller]   = useState(null);
   const [q, setQ] = useState('');
@@ -40,10 +38,7 @@ export default function AllSellers() {
     [sellers, q]
   );
 
-  const onChat = () => {
-    if (!user) navigate('/login?next=' + encodeURIComponent(`/sellers/${activeId}`));
-    else navigate('/chat/c1');
-  };
+  const onChat = () => navigate('/chat/c1');
 
   return (
     <div className="page as-page">

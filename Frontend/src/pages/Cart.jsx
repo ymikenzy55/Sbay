@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, ShoppingBag, XCircle } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import { useCart } from '../store/CartContext';
-import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
 import './Cart.css';
@@ -11,7 +10,6 @@ import './Cart.css';
 export default function Cart() {
   const navigate = useNavigate();
   const confirm = useConfirm();
-  const { user } = useAuth();
   const { items, updateQty, removeItem, clear, subtotal } = useCart();
   const fee = items.length ? 15 : 0;
 
@@ -35,13 +33,7 @@ export default function Cart() {
     if (ok) removeItem(id);
   };
 
-  const onCheckout = () => {
-    if (!user) {
-      navigate('/login?next=' + encodeURIComponent('/checkout'));
-    } else {
-      navigate('/checkout');
-    }
-  };
+  const onCheckout = () => navigate('/checkout');
 
   return (
     <div className="page cart-page">

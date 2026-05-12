@@ -174,7 +174,6 @@ export default function Profile() {
         <div className="stats-row">
           <div className="stat-card"><strong>{orders.length}</strong><span>Orders</span></div>
           <div className="stat-card"><strong>{WISHLIST.length}</strong><span>Wishlist</span></div>
-          <div className="stat-card"><strong>4.9 ★</strong><span>Buyer rating</span></div>
         </div>
 
         {user.role === 'seller' && (

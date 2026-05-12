@@ -30,3 +30,22 @@
   font-weight: 800;
   letter-spacing: .06em;
 }
+
+/* Campus + hall line under product — mirrors the Home card. */
+.trending-full-grid .prod-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+.trending-full-grid .prod-loc span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}

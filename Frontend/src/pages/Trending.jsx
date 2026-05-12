@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, MapPin } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { SkeletonGrid } from '../components/Skeleton';
@@ -52,6 +52,12 @@ export default function Trending() {
                 <div className="result-body">
                   <h4 className="prod-title">{p.title}</h4>
                   <span className="price">GH₵ {p.price.toLocaleString()}</span>
+                  {(p.campus || p.location) && (
+                    <p className="prod-loc">
+                      <MapPin size={12} />
+                      <span>{p.campus}{p.location ? ` · ${p.location}` : ''}</span>
+                    </p>
+                  )}
                 </div>
               </motion.article>
             ))}

@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Heart, Settings, LogOut, Wallet, Shield, ChevronRight,
-  Check, Store, Star, MapPin, Lock, Camera, Package, Truck,
+  Settings, LogOut, Shield, ChevronRight,
+  Check, Store, Star, MapPin, Lock, Camera, Package, Truck, MessageCircle,
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
@@ -114,6 +114,17 @@ export default function Profile() {
     const reader = new FileReader();
     reader.onload = () => setSettings((s) => ({ ...s, avatar: reader.result }));
     reader.readAsDataURL(file);
+  };
+
+  const messageSeller = (order) => {
+    // Use sellerId to open (or create) a conversation with that seller,
+    // carrying the order context so the chat can display it as a banner.
+    navigate(`/chat/seller-${order.sellerId}`, {
+      state: {
+        seller: { id: order.sellerId, name: order.sellerName },
+        order: { id: order.id, title: order.title, price: order.price, image: order.image },
+      },
+    });
   };
 
   const saveSettings = (e) => {
@@ -233,6 +244,9 @@ export default function Profile() {
                   <button className="btn btn-ghost small" onClick={() => setTrackingOrder(o)}>
                     <Truck size={14} /> Track
                   </button>
+                  <button className="btn btn-ghost small" onClick={() => messageSeller(o)}>
+                    <MessageCircle size={14} /> Message seller
+                  </button>
                   {o.status === 'in_escrow' && (
                     <button className="btn btn-primary" onClick={() => onConfirmReceipt(o.id)}>
                       <Check size={14} /> Confirm Receipt
@@ -348,8 +362,6 @@ export default function Profile() {
 
         {/* Settings list */}
         <section className="link-list">
-          <button className="link-row"><span className="link-icon"><Wallet size={18} /></span><span className="link-label">Wallet</span><ChevronRight size={16} className="muted" /></button>
-          <button className="link-row"><span className="link-icon"><Shield size={18} /></span><span className="link-label">Verification</span><ChevronRight size={16} className="muted" /></button>
           <button className="link-row" onClick={() => setTab('settings')}><span className="link-icon"><Settings size={18} /></span><span className="link-label">Settings</span><ChevronRight size={16} className="muted" /></button>
           <button className="link-row danger" onClick={onLogout}>
             <span className="link-icon"><LogOut size={18} /></span>

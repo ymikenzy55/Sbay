@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Heart, Share2, Star, ShoppingCart, Check, Shield, BookmarkPlus, BookmarkCheck,
-  Copy, X, MessageCircle, Send, Mail,
+  Copy, X, MessageCircle, Send, Mail, MapPin,
 } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useCart } from '../store/CartContext';
@@ -43,11 +43,17 @@ export default function ProductDetail() {
   const [added, setAdded] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [shareOpen, setShareOpen] = useState(false);
+  const [similar, setSimilar] = useState([]);
 
   useEffect(() => {
     sbay.getProduct(id).then((p) => {
       setProduct(p);
       sbay.getSeller(p.sellerId).then(setSeller);
+      sbay.getAllProducts().then((all) => {
+        const same = all.filter((x) => x.id !== p.id && x.categoryId === p.categoryId);
+        const fill = all.filter((x) => x.id !== p.id && x.categoryId !== p.categoryId);
+        setSimilar([...same, ...fill].slice(0, 6));
+      });
     });
   }, [id]);
 
@@ -164,6 +170,37 @@ export default function ProductDetail() {
             >
               View profile
             </button>
+          </section>
+        )}
+
+        {similar.length > 0 && (
+          <section className="pdp-similar">
+            <h3 className="page-h2">Similar products</h3>
+            <div className="pdp-similar-grid">
+              {similar.map((s) => (
+                <motion.article
+                  key={s.id}
+                  className="pdp-similar-card"
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => navigate(`/product/${s.id}`)}
+                >
+                  <div
+                    className="pdp-similar-img"
+                    style={{ backgroundImage: `url(${s.image})` }}
+                  />
+                  <div className="pdp-similar-body">
+                    <h4>{s.title}</h4>
+                    <span className="price">GH₵ {s.price.toLocaleString()}</span>
+                    {(s.campus || s.location) && (
+                      <p className="pdp-similar-loc">
+                        <MapPin size={12} />
+                        <span>{s.campus}{s.location ? ` · ${s.location}` : ''}</span>
+                      </p>
+                    )}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
           </section>
         )}
       </main>

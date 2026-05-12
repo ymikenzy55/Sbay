@@ -99,6 +99,59 @@
   .pdp-title, .pdp-price { font-size: 1.15rem; }
 }
 
+/* Similar products */
+.pdp-similar { margin-top: 6px; }
+.pdp-similar .page-h2 { margin-bottom: 10px; }
+.pdp-similar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 720px) {
+  .pdp-similar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.pdp-similar-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: border-color .15s ease, transform .15s ease;
+  min-width: 0;
+}
+.pdp-similar-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.pdp-similar-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-size: cover;
+  background-position: center;
+}
+.pdp-similar-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pdp-similar-body h4 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pdp-similar-body .price { color: var(--primary); font-weight: 800; font-size: 0.95rem; }
+.pdp-similar-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+.pdp-similar-loc span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 /* Share popover */
 .share-overlay {
   position: fixed;

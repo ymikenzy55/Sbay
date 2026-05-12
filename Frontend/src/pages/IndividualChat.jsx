@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Smile, Paperclip, Mic, Send, Package } from 'lucide-react';
 import { sbay } from '../api/client';
 import './pages.css';
 import './IndividualChat.css';
 
+const FALLBACK_AVATAR =
+  'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&q=80';
+
 export default function IndividualChat() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const passed = location.state || {};
   const [chat, setChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
@@ -16,7 +21,26 @@ export default function IndividualChat() {
   const endRef = useRef(null);
 
   useEffect(() => {
-    sbay.getChats().then((cs) => setChat(cs.find((c) => c.id === id) || cs[0]));
+    sbay.getChats().then((cs) => {
+      const direct = cs.find((c) => c.id === id);
+      if (direct) return setChat(direct);
+      // If routed from "Message seller" with state, match by sellerId or
+      // fall back to a synthetic conversation stub for that seller.
+      if (passed.seller) {
+        const bySeller = cs.find((c) => c.sellerId === passed.seller.id);
+        if (bySeller) return setChat(bySeller);
+        return setChat({
+          id,
+          sellerId: passed.seller.id,
+          name: passed.seller.name,
+          avatar: FALLBACK_AVATAR,
+          last: '',
+          time: 'now',
+          unread: 0,
+        });
+      }
+      setChat(cs[0]);
+    });
     sbay.getMessages(id).then(setMessages);
   }, [id]);
 
@@ -54,11 +78,19 @@ export default function IndividualChat() {
         </div>
       </header>
 
-      <div className="order-banner">
-        <Package size={16} />
-        <span>Order #SB-2031 · iPad Pro 12.9"</span>
-        <strong>GH₵ 4,500</strong>
-      </div>
+      {passed.order ? (
+        <div className="order-banner">
+          <Package size={16} />
+          <span>Order #{passed.order.id} · {passed.order.title}</span>
+          <strong>GH₵ {passed.order.price?.toLocaleString?.() ?? passed.order.price}</strong>
+        </div>
+      ) : (
+        <div className="order-banner">
+          <Package size={16} />
+          <span>Order #SB-2031 · iPad Pro 12.9"</span>
+          <strong>GH₵ 4,500</strong>
+        </div>
+      )}
 
       <main className="chat-stream">
         {messages.map((m) => (

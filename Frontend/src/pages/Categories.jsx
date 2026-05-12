@@ -44,21 +44,8 @@ export default function Categories() {
   }, [products, filter]);
 
   const panels = useMemo(() => {
-    if (!filtered) return [];
-    if (filtered.length === 0) return [];
-    const chunks = [];
-    const labels = ['Top Picks', 'New Arrivals', 'Under GH₵ 1,000', 'Most Loved'];
-    let i = 0;
-    let l = 0;
-    while (i < filtered.length && l < labels.length) {
-      const next = filtered.slice(i, i + 6);
-      if (next.length === 0) break;
-      chunks.push({ label: labels[l], items: next });
-      i += 6;
-      l += 1;
-    }
-    if (chunks.length === 0) chunks.push({ label: 'All items', items: filtered });
-    return chunks;
+    if (!filtered || filtered.length === 0) return [];
+    return [{ label: 'Products', items: filtered }];
   }, [filtered]);
 
   return (

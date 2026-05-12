@@ -3,18 +3,24 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 9px 16px;
+  height: 38px;
+  padding: 0 14px;
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
+  line-height: 1;
   color: var(--text);
   transition: all .15s ease;
   cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
+.filter-btn svg { display: block; }
 .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
 .filter-btn.has-active {
   background: var(--primary);
@@ -105,31 +111,36 @@
   margin-bottom: 10px;
 }
 
-.uni-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.uni-select-wrap {
+  position: relative;
+  display: block;
 }
-.uni-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 14px;
-  background: #fff;
+.uni-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 12px 40px 12px 14px;
+  background: var(--surface-2);
   border: 1.5px solid var(--border);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
-  transition: all .15s ease;
   cursor: pointer;
+  transition: border-color .15s ease;
 }
-.uni-chip:hover { border-color: var(--primary); }
-.uni-chip.active {
-  background: var(--primary-50);
+.uni-select:focus {
+  outline: none;
   border-color: var(--primary);
-  color: var(--primary);
+}
+.uni-select-caret {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .price-pills {

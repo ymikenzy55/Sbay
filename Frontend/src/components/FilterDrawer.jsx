@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { SlidersHorizontal, X, Check, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, X, Check, RotateCcw, ChevronDown } from 'lucide-react';
 import { sbay } from '../api/client';
 import './FilterDrawer.css';
 
@@ -26,12 +26,10 @@ export default function FilterDrawer({ value, onApply, onReset, inline, label = 
   // Keep local draft in sync when the parent's value changes (e.g. reset).
   useEffect(() => { setDraft({ ...DEFAULT, ...(value || {}) }); }, [value, open]);
 
-  const toggleUni = (id) => {
+  const setUni = (id) => {
     setDraft((d) => ({
       ...d,
-      universities: d.universities.includes(id)
-        ? d.universities.filter((u) => u !== id)
-        : [...d.universities, id],
+      universities: id ? [id] : [],
     }));
   };
 
@@ -79,20 +77,18 @@ export default function FilterDrawer({ value, onApply, onReset, inline, label = 
 
               <section className="filter-section">
                 <h4>School / Campus</h4>
-                <div className="uni-grid">
-                  {unis.map((u) => {
-                    const active = draft.universities.includes(u.id);
-                    return (
-                      <button
-                        key={u.id}
-                        className={`uni-chip ${active ? 'active' : ''}`}
-                        onClick={() => toggleUni(u.id)}
-                      >
-                        {active && <Check size={14} />}
-                        <span>{u.label}</span>
-                      </button>
-                    );
-                  })}
+                <div className="uni-select-wrap">
+                  <select
+                    className="uni-select"
+                    value={draft.universities[0] || ''}
+                    onChange={(e) => setUni(e.target.value)}
+                  >
+                    <option value="">All schools</option>
+                    {unis.map((u) => (
+                      <option key={u.id} value={u.id}>{u.label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="uni-select-caret" />
                 </div>
               </section>
 

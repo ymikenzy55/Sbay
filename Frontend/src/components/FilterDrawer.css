@@ -20,7 +20,15 @@
   white-space: nowrap;
   flex: 0 0 auto;
 }
-.filter-btn svg { display: block; }
+.filter-btn svg {
+  display: block;
+  flex: 0 0 auto;
+  transform: translateY(1px);
+}
+.filter-btn span {
+  display: inline-block;
+  line-height: 1;
+}
 .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
 .filter-btn.has-active {
   background: var(--primary);

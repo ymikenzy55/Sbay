@@ -1,5 +1,8 @@
 .sk {
   display: inline-block;
+  position: relative;
+  overflow: hidden;
+  container-type: size;
   background: linear-gradient(
     90deg,
     rgba(10, 126, 62, 0.06) 0%,
@@ -8,6 +11,26 @@
   );
   background-size: 200% 100%;
   animation: skShimmer 1.4s ease-in-out infinite;
+}
+.sk::after {
+  content: 'sBay';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: 'Urbanist', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  /* Scale with the skeleton's own height so tiny bars stay unobtrusive */
+  font-size: min(35cqh, 1.4rem);
+  color: rgba(10, 126, 62, 0.32);
+  pointer-events: none;
+  user-select: none;
+  animation: skBrandPulse 1.8s ease-in-out infinite;
+}
+@keyframes skBrandPulse {
+  0%, 100% { opacity: 0.75; }
+  50%      { opacity: 1; }
 }
 @keyframes skShimmer {
   0%   { background-position: 200% 0; }

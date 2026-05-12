@@ -1,4 +1,4 @@
-import logoImage from '../assets/logo.jpg';
+import logoImage from '../assets/logo.png';
 import './Logo.css';
 
 /**

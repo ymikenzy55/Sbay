@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Tag, GraduationCap } from 'lucide-react';
-import logoImage from '../assets/logo.jpg';
+import logoImage from '../assets/logo.png';
 import './Splash.css';
 
 const SPRING = { type: 'spring', stiffness: 120, damping: 14 };

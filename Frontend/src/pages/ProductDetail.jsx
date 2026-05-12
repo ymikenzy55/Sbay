@@ -143,7 +143,7 @@ export default function ProductDetail() {
           </div>
           <div className="pdp-meta">
             <span className="badge-soft"><Check size={12} /> {product.condition || 'Brand New'}</span>
-            <span className="badge-soft">{product.school || 'University of Ghana'}{product.city ? `, ${product.city}` : ''}</span>
+            <span className="badge-soft">{product.school || 'UG'}{product.city ? `, ${product.city}` : ''}</span>
           </div>
         </section>
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Search as SearchIcon, X, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { MapPin, Search as SearchIcon, X, ChevronRight, ArrowLeft, Package } from 'lucide-react';
 import * as Lucide from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import Logo from '../components/Logo';
@@ -19,7 +19,10 @@ export default function Categories() {
   const { catId } = useParams();
   const navigate = useNavigate();
   const [tree, setTree] = useState([]);
-  const [expanded, setExpanded] = useState(null);
+  /* Sidebar view mode:
+     - 'schools'    → show list of schools
+     - 'categories' → show categories for the currently-selected school */
+  const [sideView, setSideView] = useState('schools');
   const [scope, setScope] = useState({ schoolId: null, categoryId: null });
   const [products, setProducts] = useState(null);
   const [query, setQuery] = useState('');
@@ -32,6 +35,7 @@ export default function Categories() {
   useEffect(() => {
     if (catId && catId !== 'all') {
       setScope({ schoolId: null, categoryId: catId });
+      setSideView('schools');
     }
   }, [catId]);
 
@@ -56,11 +60,15 @@ export default function Categories() {
   }, [products, query]);
 
   const selectSchool = (sid) => {
-    setExpanded((cur) => (cur === sid ? null : sid));
     setScope({ schoolId: sid, categoryId: null });
+    setSideView('categories');
   };
-  const selectCategory = (sid, cid) => {
-    setScope({ schoolId: sid, categoryId: cid });
+  const selectCategory = (cid) => {
+    setScope((s) => ({ ...s, categoryId: cid }));
+  };
+  const backToSchools = () => {
+    setSideView('schools');
+    setScope({ schoolId: null, categoryId: null });
   };
 
   return (
@@ -88,52 +96,55 @@ export default function Categories() {
       </header>
 
       <div className="cat-layout">
-        {/* School tree sidebar */}
-        <aside className="cat-sidebar" aria-label="Schools">
+        {/* Two-level sidebar: schools → categories of the selected school */}
+        <aside className="cat-sidebar" aria-label="Schools and categories">
           {tree.length === 0 ? (
             <div className="cat-side-skel">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} h={36} r={6} style={{ display: 'block', margin: '6px 4px' }} />
               ))}
             </div>
-          ) : (
+          ) : sideView === 'schools' ? (
             <ul className="school-list">
+              <li className="side-section-label">Schools</li>
               {tree.map((s) => {
-                const isOpen = expanded === s.id;
-                const isActiveSchool = scope.schoolId === s.id;
+                const isActive = scope.schoolId === s.id;
                 return (
-                  <li key={s.id} className={`school-item ${isActiveSchool ? 'active' : ''}`}>
-                    <button
-                      className="school-head"
-                      onClick={() => selectSchool(s.id)}
-                      aria-expanded={isOpen}
-                    >
-                      {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <li key={s.id} className={`school-item ${isActive ? 'active' : ''}`}>
+                    <button className="school-head" onClick={() => selectSchool(s.id)}>
                       <span className="school-label">{s.label}</span>
                       {s.city && <span className="school-city">{s.city}</span>}
+                      <ChevronRight size={14} className="school-chev" />
                     </button>
-                    {isOpen && (
-                      <ul className="school-cats">
-                        {s.categories.length === 0 ? (
-                          <li className="cat-empty">No categories yet</li>
-                        ) : (
-                          s.categories.map((c) => (
-                            <li key={c.id}>
-                              <button
-                                className={`cat-sub ${scope.schoolId === s.id && scope.categoryId === c.id ? 'active' : ''}`}
-                                onClick={() => selectCategory(s.id, c.id)}
-                              >
-                                <CatIcon name={c.icon} size={14} />
-                                <span>{c.label}</span>
-                              </button>
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    )}
                   </li>
                 );
               })}
+            </ul>
+          ) : (
+            <ul className="school-list">
+              <li>
+                <button className="side-back" onClick={backToSchools}>
+                  <ArrowLeft size={14} /> Schools
+                </button>
+              </li>
+              <li className="side-section-label">
+                {activeSchool?.label}
+              </li>
+              {activeSchool && activeSchool.categories.length === 0 ? (
+                <li className="cat-empty">No categories yet</li>
+              ) : (
+                activeSchool?.categories.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      className={`cat-sub ${scope.categoryId === c.id ? 'active' : ''}`}
+                      onClick={() => selectCategory(c.id)}
+                    >
+                      <CatIcon name={c.icon} size={14} />
+                      <span>{c.label}</span>
+                    </button>
+                  </li>
+                ))
+              )}
             </ul>
           )}
         </aside>
@@ -145,7 +156,7 @@ export default function Categories() {
             {(scope.schoolId || scope.categoryId) && (
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={() => { setScope({ schoolId: null, categoryId: null }); setExpanded(null); }}
+                onClick={() => { setScope({ schoolId: null, categoryId: null }); setSideView('schools'); }}
               >
                 <X size={14} /> Clear
               </button>

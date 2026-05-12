@@ -19,11 +19,11 @@ const MOCK_DELAY = 350;
 const wait = (ms = MOCK_DELAY) => new Promise((r) => setTimeout(r, ms));
 
 const UNIVERSITIES = [
-  { id: 'ug', label: 'UG · Legon', active: true },
+  { id: 'ug', label: 'UG', active: true },
   { id: 'knust', label: 'KNUST' },
   { id: 'ucc', label: 'UCC' },
   { id: 'upsa', label: 'UPSA' },
-  { id: 'asuesi', label: 'ASUESI' },
+  { id: 'ashesi', label: 'Ashesi' },
 ];
 
 const TRENDING = [
@@ -80,11 +80,11 @@ const CATEGORIES = [
 /* Used to render the 'school, city' label on product cards and the
    Categories school-tree sidebar. */
 const SCHOOL_INFO = {
-  ug:     { school: 'University of Ghana',             city: 'Accra' },
-  knust:  { school: 'Kwame Nkrumah University',        city: 'Kumasi' },
-  ucc:    { school: 'University of Cape Coast',        city: 'Cape Coast' },
-  upsa:   { school: 'UPSA',                             city: 'Accra' },
-  asuesi: { school: 'ASUESI',                           city: 'Accra' },
+  ug:     { school: 'UG',     city: 'Accra' },
+  knust:  { school: 'KNUST',  city: 'Kumasi' },
+  ucc:    { school: 'UCC',    city: 'Cape Coast' },
+  upsa:   { school: 'UPSA',   city: 'Accra' },
+  ashesi: { school: 'Ashesi', city: 'Berekuso' },
 };
 
 const SELLERS = [
@@ -286,7 +286,7 @@ export const sbay = {
     const seller = SELLERS.find((s) => s.id === id) || SELLERS[0];
     return {
       ...seller,
-      university: 'University of Ghana, Legon',
+      university: 'UG, Legon',
       verified: seller.verified ?? true,
       bio: seller.tagline || 'Selling lightly used campus gadgets since 2023.',
       listings: ALL_PRODUCTS.filter((p) => p.sellerId === seller.id),

@@ -244,21 +244,34 @@
   display: inline-flex;
 }
 
-/* School-tree sidebar */
+/* Two-level sidebar — stacked views (schools ↔ categories). */
 .school-list { list-style: none; padding: 6px 0 0; margin: 0; }
+
+.side-section-label {
+  padding: 10px 12px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .school-item { border-bottom: 1px solid rgba(0,0,0,.04); }
-.school-item.active > .school-head { background: var(--surface-2); }
+.school-item.active > .school-head {
+  background: var(--surface-2);
+  color: var(--primary);
+}
 .school-head {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 12px 10px;
+  padding: 14px 10px;
   background: transparent;
   border: none;
   text-align: left;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text);
   cursor: pointer;
@@ -272,32 +285,42 @@
   font-weight: 500;
   color: var(--text-muted);
 }
+.school-chev { color: var(--text-muted); flex-shrink: 0; }
 @media (min-width: 720px) {
   .school-city { display: inline; }
 }
 
-.school-cats {
-  list-style: none;
-  padding: 2px 0 6px 20px;
-  margin: 0;
-  background: var(--surface-2);
-}
-.cat-sub {
-  display: flex;
+.side-back {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   background: transparent;
   border: none;
   font-family: inherit;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-align: left;
-  border-radius: var(--r-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary);
   cursor: pointer;
 }
-.cat-sub:hover { background: #fff; color: var(--text); }
+.side-back:hover { text-decoration: underline; }
+
+.cat-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.cat-sub:hover { background: var(--surface-2); color: var(--text); }
 .cat-sub.active {
   background: #fff;
   color: var(--primary);
@@ -307,7 +330,7 @@
 .cat-empty {
   font-size: 0.74rem;
   color: var(--text-muted);
-  padding: 6px 10px 8px;
+  padding: 8px 12px 10px;
   font-style: italic;
 }
 

@@ -67,7 +67,7 @@ export default function Profile() {
   const [settings, setSettings] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    location: user?.location || 'University of Ghana, Legon',
+    location: user?.location || 'UG, Legon',
     avatar: user?.avatar || '',
     password: '',
     newPassword: '',

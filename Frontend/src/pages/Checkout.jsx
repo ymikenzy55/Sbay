@@ -99,7 +99,7 @@ export default function Checkout() {
               <input
                 type="text"
                 className="co-loc-input"
-                placeholder="e.g. University of Ghana, Night Market, Legon"
+                placeholder="e.g. UG, Night Market, Legon"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 autoFocus

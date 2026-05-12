@@ -54,12 +54,25 @@
   flex: 1;
   background: transparent;
   border: none; outline: none;
-  padding: 12px 14px;
-  font-size: 0.95rem;
+  padding: 14px 14px;
+  font-size: 1.05rem;
   font-family: inherit;
   color: var(--text);
+  letter-spacing: 0.02em;
 }
-.field-input .lead { padding-left: 12px; color: var(--text-soft); }
+/* Make password bullets noticeably larger & easier to read. */
+.field-input input[type="password"] {
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  line-height: 1;
+}
+.field-input .lead {
+  padding-left: 14px;
+  color: var(--text-soft);
+  display: inline-flex;
+  align-items: center;
+}
+.field-input .lead svg { width: 22px; height: 22px; }
 .field-input .toggle {
   padding: 0 12px; color: var(--text-muted);
   height: 100%;

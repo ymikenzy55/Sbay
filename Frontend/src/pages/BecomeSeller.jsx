@@ -121,7 +121,7 @@ export default function BecomeSeller() {
                 <div className="field">
                   <label>University</label>
                   <div className="field-input">
-                    <input value={form.university} onChange={(e) => set('university', e.target.value)} placeholder="University of Ghana, Legon" />
+                    <input value={form.university} onChange={(e) => set('university', e.target.value)} placeholder="UG, Legon" />
                   </div>
                 </div>
                 <div className="field">

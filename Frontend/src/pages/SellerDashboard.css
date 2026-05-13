@@ -127,3 +127,160 @@
 .sd-link-body strong { font-size: .95rem; font-weight: 700; }
 .sd-link-body p { margin-top: 2px; }
 .small { font-size: .78rem; }
+
+
+/* Verification status banner (read-only, admin-driven) */
+.sd-verify-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid;
+}
+.sd-verify-banner.is-pending {
+  background: #fff8e6;
+  border-color: #f3dca0;
+  color: #6b4d00;
+}
+.sd-verify-banner.is-warn {
+  background: #fde6e6;
+  border-color: #f3c4c4;
+  color: var(--error);
+}
+.sd-verify-banner strong { display: block; margin-bottom: 2px; }
+.sd-verify-ic {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.6);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+
+
+/* Buyer-message chat rows on the seller dashboard */
+.sd-chats-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--primary-50);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 6px;
+  color: var(--primary);
+}
+.sd-chats-help strong { font-size: .9rem; }
+.sd-chats-help p { color: var(--text-muted); margin-top: 2px; }
+
+.sd-chat-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: border-color .15s ease;
+}
+.sd-chat-row:hover { border-color: var(--primary); }
+.sd-chat-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background-size: cover; background-position: center;
+  background-color: var(--surface-2);
+  flex-shrink: 0;
+}
+.sd-chat-body { flex: 1; min-width: 0; }
+.sd-chat-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.sd-chat-top h4 { font-size: .95rem; font-weight: 700; }
+.sd-chat-loc { margin-top: 2px; }
+.sd-chat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border-radius: 8px;
+  font-size: .78rem;
+}
+.sd-chat-item-img {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  background-size: cover; background-position: center;
+  flex-shrink: 0;
+}
+.sd-chat-item-title {
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sd-chat-last {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sd-chat-row .unread-pulse {
+  position: absolute;
+  top: 12px; right: 12px;
+}
+
+
+/* Status selector on Sales (orders received) cards */
+.status-select {
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  min-width: 130px;
+}
+.status-select:focus { outline: 2px solid var(--primary); outline-offset: 0; }
+.status-select:disabled { opacity: .55; cursor: not-allowed; }
+
+
+/* Listing category filter pills */
+.sd-listing-filter {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.sd-listing-filter::-webkit-scrollbar { display: none; }
+.sd-filter-pill {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: .8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+.sd-filter-pill:hover { border-color: var(--primary); }
+.sd-filter-pill.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}

@@ -17,6 +17,9 @@
   transition: border-color .15s ease;
 }
 .ss-quick-row:hover { border-color: var(--primary); }
+.ss-quick-row.read-only { cursor: default; }
+.ss-quick-row.read-only:hover { border-color: var(--border); }
+.ss-quick-row.is-ok .ic { background: var(--primary-50); color: var(--primary); }
 .ss-quick-row .ic {
   width: 36px; height: 36px;
   border-radius: 12px;

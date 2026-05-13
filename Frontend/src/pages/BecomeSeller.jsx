@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, Upload, Shield,
+  ArrowLeft, ArrowRight, Check, GraduationCap, Briefcase, Upload, Shield, Clock,
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../store/AuthContext';
@@ -15,6 +15,7 @@ export default function BecomeSeller() {
   const navigate = useNavigate();
   const { user, upgradeToSeller } = useAuth();
   const [step, setStep] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     storeName: '',
     bio: '',
@@ -47,9 +48,47 @@ export default function BecomeSeller() {
     upgradeToSeller({
       sellerProfile: { ...form, studentId: undefined },
       role: 'seller',
+      // The submission is queued for admin review. The dashboard and the
+      // public store both surface this status. There is no separate
+      // verification flow — admins approve from the admin panel.
+      verification: {
+        status: 'pending',
+        submittedAt: Date.now(),
+        isStudent: form.isStudent,
+        university: form.university,
+        occupation: form.occupation,
+        businessReg: form.businessReg,
+      },
+      verified: false,
     });
-    navigate('/seller-dashboard', { replace: true });
+    setSubmitted(true);
   };
+
+  if (submitted) {
+    return (
+      <div className="auth-page kente-bg bs-page">
+        <div className="auth-logo"><Logo size="md" /></div>
+        <div className="bs-card bs-submitted">
+          <div className="bs-submitted-ic"><Clock size={36} /></div>
+          <h2>Application submitted</h2>
+          <p className="muted">
+            Thanks, {form.storeName || 'seller'}! Our admins will review your details and verify
+            your account, usually within 24 hours. You can start setting up your store right away —
+            you'll see a "Verified" badge on your profile once approved.
+          </p>
+          <div className="bs-actions" style={{ marginTop: 18 }}>
+            <button
+              className="btn btn-primary"
+              style={{ marginLeft: 'auto' }}
+              onClick={() => navigate('/seller-dashboard', { replace: true })}
+            >
+              Go to dashboard <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page kente-bg bs-page">

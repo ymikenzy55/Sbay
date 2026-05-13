@@ -242,6 +242,54 @@ const CHATS = [
   },
 ];
 
+/* Chats from the SELLER's perspective.
+   Each entry includes the buyer's name, campus location and the specific
+   product the buyer is enquiring about so the seller can triage quickly. */
+const SELLER_CHATS = [
+  {
+    id: 'sc1',
+    buyerId: 'b1',
+    buyerName: 'Akwasi Mensah',
+    buyerLocation: 'UG Legon · Akuafo Hall',
+    avatar:
+      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&q=80',
+    productId: 't1',
+    productTitle: 'iPad Pro 12.9"',
+    productImage: TRENDING[0].image,
+    last: 'Is this still available? Can I pick it up tomorrow?',
+    time: '4m',
+    unread: 3,
+  },
+  {
+    id: 'sc2',
+    buyerId: 'b2',
+    buyerName: 'Adwoa Osei',
+    buyerLocation: 'KNUST · Unity Hall',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+    productId: 't2',
+    productTitle: 'iPhone 13 128GB',
+    productImage: TRENDING[1].image,
+    last: 'Can you do GH₵ 3,600?',
+    time: '32m',
+    unread: 1,
+  },
+  {
+    id: 'sc3',
+    buyerId: 'b3',
+    buyerName: 'Yaw Boateng',
+    buyerLocation: 'UCC · Casford Hall',
+    avatar:
+      'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=200&q=80',
+    productId: 't3',
+    productTitle: 'Apple Watch SE',
+    productImage: TRENDING[2].image,
+    last: 'Thanks, transfer sent!',
+    time: '2d',
+    unread: 0,
+  },
+];
+
 const MESSAGES = {
   c1: [
     { id: 1, from: 'them', text: 'Hello! Are you interested in the iPad?', time: '10:14' },
@@ -343,6 +391,7 @@ export const sbay = {
     );
   },
   async getChats()        { await wait(); return CHATS; },
+  async getSellerChats()  { await wait(); return SELLER_CHATS; },
   async getMessages(id)   { await wait(); return MESSAGES[id] || []; },
   async getNotifications(){ await wait(); return NOTIFICATIONS; },
 };

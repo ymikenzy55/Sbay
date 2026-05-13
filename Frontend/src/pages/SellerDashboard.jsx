@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Plus, Edit2, Trash2, Eye, MessageCircle, Package, TrendingUp, Wallet,
-  ShieldCheck, ShieldAlert, Crown, Settings as SettingsIc, LogOut, ChevronRight, Store,
+  ShieldAlert, Crown, Settings as SettingsIc, LogOut, ChevronRight, Store, Clock,
   ShoppingBag, Truck, Check, Star,
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
@@ -11,56 +11,14 @@ import BottomNav from '../components/BottomNav';
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
+import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
 import './pages.css';
 import './Profile.css';
 import './SellerDashboard.css';
 
 const PLAN_LABEL = { free: 'Free', plus: 'Plus', pro: 'Pro' };
 
-// Sellers can still buy on sBay. These are mocked purchases for the
-// "Purchases" tab so they can track and confirm receipt like any buyer.
-const INITIAL_PURCHASES = [
-  {
-    id: 'SB-3104',
-    title: 'Logitech MX Master 3 Mouse',
-    sellerId: 's2',
-    sellerName: "Ama's Boutique",
-    price: 780,
-    status: 'in_escrow',
-    method: 'escrow',
-    eta: 'Tomorrow, by 6pm',
-    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&q=70',
-  },
-  {
-    id: 'SB-3088',
-    title: 'Adjustable Standing Desk',
-    sellerId: 's3',
-    sellerName: 'Yaw Electronics',
-    price: 2200,
-    status: 'shipping',
-    method: 'meetup',
-    eta: 'Today, by 5pm',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=70',
-  },
-  {
-    id: 'SB-2980',
-    title: 'Wireless Charger',
-    sellerId: 's1',
-    sellerName: 'Kofi Gadgets',
-    price: 220,
-    status: 'completed',
-    method: 'escrow',
-    eta: 'Delivered',
-    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&q=70',
-  },
-];
-
-const STATUS_LABEL = {
-  placed: 'Placed',
-  in_escrow: 'In Escrow',
-  shipping: 'Shipping',
-  completed: 'Completed',
-};
+const STATUS_LABEL = ORDER_STATUSES.reduce((m, s) => (m[s.id] = s.label, m), {});
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -68,12 +26,13 @@ export default function SellerDashboard() {
   const confirm = useConfirm();
   const [listings, setListings] = useState([]);
   const [chats, setChats] = useState([]);
-  const [purchases, setPurchases] = useState(INITIAL_PURCHASES);
+  const { myOrders: purchases, salesOrders, setStatus } = useOrders();
   const [tab, setTab] = useState('listings');
+  const [listingCat, setListingCat] = useState('all');
 
   useEffect(() => {
     sbay.getRecent().then(setListings);
-    sbay.getChats().then(setChats);
+    sbay.getSellerChats().then(setChats);
   }, []);
 
   const { logout } = useAuth();
@@ -105,8 +64,22 @@ export default function SellerDashboard() {
       confirmLabel: 'Yes, release funds',
     });
     if (!ok) return;
-    setPurchases((ps) => ps.map((p) => (p.id === id ? { ...p, status: 'completed' } : p)));
+    setStatus(id, 'completed');
   };
+
+  const onMarkDelivered = async (id) => {
+    const ok = await confirm({
+      title: 'Mark as delivered?',
+      body: 'Confirm you handed the item to the buyer. They\'ll be asked to confirm receipt to release the funds.',
+      confirmLabel: 'Yes, delivered',
+    });
+    if (!ok) return;
+    setStatus(id, 'delivered');
+  };
+
+  const pendingSales = salesOrders.filter(
+    (o) => !['delivered', 'completed', 'canceled'].includes(o.status)
+  ).length;
 
   const messageSeller = (order) => {
     navigate(`/chat/seller-${order.sellerId}`, {
@@ -158,27 +131,29 @@ export default function SellerDashboard() {
           </div>
         </section>
 
-        {/* Quick links: Verification · Subscription · Settings · Logout */}
-        <section className="sd-links">
-          <button
-            className={`sd-link ${verificationStatus === 'verified' ? 'is-ok' : verificationStatus === 'pending' ? 'is-pending' : 'is-warn'}`}
-            onClick={() => navigate('/seller/verification')}
-          >
-            <span className="sd-link-ic">
-              {verificationStatus === 'verified' ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
+        {/* Verification banner — read-only. Admins approve from the admin panel. */}
+        {verificationStatus !== 'verified' && (
+          <div className={`sd-verify-banner ${verificationStatus === 'pending' ? 'is-pending' : 'is-warn'}`}>
+            <span className="sd-verify-ic">
+              {verificationStatus === 'pending' ? <Clock size={18} /> : <ShieldAlert size={18} />}
             </span>
-            <div className="sd-link-body">
-              <strong>Verification</strong>
+            <div>
+              <strong>
+                {verificationStatus === 'pending' && 'Verification pending'}
+                {verificationStatus === 'rejected' && 'Verification rejected'}
+                {verificationStatus === 'unverified' && 'Not verified yet'}
+              </strong>
               <p className="muted small">
-                {verificationStatus === 'verified' && 'Your identity is verified'}
-                {verificationStatus === 'pending' && 'Under review — usually within 24h'}
-                {verificationStatus === 'unverified' && 'Verify your identity to build trust'}
-                {verificationStatus === 'rejected' && 'Verification was rejected — try again'}
+                {verificationStatus === 'pending' && 'Our admins are reviewing your application. You\'ll see a Verified badge once approved.'}
+                {verificationStatus === 'rejected' && (user?.verification?.reason || 'Please contact support to update your details.')}
+                {verificationStatus === 'unverified' && 'Complete your seller registration so admins can review your account.'}
               </p>
             </div>
-            <ChevronRight size={16} className="muted" />
-          </button>
+          </div>
+        )}
 
+        {/* Quick links: Subscription · Store · Settings · Logout */}
+        <section className="sd-links">
           <button className="sd-link" onClick={() => navigate('/seller/subscription')}>
             <span className="sd-link-ic"><Crown size={18} /></span>
             <div className="sd-link-body">
@@ -221,19 +196,42 @@ export default function SellerDashboard() {
 
         <div className="sd-tabs">
           <button className={`sd-tab ${tab === 'listings' ? 'active' : ''}`} onClick={() => setTab('listings')}>
-            My Listings
+            Listings
+          </button>
+          <button className={`sd-tab ${tab === 'sales' ? 'active' : ''}`} onClick={() => setTab('sales')}>
+            Orders {pendingSales > 0 && <span className="badge-dot" />}
           </button>
           <button className={`sd-tab ${tab === 'purchases' ? 'active' : ''}`} onClick={() => setTab('purchases')}>
-            Purchases {pendingPurchases > 0 && <span className="badge-dot" />}
+            Purchases
           </button>
           <button className={`sd-tab ${tab === 'chats' ? 'active' : ''}`} onClick={() => setTab('chats')}>
-            Buyer Messages {chats.some((c) => c.unread > 0) && <span className="badge-dot" />}
+            Messages {chats.some((c) => c.unread > 0) && <span className="badge-dot" />}
           </button>
         </div>
 
-        {tab === 'listings' && (
-          <div className="sd-listings">
-            {listings.map((p, i) => (
+        {tab === 'listings' && (() => {
+          // Build the set of categories actually present in the seller's
+          // listings, plus an "All" pill that resets the filter.
+          const cats = ['all', ...new Set(listings.map((l) => l.categoryId).filter(Boolean))];
+          const visible = listings.filter((l) =>
+            listingCat === 'all' ? true : l.categoryId === listingCat
+          );
+          return (
+            <div className="sd-listings">
+              {cats.length > 1 && (
+                <div className="sd-listing-filter">
+                  {cats.map((c) => (
+                    <button
+                      key={c}
+                      className={`sd-filter-pill ${listingCat === c ? 'active' : ''}`}
+                      onClick={() => setListingCat(c)}
+                    >
+                      {c === 'all' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {visible.map((p, i) => (
               <motion.article
                 key={p.id}
                 className="sd-listing"
@@ -251,7 +249,7 @@ export default function SellerDashboard() {
                   <button className="iac" onClick={() => navigate(`/product/${p.id}`)} aria-label="View">
                     <Eye size={16} />
                   </button>
-                  <button className="iac" onClick={() => navigate(`/sell?edit=${p.id}`)} aria-label="Edit">
+                  <button className="iac" onClick={() => navigate(`/seller/listing/${p.id}/edit`)} aria-label="Edit">
                     <Edit2 size={16} />
                   </button>
                   <button className="iac danger" onClick={() => onDelete(p.id, p.title)} aria-label="Delete">
@@ -260,16 +258,92 @@ export default function SellerDashboard() {
                 </div>
               </motion.article>
             ))}
-            {listings.length === 0 && (
+              {listings.length === 0 && (
+                <div className="empty">
+                  <Package size={48} color="#C9D4BD" />
+                  <h3>No listings yet</h3>
+                  <p>Create your first listing to start selling.</p>
+                  <button className="btn btn-primary" onClick={() => navigate('/sell')}>
+                    <Plus size={16} /> Create Listing
+                  </button>
+                </div>
+              )}
+              {listings.length > 0 && visible.length === 0 && (
+                <div className="empty">
+                  <Package size={48} color="#C9D4BD" />
+                  <h3>No listings in this category</h3>
+                  <p>Try a different category, or tap "All" to see everything.</p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {tab === 'sales' && (
+          <div className="sd-purchases">
+            <div className="sd-chats-help">
+              <Package size={16} />
+              <div>
+                <strong>Orders you've received</strong>
+                <p className="muted small">
+                  Update the order status as you process it. Buyers see status changes
+                  in real time. Mark "Delivered" once the buyer has the item.
+                </p>
+              </div>
+            </div>
+
+            {salesOrders.length === 0 && (
               <div className="empty">
                 <Package size={48} color="#C9D4BD" />
-                <h3>No listings yet</h3>
-                <p>Create your first listing to start selling.</p>
-                <button className="btn btn-primary" onClick={() => navigate('/sell')}>
-                  <Plus size={16} /> Create Listing
-                </button>
+                <h3>No incoming orders</h3>
+                <p>New buyer orders will appear here so you can fulfil them.</p>
               </div>
             )}
+
+            {salesOrders.map((o) => (
+              <motion.article
+                key={o.id}
+                className="order-card"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="thumb" style={{ backgroundImage: `url(${o.image})` }} />
+                <div className="order-meta">
+                  <h4>{o.title}</h4>
+                  <p className="muted small">
+                    #{o.id} · {o.buyerName} · {o.method === 'escrow' ? 'Escrow' : 'Meet-up'}
+                  </p>
+                  <p className="muted small">📍 {o.buyerLocation}</p>
+                  <span className="price">GH₵ {o.price.toLocaleString()}</span>
+                </div>
+                <div className="order-side">
+                  <span className={`status ${o.status}`}>{STATUS_LABEL[o.status]}</span>
+                  <select
+                    className="status-select"
+                    value={o.status}
+                    onChange={(e) => setStatus(o.id, e.target.value)}
+                    disabled={o.status === 'completed' || o.status === 'canceled'}
+                  >
+                    {ORDER_STATUSES.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="btn btn-ghost small"
+                    onClick={() => navigate(`/chat/sc-${o.buyerId}`, {
+                      state: { buyer: { id: o.buyerId, name: o.buyerName }, order: o },
+                    })}
+                  >
+                    <MessageCircle size={14} /> Message buyer
+                  </button>
+                  {o.status !== 'delivered' && o.status !== 'completed' && o.status !== 'canceled' && (
+                    <button className="btn btn-primary" onClick={() => onMarkDelivered(o.id)}>
+                      <Truck size={14} /> Mark Delivered
+                    </button>
+                  )}
+                </div>
+              </motion.article>
+            ))}
           </div>
         )}
 
@@ -311,12 +385,12 @@ export default function SellerDashboard() {
                   <button className="btn btn-ghost small" onClick={() => messageSeller(o)}>
                     <MessageCircle size={14} /> Message seller
                   </button>
-                  {o.status === 'in_escrow' && (
+                  {o.status === 'delivered' && (
                     <button className="btn btn-primary" onClick={() => onConfirmReceipt(o.id)}>
                       <Check size={14} /> Confirm Receipt
                     </button>
                   )}
-                  {o.status === 'shipping' && (
+                  {o.status === 'shipped' && (
                     <span className="muted small"><Truck size={12} /> On the way</span>
                   )}
                   {o.status === 'completed' && (
@@ -335,18 +409,54 @@ export default function SellerDashboard() {
 
         {tab === 'chats' && (
           <div className="sd-chats">
+            <div className="sd-chats-help">
+              <MessageCircle size={16} />
+              <div>
+                <strong>Buyer messages</strong>
+                <p className="muted small">
+                  Tap a chat to reply. Each card shows the buyer, their campus and the
+                  exact item they're enquiring about.
+                </p>
+              </div>
+            </div>
+
+            {chats.length === 0 && (
+              <div className="empty">
+                <MessageCircle size={48} color="#C9D4BD" />
+                <h3>No buyer messages yet</h3>
+                <p>When buyers message you about your listings, they'll appear here.</p>
+              </div>
+            )}
+
             {chats.map((c) => (
-              <button key={c.id} className="chat-row" onClick={() => navigate(`/chat/${c.id}`)}>
-                <div className="chat-avatar" style={{ backgroundImage: `url(${c.avatar})` }} />
-                <div className="chat-info">
-                  <div className="chat-row-top">
-                    <h4>{c.name}</h4>
-                    <span className="muted">{c.time}</span>
+              <button
+                key={c.id}
+                className="sd-chat-row"
+                onClick={() => navigate(`/chat/${c.id}`)}
+              >
+                <div className="sd-chat-avatar" style={{ backgroundImage: `url(${c.avatar})` }} />
+                <div className="sd-chat-body">
+                  <div className="sd-chat-top">
+                    <h4>{c.buyerName || c.name}</h4>
+                    <span className="muted small">{c.time}</span>
                   </div>
-                  <p className="muted last">{c.last}</p>
+                  {c.buyerLocation && (
+                    <p className="sd-chat-loc muted small">📍 {c.buyerLocation}</p>
+                  )}
+                  {c.productTitle && (
+                    <div className="sd-chat-item">
+                      {c.productImage && (
+                        <span
+                          className="sd-chat-item-img"
+                          style={{ backgroundImage: `url(${c.productImage})` }}
+                        />
+                      )}
+                      <span className="sd-chat-item-title">Re: {c.productTitle}</span>
+                    </div>
+                  )}
+                  <p className="sd-chat-last">{c.last}</p>
                 </div>
                 {c.unread > 0 && <span className="unread-pulse">{c.unread}</span>}
-                <MessageCircle size={18} className="muted" />
               </button>
             ))}
           </div>

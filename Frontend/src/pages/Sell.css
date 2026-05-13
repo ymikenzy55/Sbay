@@ -101,3 +101,80 @@ label.full { margin-top: 14px; }
   .form-grid { grid-template-columns: 1fr; }
   .photo-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* New Sell wizard — per-step head with help text */
+.sell-step-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 14px;
+  background: var(--primary-50);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin: 4px 0 14px;
+}
+.sell-step-ic {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--primary);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.sell-step-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+.sell-step-help {
+  margin-top: 4px;
+  font-size: .85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.sell-step-help svg { flex-shrink: 0; margin-top: 3px; color: var(--primary); }
+
+/* Photo cover badge + remove button */
+.photo { position: relative; }
+.photo-badge {
+  position: absolute;
+  top: 6px; left: 6px;
+  background: var(--primary);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.photo-remove {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  display: grid; place-items: center;
+  border: none;
+  cursor: pointer;
+}
+.photo-remove:hover { background: var(--error); }
+
+/* Disabled primary button (next/publish guards) */
+.btn.btn-primary:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* Current-step indicator on the stepper */
+.step.current .circle {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--primary-50);
+}

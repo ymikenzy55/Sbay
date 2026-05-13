@@ -84,3 +84,23 @@
   display: flex; gap: 10px; align-items: center;
   margin-top: 22px;
 }
+
+
+/* Application submitted notice */
+.bs-submitted {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 26px;
+}
+.bs-submitted-ic {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: #fff4dd;
+  color: #b07700;
+  display: grid; place-items: center;
+}
+.bs-submitted h2 { font-size: 1.3rem; font-weight: 800; }
+.bs-submitted .muted { line-height: 1.5; max-width: 380px; }

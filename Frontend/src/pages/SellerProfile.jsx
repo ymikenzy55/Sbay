@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Shield, MapPin, MessageCircle, Send, Zap, BadgeCheck, Trophy } from 'lucide-react';
+import { ArrowLeft, Star, Shield, MapPin, MessageCircle, Send, Zap, BadgeCheck, Trophy, Clock } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
@@ -61,7 +61,8 @@ export default function SellerProfile() {
         <button className="round-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
         <div className="sp-avatar" style={{ backgroundImage: `url(${seller.avatar})` }} />
         <h1 className="sp-name">
-          {seller.name} {seller.verified && <Shield size={16} color="#F5A623" />}
+          {seller.name}
+          {seller.verified && <BadgeCheck size={18} color="#0A7E3E" aria-label="Verified" />}
         </h1>
         <div className="sp-meta">
           <span><Star size={13} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews})</span>
@@ -69,8 +70,12 @@ export default function SellerProfile() {
         </div>
         <p className="sp-bio">{seller.bio}</p>
         <div className="sp-badges">
+          {seller.verified ? (
+            <span className="badge-soft is-verified"><BadgeCheck size={12} /> Verified seller</span>
+          ) : (
+            <span className="badge-soft is-pending"><Clock size={12} /> Pending review</span>
+          )}
           <span className="badge-soft"><Zap size={12} /> Fast replier</span>
-          <span className="badge-soft"><BadgeCheck size={12} /> ID Verified</span>
           <span className="badge-soft"><Trophy size={12} /> Top Seller</span>
         </div>
       </div>

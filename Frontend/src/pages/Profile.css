@@ -103,8 +103,13 @@
   padding: 4px 10px; border-radius: var(--r-pill);
   text-transform: uppercase;
 }
-.status.in_escrow { background: #fff5e6; color: #B97A0A; }
-.status.completed { background: var(--primary-50); color: var(--primary); }
+.status.in_escrow  { background: #fff5e6; color: #B97A0A; }
+.status.pending    { background: #fff8e6; color: #6b4d00; }
+.status.processing { background: #e6f3ff; color: #0066B3; }
+.status.shipped    { background: #e0f2f7; color: #07697e; }
+.status.delivered  { background: #e7f6ee; color: #1e7d3b; }
+.status.completed  { background: var(--primary-50); color: var(--primary); }
+.status.canceled   { background: #fde6e6; color: var(--error); }
 
 .wishlist-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;

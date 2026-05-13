@@ -44,6 +44,19 @@
 .sp-hero .badge-soft {
   background: rgba(255,255,255,0.18);
   color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sp-hero .badge-soft.is-verified {
+  background: rgba(255,255,255,0.95);
+  color: var(--primary);
+  font-weight: 700;
+}
+.sp-hero .badge-soft.is-pending {
+  background: rgba(255, 220, 110, 0.95);
+  color: #6b4d00;
+  font-weight: 700;
 }
 
 .sp-tabs {

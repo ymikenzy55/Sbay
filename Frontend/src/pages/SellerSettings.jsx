@@ -117,18 +117,19 @@ export default function SellerSettings() {
       <main className="page-main">
         {/* Quick links */}
         <section className="ss-quick">
-          <button
-            className={`ss-quick-row ${verificationStatus === 'verified' ? 'is-ok' : 'is-warn'}`}
-            onClick={() => navigate('/seller/verification')}
-          >
+          <div className={`ss-quick-row read-only ${verificationStatus === 'verified' ? 'is-ok' : 'is-warn'}`}>
             <span className="ic">
               {verificationStatus === 'verified' ? <ShieldCheck size={18} /> : <ShieldAlert size={18} />}
             </span>
             <div>
-              <strong>Verification</strong>
-              <p className="muted small">{verificationStatus === 'verified' ? 'Verified' : 'Not yet verified'}</p>
+              <strong>{verificationStatus === 'verified' ? 'Verified seller' : 'Not yet verified'}</strong>
+              <p className="muted small">
+                {verificationStatus === 'verified'
+                  ? 'Your account has been approved by sBay admins.'
+                  : 'Admins are reviewing your application. You\'ll be notified once approved.'}
+              </p>
             </div>
-          </button>
+          </div>
           <button className="ss-quick-row" onClick={() => navigate('/seller/subscription')}>
             <span className="ic"><Crown size={18} /></span>
             <div>

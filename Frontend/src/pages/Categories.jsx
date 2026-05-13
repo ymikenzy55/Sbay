@@ -76,7 +76,7 @@ export default function Categories() {
       {/* Custom top bar: logo + live-search input shifted left */}
       <header className="cat-top">
         <button className="cat-brand" onClick={() => navigate('/home')} aria-label="Home">
-          <Logo size="sm" />
+          <Logo size="md" />
         </button>
         <div className="cat-search">
           <SearchIcon size={16} className="cat-search-ic" />

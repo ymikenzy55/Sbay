@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './store/CartContext';
 import { AuthProvider } from './store/AuthContext';
 import { ConfirmProvider } from './store/ConfirmContext';
+import { OrdersProvider } from './store/OrdersContext';
 import RequireAuth from './components/RequireAuth';
 import ScrollToTop from './components/ScrollToTop';
 import FloatingCart from './components/FloatingCart';
@@ -25,9 +26,9 @@ import Signup          from './pages/Signup';
 import ForgotPassword  from './pages/ForgotPassword';
 import BecomeSeller    from './pages/BecomeSeller';
 import SellerDashboard from './pages/SellerDashboard';
-import SellerVerification from './pages/SellerVerification';
 import SellerSubscription from './pages/SellerSubscription';
 import SellerSettings  from './pages/SellerSettings';
+import EditListing    from './pages/EditListing';
 import Categories      from './pages/Categories';
 import Trending        from './pages/Trending';
 
@@ -36,6 +37,7 @@ export default function App() {
     <AuthProvider>
       <ConfirmProvider>
         <CartProvider>
+          <OrdersProvider>
           <BrowserRouter>
             <ScrollToTop />
             <DesktopNav />
@@ -72,14 +74,15 @@ export default function App() {
               {/* Seller flow — auth + seller role */}
               <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />
               <Route path="/sell"             element={<RequireAuth role="seller"><Sell /></RequireAuth>} />
+              <Route path="/seller/listing/:id/edit" element={<RequireAuth role="seller"><EditListing /></RequireAuth>} />
               <Route path="/seller-dashboard" element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
-              <Route path="/seller/verification" element={<RequireAuth role="seller"><SellerVerification /></RequireAuth>} />
               <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
               <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
 
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>
+          </OrdersProvider>
         </CartProvider>
       </ConfirmProvider>
     </AuthProvider>

@@ -9,35 +9,11 @@ import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
+import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
 import './pages.css';
 import './Profile.css';
 
-const INITIAL_ORDERS = [
-  {
-    id: 'SB-2031',
-    title: 'iPad Pro 12.9"',
-    sellerId: 's1',
-    sellerName: 'Kofi Gadgets',
-    price: 4500,
-    status: 'in_escrow',
-    method: 'escrow',
-    placedOn: '2 May',
-    eta: 'Tomorrow, by 6pm',
-    image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=600&q=70',
-  },
-  {
-    id: 'SB-2024',
-    title: 'Beats Solo 3 Wireless',
-    sellerId: 's3',
-    sellerName: 'Yaw Electronics',
-    price: 1200,
-    status: 'completed',
-    method: 'meetup',
-    placedOn: '12 Apr',
-    eta: 'Delivered',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=70',
-  },
-];
+const STATUS_LABEL = ORDER_STATUSES.reduce((m, s) => (m[s.id] = s.label, m), {});
 
 const WISHLIST = [
   { id: 't2', title: 'iPhone 13 128GB', price: 3800, image: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=600&q=70' },
@@ -45,19 +21,21 @@ const WISHLIST = [
 ];
 
 const TIMELINE = [
-  { key: 'placed',     label: 'Order placed',  icon: Check },
-  { key: 'in_escrow',  label: 'Funds in escrow', icon: Shield },
-  { key: 'shipping',   label: 'Out for delivery', icon: Truck },
-  { key: 'completed',  label: 'Delivered',     icon: Package },
+  { key: 'pending',    label: 'Order placed',     icon: Check },
+  { key: 'processing', label: 'Seller preparing', icon: Shield },
+  { key: 'shipped',    label: 'Out for delivery', icon: Truck },
+  { key: 'delivered',  label: 'Delivered',        icon: Package },
+  { key: 'completed',  label: 'You confirmed',    icon: Star },
 ];
 
-const STATUS_INDEX = { placed: 0, in_escrow: 1, shipping: 2, completed: 3 };
+const STATUS_INDEX = { pending: 0, processing: 1, shipped: 2, delivered: 3, completed: 4 };
 
 export default function Profile() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { user, logout, updateUser } = useAuth();
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const { myOrders, setStatus } = useOrders();
+  const orders = myOrders;
   const [tab, setTab] = useState('orders');
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [reviewing, setReviewing]         = useState(null);
@@ -98,18 +76,14 @@ export default function Profile() {
       confirmLabel: 'Yes, release funds',
     });
     if (!ok) return;
-    setOrders((os) =>
-      os.map((o) => (o.id === id ? { ...o, status: 'completed' } : o))
-    );
+    setStatus(id, 'completed');
   };
 
   const submitReview = () => {
     if (!draft.text.trim()) return;
     // In a real app this would POST to the seller. For the mock, we just
     // mark the order as reviewed and close the modal.
-    setOrders((os) =>
-      os.map((o) => (o.id === reviewing.id ? { ...o, reviewed: true } : o))
-    );
+    // Reviewed flag is local-only in the mock; status stays as-is.
     setReviewing(null);
     setDraft({ rating: 5, text: '' });
   };
@@ -241,18 +215,16 @@ export default function Profile() {
                 </div>
                 <div className="order-side">
                   <span className={`status ${o.status}`}>
-                    {o.status === 'in_escrow' && 'In Escrow'}
-                    {o.status === 'completed' && 'Completed'}
-                    {o.status === 'shipping' && 'Shipping'}
-                    {o.status === 'placed' && 'Placed'}
+                    {STATUS_LABEL[o.status] || o.status}
                   </span>
+                  <p className="muted small">{o.eta}</p>
                   <button className="btn btn-ghost small" onClick={() => setTrackingOrder(o)}>
                     <Truck size={14} /> Track
                   </button>
                   <button className="btn btn-ghost small" onClick={() => messageSeller(o)}>
                     <MessageCircle size={14} /> Message seller
                   </button>
-                  {o.status === 'in_escrow' && (
+                  {o.status === 'delivered' && (
                     <button className="btn btn-primary" onClick={() => onConfirmReceipt(o.id)}>
                       <Check size={14} /> Confirm Receipt
                     </button>

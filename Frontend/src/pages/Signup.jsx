@@ -34,7 +34,10 @@ export default function Signup() {
   return (
     <div className="auth-page kente-bg">
       <button className="auth-back" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
-      <div className="auth-logo"><Logo size="lg" /></div>
+      <div className="auth-logo">
+        <Logo size="lg" />
+        <p className="auth-tagline">Buy &amp; sell, the smart campus way.</p>
+      </div>
 
       <form className="auth-card" onSubmit={submit}>
         <h2>Join sBay</h2>

@@ -178,3 +178,25 @@ label.full { margin-top: 14px; }
   color: #fff;
   box-shadow: 0 0 0 4px var(--primary-50);
 }
+
+/* Big, prominent listing-title input on step 1 */
+.sell-title-input {
+  width: 100%;
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding: 18px 20px;
+  border-radius: var(--r-md);
+  border: 2px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.sell-title-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-50);
+}
+.sell-title-input::placeholder {
+  font-weight: 400;
+  color: var(--text-muted);
+}

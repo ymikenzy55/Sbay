@@ -141,7 +141,7 @@ export default function SellerSubscription() {
                 <h3>{p.name}</h3>
                 <div className="plan-price">
                   <span className="cur">GH₵</span>
-                  <strong>{p.price}</strong>
+                  <strong>{p.price.toLocaleString()}</strong>
                   <span className="per">{p.price === 0 ? 'forever' : '/month'}</span>
                 </div>
                 <p className="muted small">{p.tag}</p>
@@ -197,7 +197,7 @@ export default function SellerSubscription() {
               <div className="sub-receipt">
                 <div className="row"><span>Plan</span><strong>{pendingDetails?.name}</strong></div>
                 <div className="row"><span>Billing</span><strong>Monthly</strong></div>
-                <div className="row total"><span>Total today</span><strong>GH₵ {pendingDetails?.price}</strong></div>
+                <div className="row total"><span>Total today</span><strong>GH₵ {Number(pendingDetails?.price || 0).toLocaleString()}</strong></div>
               </div>
 
               <h4 className="page-h2" style={{ marginTop: 16 }}>Payment method</h4>
@@ -223,7 +223,7 @@ export default function SellerSubscription() {
                   <Back size={16} /> Back
                 </button>
                 <button className="btn btn-primary" onClick={confirmSubscribe} disabled={busy}>
-                  {busy ? 'Processing…' : `Pay GH₵ ${pendingDetails?.price}`}
+                  {busy ? 'Processing…' : `Pay GH₵ ${Number(pendingDetails?.price || 0).toLocaleString()}`}
                 </button>
               </div>
             </motion.div>

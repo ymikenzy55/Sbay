@@ -80,7 +80,7 @@ export default function Cart() {
 
             <section className="cart-summary card">
               <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
-              <div className="row"><span>Service fee</span><strong>GH₵ {fee}</strong></div>
+              <div className="row"><span>Service fee</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
               <div className="divider" />
               <div className="row total"><span>Total</span><strong>GH₵ {(subtotal + fee).toLocaleString()}</strong></div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: 12 }} onClick={onCheckout}>

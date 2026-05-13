@@ -186,12 +186,13 @@ export default function Sell() {
               <label className="full">
                 <span>Listing name</span>
                 <input
+                  className="sell-title-input"
                   autoFocus
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                   placeholder='e.g. Apple iPad Pro 12.9" — 256GB Wi-Fi'
                 />
-                <p className="muted small" style={{ marginTop: 6 }}>
+                <p className="muted small" style={{ marginTop: 8 }}>
                   At least 3 characters. You can change this later.
                 </p>
               </label>

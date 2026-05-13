@@ -32,7 +32,7 @@ export default function Login() {
       <div className="auth-logo"><Logo size="lg" /></div>
 
       <form className="auth-card" onSubmit={submit}>
-        <h2>Welcome back</h2>
+        <h2>Sign in</h2>
         <p className="lede">Sign in to chat, checkout and manage your sBay activity.</p>
 
         <div className="field">
@@ -60,7 +60,7 @@ export default function Login() {
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
             <input type="checkbox" /> Remember me
           </label>
-          <a>Forgot password?</a>
+          <Link to="/forgot-password">Forgot password?</Link>
         </div>
 
         <button className="btn btn-primary auth-submit" type="submit" disabled={busy}>

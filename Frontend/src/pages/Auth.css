@@ -52,30 +52,58 @@
 }
 .field-input input {
   flex: 1;
+  width: 100%;
+  min-width: 0;
   background: transparent;
   border: none; outline: none;
-  padding: 14px 14px;
-  font-size: 1.05rem;
+  padding: 14px 12px;
+  font-size: 1rem;
+  line-height: 1.4;
   font-family: inherit;
   color: var(--text);
   letter-spacing: 0.02em;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
 }
-/* Make password bullets noticeably larger & easier to read. */
+.field-input input::placeholder {
+  color: var(--text-soft);
+  opacity: 1;
+  font-size: 0.95rem;
+  letter-spacing: normal;
+}
+/* Slightly tighten the bullet spacing in masked passwords without
+   changing the input's overall metrics (so toggling show/hide
+   doesn't make the field jump around). */
 .field-input input[type="password"] {
-  font-size: 1.4rem;
-  letter-spacing: 0.15em;
-  line-height: 1;
+  letter-spacing: 0.18em;
 }
+.field-input input[type="password"]::placeholder {
+  letter-spacing: normal;
+}
+/* Hide native browser password reveal/clear buttons since we ship our own. */
+.field-input input::-ms-reveal,
+.field-input input::-ms-clear { display: none; }
 .field-input .lead {
   padding-left: 14px;
   color: var(--text-soft);
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
-.field-input .lead svg { width: 22px; height: 22px; }
+.field-input .lead svg { width: 20px; height: 20px; }
 .field-input .toggle {
-  padding: 0 12px; color: var(--text-muted);
-  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  height: auto;
+  align-self: stretch;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 .field-input .toggle:hover { color: var(--primary); }
 
@@ -94,6 +122,13 @@
   padding: 10px 14px; border-radius: var(--r-md);
   margin-top: 12px; font-size: 0.85rem; font-weight: 600;
 }
+.auth-hint {
+  background: var(--primary-50, #e6f4ec);
+  color: var(--primary);
+  padding: 10px 14px; border-radius: var(--r-md);
+  margin-top: 12px; font-size: 0.82rem;
+}
+.auth-meta a { cursor: pointer; }
 
 /* Role selector for signup */
 .role-grid {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Settings, LogOut, Shield, ChevronRight,
@@ -74,6 +74,12 @@ export default function Profile() {
   });
 
   const isGuest = !user;
+
+  // Sellers manage everything (account, settings, orders, purchases) from
+  // their dashboard — they should never see the buyer Profile page.
+  if (user?.role === 'seller') {
+    return <Navigate to="/seller-dashboard" replace />;
+  }
 
   const onLogout = async () => {
     const ok = await confirm({

@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, MessageCircle, User, TrendingUp } from 'lucide-react';
+import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, MessageCircle, TrendingUp } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
@@ -9,7 +9,6 @@ const LINKS = [
   { to: '/home',       label: 'Home',       icon: HomeIc },
   { to: '/categories', label: 'Categories', icon: LayoutGrid },
   { to: '/trending',   label: 'Trending',   icon: TrendingUp },
-  { to: '/sellers',    label: 'Sellers',    icon: User },
   { to: '/chats',      label: 'Messages',   icon: MessageCircle },
 ];
 
@@ -68,8 +67,8 @@ export default function DesktopNav() {
           {user ? (
             <button
               className="avatar"
-              onClick={() => navigate('/profile')}
-              aria-label="Profile"
+              onClick={() => navigate(user.role === 'seller' ? '/seller-dashboard' : '/profile')}
+              aria-label={user.role === 'seller' ? 'Seller dashboard' : 'Profile'}
               style={{ backgroundImage: `url(${user.avatar})` }}
             />
           ) : (

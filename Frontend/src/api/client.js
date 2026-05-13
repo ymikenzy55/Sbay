@@ -271,9 +271,9 @@ const NOTIFICATIONS = {
 export const sbay = {
   async getUniversities() { await wait(); return UNIVERSITIES; },
   async getCategories()   { await wait(); return CATEGORIES; },
-  async getTrending()     { await wait(); return TRENDING; },
+  async getTrending()     { await wait(); return ALL_PRODUCTS.filter((p) => TRENDING.some((t) => t.id === p.id)); },
   async getSellers()      { await wait(); return SELLERS; },
-  async getRecent()       { await wait(); return RECENT; },
+  async getRecent()       { await wait(); return ALL_PRODUCTS.filter((p) => RECENT.some((r) => r.id === p.id)); },
   async getAllProducts()  { await wait(); return ALL_PRODUCTS; },
   async getProductsByCategory(catId) {
     await wait();

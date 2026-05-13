@@ -44,6 +44,7 @@ export default function ProductDetail() {
   const [toastMsg, setToastMsg] = useState('');
   const [shareOpen, setShareOpen] = useState(false);
   const [similar, setSimilar] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   useEffect(() => {
     sbay.getProduct(id).then((p) => {
@@ -53,6 +54,22 @@ export default function ProductDetail() {
         const same = all.filter((x) => x.id !== p.id && x.categoryId === p.categoryId);
         const fill = all.filter((x) => x.id !== p.id && x.categoryId !== p.categoryId);
         setSimilar([...same, ...fill].slice(0, 6));
+
+        // Build "recently viewed" from localStorage history (excluding current).
+        let history = [];
+        try {
+          history = JSON.parse(localStorage.getItem('sbay.recentlyViewed') || '[]');
+        } catch { history = []; }
+        const previous = history.filter((pid) => pid !== p.id);
+        const viewedProducts = previous
+          .map((pid) => all.find((x) => x.id === pid))
+          .filter(Boolean)
+          .slice(0, 10);
+        setRecentlyViewed(viewedProducts);
+
+        // Push current product to the front of the history (deduped, capped).
+        const updated = [p.id, ...history.filter((pid) => pid !== p.id)].slice(0, 12);
+        localStorage.setItem('sbay.recentlyViewed', JSON.stringify(updated));
       });
     });
   }, [id]);
@@ -159,14 +176,21 @@ export default function ProductDetail() {
           >
             <div className="seller-avatar lg" style={{ backgroundImage: `url(${seller.avatar})` }} />
             <div style={{ flex: 1 }}>
-              <h4>{seller.name} {seller.verified && <Shield size={14} color="#0A7E3E" style={{ verticalAlign: 'middle' }} />}</h4>
+              <h4>
+                {seller.name}
+                {seller.verified && (
+                  <span className="verified-pill" title="Verified seller" style={{ marginLeft: 6 }}>
+                    <Shield size={11} /> Verified
+                  </span>
+                )}
+              </h4>
               <p className="muted" style={{ fontSize: '.85rem' }}>
                 <Star size={12} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews}) · {seller.university}
               </p>
             </div>
             <button
               className="btn btn-ghost"
-              onClick={(e) => { e.stopPropagation(); navigate(`/sellers/${seller.id}`); }}
+              onClick={(e) => { e.stopPropagation(); navigate(`/seller/${seller.id}`); }}
             >
               View profile
             </button>
@@ -178,6 +202,37 @@ export default function ProductDetail() {
             <h3 className="page-h2">Similar products</h3>
             <div className="pdp-similar-grid">
               {similar.map((s) => (
+                <motion.article
+                  key={s.id}
+                  className="pdp-similar-card"
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => navigate(`/product/${s.id}`)}
+                >
+                  <div
+                    className="pdp-similar-img"
+                    style={{ backgroundImage: `url(${s.image})` }}
+                  />
+                  <div className="pdp-similar-body">
+                    <h4>{s.title}</h4>
+                    <span className="price">GH₵ {s.price.toLocaleString()}</span>
+                    {(s.school || s.city) && (
+                      <p className="pdp-similar-loc">
+                        <MapPin size={12} />
+                        <span>{s.school}{s.city ? `, ${s.city}` : ''}</span>
+                      </p>
+                    )}
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {recentlyViewed.length > 0 && (
+          <section className="pdp-similar">
+            <h3 className="page-h2">Recently viewed</h3>
+            <div className="pdp-similar-grid">
+              {recentlyViewed.map((s) => (
                 <motion.article
                   key={s.id}
                   className="pdp-similar-card"

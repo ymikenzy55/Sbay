@@ -129,9 +129,6 @@ export default function Home() {
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trusted Campus Sellers</h2>
-                <button className="view-all" onClick={() => navigate('/sellers')}>
-                  View more <ArrowRight size={14} />
-                </button>
               </div>
               {sellers.length === 0 && <Skeleton h={140} r={16} />}
               <div className="sellers-featured">
@@ -139,7 +136,7 @@ export default function Home() {
                   <article
                     key={s.id}
                     className="seller-big"
-                    onClick={() => navigate(`/sellers/${s.id}`)}
+                    onClick={() => navigate(`/seller/${s.id}`)}
                   >
                     <div className="seller-avatar xl" style={{ backgroundImage: `url(${s.avatar})` }} />
                     <div className="seller-info">

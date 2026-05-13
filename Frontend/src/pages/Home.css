@@ -178,11 +178,28 @@
   margin-top: 4px;
 }
 
-/* ───────────  RECENT  ─────────── */
+/* ───────────  RECENT  (horizontal scroll row) ─────────── */
 .recent-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+}
+.recent-grid::-webkit-scrollbar { height: 6px; }
+.recent-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+.recent-grid > * {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
+}
+@media (max-width: 720px) {
+  .recent-grid > * { flex-basis: 170px; }
 }
 .recent-card {
   background: #fff;
@@ -233,7 +250,6 @@
 
 /* ───────────  RESPONSIVE  ─────────── */
 @media (max-width: 960px) {
-  .recent-grid { grid-template-columns: repeat(3, 1fr); }
   .sellers-grid { grid-template-columns: 1fr 1fr; }
   .seller-cta { grid-column: span 2; }
 }
@@ -242,7 +258,6 @@
   .home-main { padding: 6px 14px 24px; gap: 22px; }
   .trending-grid { grid-template-columns: 1fr 1fr; }
   .trending-grid .trend-card:nth-child(3) { grid-column: span 2; }
-  .recent-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
   .trending-grid { grid-template-columns: 1fr; }
@@ -389,7 +404,6 @@
 @media (min-width: 961px) {
   .home-main { max-width: 1400px; margin: 0 auto; padding: 10px 28px 60px; }
   .uni-chips { max-width: 1400px; margin: 10px auto 0; padding: 0 28px; }
-  .recent-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .filter-panel {

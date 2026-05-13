@@ -11,7 +11,12 @@
   font-weight: 700; font-size: 0.78rem; color: var(--text-muted);
 }
 .step.done .circle { background: var(--primary); border-color: var(--primary); color: #fff; }
-.step .lbl { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+.step .lbl {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
 .step.done .lbl { color: var(--primary); }
 
 .photo-grid {

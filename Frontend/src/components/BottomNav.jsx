@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, LayoutGrid, MessageCircle, User, Plus } from 'lucide-react';
+import { Home, LayoutGrid, MessageCircle, User, Plus, Store } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import './BottomNav.css';
 
@@ -17,11 +17,12 @@ const BUYER_ITEMS = [
 ];
 
 // Sellers don't need the Sell CTA — they manage everything from their dashboard.
+// Their account hub is the Seller Dashboard, not the buyer Profile screen.
 const SELLER_ITEMS = [
-  { id: 'home',       label: 'Home',       path: '/home',       icon: Home },
-  { id: 'categories', label: 'Categories', path: '/categories', icon: LayoutGrid },
-  { id: 'chat',       label: 'Chat',       path: '/chats',      icon: MessageCircle },
-  { id: 'profile',    label: 'Profile',    path: '/profile',    icon: User },
+  { id: 'home',       label: 'Home',       path: '/home',            icon: Home },
+  { id: 'categories', label: 'Categories', path: '/categories',      icon: LayoutGrid },
+  { id: 'chat',       label: 'Chat',       path: '/chats',           icon: MessageCircle },
+  { id: 'dashboard',  label: 'Dashboard',  path: '/seller-dashboard', icon: Store },
 ];
 
 export default function BottomNav() {
@@ -49,7 +50,8 @@ export default function BottomNav() {
         const active = !center && (
           pathname === path ||
           (path === '/chats' && pathname.startsWith('/chat')) ||
-          (path === '/categories' && pathname.startsWith('/category'))
+          (path === '/categories' && pathname.startsWith('/category')) ||
+          (path === '/seller-dashboard' && pathname.startsWith('/seller'))
         );
         return (
           <button

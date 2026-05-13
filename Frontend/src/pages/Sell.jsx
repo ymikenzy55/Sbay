@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Plus, Check, ArrowRight, ArrowLeft as Back } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import { sbay } from '../api/client';
 import './pages.css';
 import './Sell.css';
 
@@ -11,12 +12,31 @@ const STEPS = ['Photos', 'Basic Info', 'Description', 'Preview'];
 
 export default function Sell() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const editId = params.get('edit');
+  const isEdit = Boolean(editId);
   const [step, setStep] = useState(0);
   const [photos, setPhotos] = useState([]);
   const [form, setForm] = useState({
     title: '', price: '', condition: 'Brand New', category: 'Electronics', desc: '',
   });
   const [done, setDone] = useState(false);
+
+  // Pre-fill the form when editing an existing listing.
+  useEffect(() => {
+    if (!isEdit) return;
+    sbay.getProduct(editId).then((p) => {
+      if (!p) return;
+      setForm({
+        title: p.title || '',
+        price: p.price ? String(p.price) : '',
+        condition: p.condition || 'Brand New',
+        category: p.category || 'Electronics',
+        desc: p.description || '',
+      });
+      setPhotos(Array.isArray(p.images) && p.images.length ? p.images : (p.image ? [p.image] : []));
+    });
+  }, [isEdit, editId]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const addPhotoSlot = () =>
@@ -27,12 +47,12 @@ export default function Sell() {
 
   const submit = () => {
     setDone(true);
-    setTimeout(() => navigate('/home'), 1600);
+    setTimeout(() => navigate(isEdit ? '/seller-dashboard' : '/home'), 1600);
   };
 
   return (
     <div className="page">
-      <TopBar showBack title="Create Listing" showSearch={false} />
+      <TopBar showBack title={isEdit ? 'Edit Listing' : 'Create Listing'} showSearch={false} />
 
       {/* Stepper */}
       <div className="stepper">
@@ -149,7 +169,7 @@ export default function Sell() {
             </button>
           ) : (
             <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={submit}>
-              Publish Listing
+              {isEdit ? 'Save Changes' : 'Publish Listing'}
             </button>
           )}
         </div>
@@ -167,8 +187,10 @@ export default function Sell() {
               transition={{ type: 'spring', stiffness: 200, damping: 14 }}
             >
               <div className="checkmark"><Check size={36} color="#fff" /></div>
-              <h3>Listing Published!</h3>
-              <p className="muted">Your item is now live on sBay.</p>
+              <h3>{isEdit ? 'Listing Updated!' : 'Listing Published!'}</h3>
+              <p className="muted">
+                {isEdit ? 'Your changes are saved.' : 'Your item is now live on sBay.'}
+              </p>
             </motion.div>
           </motion.div>
         )}

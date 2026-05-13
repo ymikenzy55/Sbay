@@ -99,16 +99,26 @@
   .pdp-title, .pdp-price { font-size: 1.15rem; }
 }
 
-/* Similar products */
+/* Similar products — single row, horizontal scroll */
 .pdp-similar { margin-top: 6px; }
 .pdp-similar .page-h2 { margin-bottom: 10px; }
 .pdp-similar-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+  margin: 0 -22px;
+  padding-left: 22px;
+  padding-right: 22px;
+  scrollbar-width: thin;
 }
-@media (max-width: 720px) {
-  .pdp-similar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pdp-similar-grid::-webkit-scrollbar { height: 6px; }
+.pdp-similar-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
 }
 .pdp-similar-card {
   background: #fff;
@@ -120,6 +130,11 @@
   flex-direction: column;
   transition: border-color .15s ease, transform .15s ease;
   min-width: 0;
+  flex: 0 0 180px;
+  scroll-snap-align: start;
+}
+@media (max-width: 720px) {
+  .pdp-similar-card { flex-basis: 150px; }
 }
 .pdp-similar-card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .pdp-similar-img {

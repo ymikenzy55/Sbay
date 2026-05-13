@@ -22,11 +22,14 @@ import Sell            from './pages/Sell';
 import Profile         from './pages/Profile';
 import Login           from './pages/Login';
 import Signup          from './pages/Signup';
+import ForgotPassword  from './pages/ForgotPassword';
 import BecomeSeller    from './pages/BecomeSeller';
 import SellerDashboard from './pages/SellerDashboard';
+import SellerVerification from './pages/SellerVerification';
+import SellerSubscription from './pages/SellerSubscription';
+import SellerSettings  from './pages/SellerSettings';
 import Categories      from './pages/Categories';
 import Trending        from './pages/Trending';
-import AllSellers      from './pages/AllSellers';
 
 export default function App() {
   return (
@@ -50,16 +53,15 @@ export default function App() {
               <Route path="/categories"        element={<Categories />} />
               <Route path="/category/:catId"   element={<Categories />} />
               <Route path="/trending"          element={<Trending />} />
-              <Route path="/sellers"           element={<AllSellers />} />
-              <Route path="/sellers/:id"       element={<AllSellers />} />
 
               {/* Auth */}
-              <Route path="/login"        element={<Login />} />
-              <Route path="/signup"       element={<Signup />} />
+              <Route path="/login"           element={<Login />} />
+              <Route path="/signup"          element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* Chat is free — guests can message sellers too */}
-              <Route path="/chats"           element={<ChatList />} />
-              <Route path="/chat/:id"        element={<IndividualChat />} />
+              {/* Chat — sign-in required */}
+              <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
+              <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
 
               {/* Sensitive — sign-in required */}
               <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
@@ -71,6 +73,9 @@ export default function App() {
               <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />
               <Route path="/sell"             element={<RequireAuth role="seller"><Sell /></RequireAuth>} />
               <Route path="/seller-dashboard" element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
+              <Route path="/seller/verification" element={<RequireAuth role="seller"><SellerVerification /></RequireAuth>} />
+              <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
+              <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
 
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>

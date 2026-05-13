@@ -78,8 +78,52 @@
 
 .sd-chats { display: flex; flex-direction: column; gap: 6px; }
 
+.sd-purchases {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 @media (max-width: 720px) {
   .sd-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .sd-listing { grid-template-columns: 70px 1fr; }
   .sd-actions { grid-column: span 2; justify-content: flex-end; }
 }
+
+/* Quick-link rows (Verification, Subscription, Settings, Logout) */
+.sd-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sd-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.sd-link:hover { border-color: var(--primary); transform: translateY(-1px); }
+.sd-link.danger:hover { border-color: var(--error); }
+.sd-link.danger .sd-link-ic { background: #fde6e6; color: var(--error); }
+.sd-link.is-ok .sd-link-ic { background: var(--primary-50); color: var(--primary); }
+.sd-link.is-pending .sd-link-ic { background: #fff4dd; color: #b07700; }
+.sd-link.is-warn .sd-link-ic { background: #fde6e6; color: var(--error); }
+.sd-link-ic {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  background: var(--primary-50);
+  color: var(--primary);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.sd-link-body { flex: 1; min-width: 0; }
+.sd-link-body strong { font-size: .95rem; font-weight: 700; }
+.sd-link-body p { margin-top: 2px; }
+.small { font-size: .78rem; }

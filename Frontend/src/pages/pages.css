@@ -51,3 +51,20 @@
   .page-main { padding: 14px 14px 24px; gap: 16px; }
   .page-h1 { font-size: 1.25rem; }
 }
+
+/* Verified pill (shared) */
+.verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  margin-left: 6px;
+  background: var(--primary-50);
+  color: var(--primary);
+  border-radius: var(--r-pill);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}

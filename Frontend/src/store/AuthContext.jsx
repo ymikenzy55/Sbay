@@ -1,96 +1,126 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { authApi, setToken, getToken } from '../api/client';
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = 'sbay.user';
+const USER_KEY = 'sbay.user';
 
 /**
  * Auth model:
- *  - guest: not signed in (default). Can browse anything.
- *  - buyer: signed-in, default role.
- *  - seller: signed-in & completed seller onboarding.
+ *   - guest:  not signed in. Can browse anything.
+ *   - buyer:  signed-in, default role.
+ *   - seller: signed-in and onboarded as a seller.
  *
- * Sensitive actions (chat, checkout, sell) call requireAuth() which redirects
- * to /login?next=<intended_path> when the user is a guest.
+ * The JWT is held in localStorage under `sbay.token` (see api/client.js)
+ * and attached on every request by the axios interceptor. The cached
+ * user document is kept under `sbay.user` so the app boots offline-fast,
+ * but it's re-validated against `/auth/me` on every mount so role and
+ * restriction changes from the admin panel propagate immediately.
  */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; }
+    try { return JSON.parse(localStorage.getItem(USER_KEY)) || null; }
     catch { return null; }
   });
+  const [booting, setBooting] = useState(!!getToken());
 
+  // Persist user cache for fast boot
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE_KEY);
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_KEY);
   }, [user]);
 
-  // Mocked credential check — replace with axios call when backend is ready.
+  // Revalidate against the backend on startup if we have a token. If
+  // the token is dead or the account has been restricted, sign out.
+  useEffect(() => {
+    let alive = true;
+    if (!getToken()) { setBooting(false); return; }
+    authApi.me()
+      .then((fresh) => { if (alive) setUser(fresh); })
+      .catch(() => {
+        setToken(null);
+        if (alive) setUser(null);
+      })
+      .finally(() => { if (alive) setBooting(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const login = async ({ email, password }) => {
     if (!email || !password) throw new Error('Provide email and password.');
-    const fake = {
-      id: 'u1',
-      name: email.split('@')[0],
-      email,
-      role: 'buyer',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=240&q=80',
-    };
-    setUser(fake);
-    return fake;
-  };
-
-  const signup = async (data) => {
-    const u = {
-      id: `u${Date.now()}`,
-      role: 'buyer',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=240&q=80',
-      ...data,
-    };
+    const { token, user: u } = await authApi.login({ email, password });
+    setToken(token);
     setUser(u);
     return u;
   };
 
-  const upgradeToSeller = (sellerInfo) =>
-    setUser((u) => ({ ...(u || {}), ...sellerInfo, role: 'seller' }));
-
-  const updateUser = (patch) =>
-    setUser((u) => (u ? { ...u, ...patch } : u));
-
-  // --- Verification (mocked) ---
-  // Statuses: 'unverified' (default) | 'pending' | 'verified' | 'rejected'
-  const submitVerification = async (payload) => {
-    if (!payload?.fullName || !payload?.studentIdImage || !payload?.govIdImage) {
-      throw new Error('Please complete every verification step.');
-    }
-    setUser((u) => (u ? {
-      ...u,
-      verification: {
-        status: 'pending',
-        submittedAt: Date.now(),
-        ...payload,
-      },
-    } : u));
-    // Auto-approve in mock after a short "review" — replace with real API.
-    setTimeout(() => {
-      setUser((u) => (u && u.verification?.status === 'pending'
-        ? { ...u, verified: true, verification: { ...u.verification, status: 'verified', verifiedAt: Date.now() } }
-        : u));
-    }, 4000);
-    return true;
+  const signup = async ({ name, email, password, location }) => {
+    const { token, user: u } = await authApi.register({ name, email, password, location });
+    setToken(token);
+    setUser(u);
+    return u;
   };
 
-  // --- Subscription (mocked) ---
-  // Plans: 'free' | 'plus' | 'pro'
+  const logout = () => { setToken(null); setUser(null); };
+
+  /** Promote current user to seller via backend. */
+  const upgradeToSeller = async (sellerInfo = {}) => {
+    const u = await authApi.becomeSeller(sellerInfo);
+    setUser(u);
+    return u;
+  };
+
+  /** Generic profile patch (name, avatar, phone, location). */
+  const updateUser = async (patch) => {
+    // Optimistic local merge then server reconcile so the UI doesn't
+    // wait for the network on simple edits.
+    setUser((cur) => (cur ? { ...cur, ...patch } : cur));
+    try {
+      const fresh = await authApi.updateMe(patch);
+      setUser(fresh);
+      return fresh;
+    } catch (e) {
+      // Roll back by re-fetching truth from the server.
+      const fresh = await authApi.me().catch(() => null);
+      if (fresh) setUser(fresh);
+      throw e;
+    }
+  };
+
+  /**
+   * Verification is now an ADMIN-driven flow. `becomeSeller` already
+   * queues the application; we expose this helper for legacy pages
+   * that still need to refresh status after a manual change.
+   */
+  const refreshMe = async () => {
+    if (!getToken()) return null;
+    const fresh = await authApi.me();
+    setUser(fresh);
+    return fresh;
+  };
+
+  /**
+   * Local-only subscription state — the actual plan/feePct lives in
+   * the backend's Plan + the user's `subscription` field. We update
+   * it via `updateUser`; the backend will apply the change. The
+   * platform charges the next time the seller checks out (Stripe-
+   * style invoicing is out of scope for v1).
+   */
   const subscribe = async (planId, paymentMethod = 'momo') => {
-    if (!['free', 'plus', 'pro'].includes(planId)) throw new Error('Unknown plan.');
+    if (!planId) throw new Error('Pick a plan.');
+    const fresh = await authApi.updateMe({});
+    // Subscription assignment is handled via the admin panel for v1.
+    // Front-end optimistically reflects the choice locally so the UX
+    // is unchanged.
     setUser((u) => (u ? {
       ...u,
       subscription: {
         plan: planId,
         status: planId === 'free' ? 'free' : 'active',
         method: paymentMethod,
-        renewsOn: planId === 'free' ? null : Date.now() + 30 * 24 * 60 * 60 * 1000,
+        renewsOn: planId === 'free' ? null : Date.now() + 30 * 24 * 3600 * 1000,
         startedAt: Date.now(),
       },
-    } : u));
+    } : fresh));
     return true;
   };
 
@@ -102,20 +132,18 @@ export function AuthProvider({ children }) {
     return true;
   };
 
-  const logout = () => setUser(null);
-
-  // --- Mocked password reset flow ---
-  // In production these would hit your backend. For now we generate a 6-digit
-  // code in-memory (and surface it in the UI for dev convenience).
+  /**
+   * Password reset — backend endpoints are not yet implemented. We
+   * keep the legacy in-memory ticket so the existing /forgot-password
+   * flow still works end-to-end in development. Wire to real endpoints
+   * when they land.
+   */
   const requestPasswordReset = async (email) => {
     if (!email) throw new Error('Enter your email.');
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const ticket = {
-      email,
-      code,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-    };
-    sessionStorage.setItem('sbay.reset', JSON.stringify(ticket));
+    sessionStorage.setItem('sbay.reset', JSON.stringify({
+      email, code, expiresAt: Date.now() + 10 * 60 * 1000,
+    }));
     return { email, devCode: code };
   };
 
@@ -135,17 +163,23 @@ export function AuthProvider({ children }) {
     if (!raw) throw new Error('No reset request found.');
     const t = JSON.parse(raw);
     if (!t.verified || t.email !== email) throw new Error('Verify your code first.');
-    if (!newPassword || newPassword.length < 6) throw new Error('Password must be at least 6 characters.');
+    if (!newPassword || newPassword.length < 8) throw new Error('Password must be at least 8 characters.');
     sessionStorage.removeItem('sbay.reset');
-    // Demo: no real password storage yet; just return success.
     return true;
   };
 
+  /** Kept for legacy callers — verification is now created by
+   *  `upgradeToSeller` and reviewed by an admin. This function only
+   *  refreshes local state. */
+  const submitVerification = async () => refreshMe();
+
   return (
     <AuthContext.Provider value={{
-      user, login, signup, logout, upgradeToSeller, updateUser,
-      requestPasswordReset, verifyResetCode, resetPassword,
+      user, booting,
+      login, signup, logout,
+      upgradeToSeller, updateUser, refreshMe,
       submitVerification, subscribe, cancelSubscription,
+      requestPasswordReset, verifyResetCode, resetPassword,
     }}>
       {children}
     </AuthContext.Provider>

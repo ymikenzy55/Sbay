@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import { sbay } from '../api/client';
+import { sbay, productApi } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './Sell.css';
@@ -85,6 +85,8 @@ export default function Sell() {
     desc: '',
   });
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Pre-fill the form when editing.
   useEffect(() => {
@@ -131,16 +133,37 @@ export default function Sell() {
   const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
-  const submit = () => {
-    setDone(true);
-    // After publishing, send the seller to their store page so they can see
-    // their new listing alongside the old ones, ready to be edited.
-    setTimeout(() => {
-      const dest = isEdit
-        ? '/seller-dashboard'
-        : (user?.id ? `/seller/${user.id}` : '/seller-dashboard');
-      navigate(dest, { replace: true });
-    }, 1600);
+  const submit = async () => {
+    setError('');
+    setSubmitting(true);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        description: form.desc.trim(),
+        price: Number(form.price),
+        discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
+        stock: Math.max(1, Number(form.stock) || 1),
+        condition: form.condition,
+        category: finalCategory,
+        images: photos,
+      };
+      if (isEdit) await productApi.update(editId, payload);
+      else        await productApi.create(payload);
+
+      setDone(true);
+      // After publishing, send the seller to their store page so they can see
+      // their new listing alongside the old ones, ready to be edited.
+      setTimeout(() => {
+        const dest = isEdit
+          ? '/seller-dashboard'
+          : (user?.id ? `/seller/${user.id}` : '/seller-dashboard');
+        navigate(dest, { replace: true });
+      }, 1600);
+    } catch (e) {
+      setError(e.message || 'Could not save your listing. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const StepIcon = STEPS[step].icon;
@@ -368,12 +391,17 @@ export default function Sell() {
               className="btn btn-primary"
               style={{ marginLeft: 'auto' }}
               onClick={submit}
-              disabled={!canAdvance()}
+              disabled={!canAdvance() || submitting}
             >
-              {isEdit ? 'Save Changes' : 'Publish Listing'}
+              {submitting ? 'Saving…' : (isEdit ? 'Save Changes' : 'Publish Listing')}
             </button>
           )}
         </div>
+        {error && (
+          <p className="muted small" style={{ color: '#c0392b', marginTop: 10, textAlign: 'center' }}>
+            {error}
+          </p>
+        )}
       </main>
 
       <AnimatePresence>

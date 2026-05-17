@@ -8,13 +8,18 @@ import {
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import { sbay } from '../api/client';
+import { sbay, productApi } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
 import './pages.css';
 import './Profile.css';
 import './SellerDashboard.css';
+
+// Sellers may only set their orders to these states from the dashboard.
+// `completed` happens automatically when the buyer confirms receipt;
+// `canceled` goes through the dedicated cancel button.
+const SELLER_SETTABLE_STATUSES = new Set(['pending', 'processing', 'shipped', 'delivered']);
 
 const PLAN_LABEL = { free: 'Free', plus: 'Plus', pro: 'Pro' };
 
@@ -26,13 +31,14 @@ export default function SellerDashboard() {
   const confirm = useConfirm();
   const [listings, setListings] = useState([]);
   const [chats, setChats] = useState([]);
-  const { myOrders: purchases, salesOrders, setStatus } = useOrders();
+  const { myOrders: purchases, salesOrders, setStatus, confirmReceipt } = useOrders();
   const [tab, setTab] = useState('listings');
   const [listingCat, setListingCat] = useState('all');
 
   useEffect(() => {
-    sbay.getRecent().then(setListings);
-    sbay.getSellerChats().then(setChats);
+    // Only the signed-in seller's own listings — not the platform-wide feed.
+    productApi.mine().then(setListings).catch(() => setListings([]));
+    sbay.getSellerChats().then(setChats).catch(() => setChats([]));
   }, []);
 
   const { logout } = useAuth();
@@ -40,11 +46,19 @@ export default function SellerDashboard() {
   const onDelete = async (id, title) => {
     const ok = await confirm({
       title: 'Delete this listing?',
-      body: `"${title}" will be removed permanently. This cannot be undone.`,
+      body: `"${title}" will be hidden from the marketplace. Existing orders are unaffected.`,
       confirmLabel: 'Delete',
       danger: true,
     });
-    if (ok) setListings((ls) => ls.filter((l) => l.id !== id));
+    if (!ok) return;
+    try {
+      await productApi.remove(id);
+      setListings((ls) => ls.filter((l) => l.id !== id));
+    } catch (e) {
+      // Backend already records the reason; just put the item back so
+      // the user knows nothing happened.
+      alert(e.message || 'Could not delete this listing.');
+    }
   };
 
   const onLogout = async () => {
@@ -64,7 +78,8 @@ export default function SellerDashboard() {
       confirmLabel: 'Yes, release funds',
     });
     if (!ok) return;
-    setStatus(id, 'completed');
+    try { await confirmReceipt(id); }
+    catch (e) { alert(e.message || 'Could not confirm receipt.'); }
   };
 
   const onMarkDelivered = async (id) => {
@@ -81,20 +96,31 @@ export default function SellerDashboard() {
     (o) => !['delivered', 'completed', 'canceled'].includes(o.status)
   ).length;
 
-  const messageSeller = (order) => {
-    navigate(`/chat/seller-${order.sellerId}`, {
-      state: {
-        seller: { id: order.sellerId, name: order.sellerName },
-        order: { id: order.id, title: order.title, price: order.price, image: order.image },
-      },
-    });
+  // Open / re-open the chat thread for an order. `startChat` is
+  // idempotent on the backend — it returns the existing thread if
+  // there's already one with this seller.
+  const openChatForOrder = async (order, role) => {
+    const otherId = role === 'seller' ? order.buyerId : order.sellerId;
+    if (!otherId || otherId === 'me') return;
+    try {
+      const chat = await sbay.startChat(otherId);
+      navigate(`/chat/${chat._id}`);
+    } catch (e) {
+      alert(e.message || 'Could not open this chat.');
+    }
   };
+  const messageSeller = (order) => openChatForOrder(order, 'buyer');
+  const messageBuyer  = (order) => openChatForOrder(order, 'seller');
 
   const pendingPurchases = purchases.filter((p) => p.status !== 'completed').length;
 
-  // Derived stats
-  const totalEarnings = listings.reduce((sum, l) => sum + (Number(l.price) || 0), 0);
-  const profileViews = 247; // TODO: replace with API value
+  // Derived stats — earnings reflect *actual* released escrow from
+  // completed sales, not the catalogue value. Listings are an inventory
+  // count.
+  const totalEarnings = salesOrders
+    .filter((o) => o.status === 'completed')
+    .reduce((sum, o) => sum + (Number(o.total) || 0) - (Number(o.fee) || 0), 0);
+  const profileViews = listings.reduce((s, l) => s + (l.views || 0), 0);
   const verificationStatus = user?.verification?.status || (user?.verified ? 'verified' : 'unverified');
   const planId = user?.subscription?.plan || 'free';
 
@@ -242,7 +268,10 @@ export default function SellerDashboard() {
                 <div className="sd-thumb" style={{ backgroundImage: `url(${p.image})` }} />
                 <div className="sd-meta">
                   <h4>{p.title}</h4>
-                  <p className="muted small">{p.tag} · {p.posted}</p>
+                  <p className="muted small">
+                    {p.tag || p.condition} · {p.stock ?? 0} in stock
+                    {p.status && p.status !== 'active' && ` · ${p.status}`}
+                  </p>
                   <span className="price">GH₵ {p.price.toLocaleString()}</span>
                 </div>
                 <div className="sd-actions">
@@ -311,9 +340,9 @@ export default function SellerDashboard() {
                 <div className="order-meta">
                   <h4>{o.title}</h4>
                   <p className="muted small">
-                    #{o.id} · {o.buyerName} · {o.method === 'escrow' ? 'Escrow' : 'Meet-up'}
+                    {o.invoiceNumber || `#${o.id}`} · {o.buyerName} · Escrow
                   </p>
-                  <p className="muted small">📍 {o.buyerLocation}</p>
+                  <p className="muted small">📍 {o.buyerLocation || o.deliveryLocation || '—'}</p>
                   <span className="price">GH₵ {o.price.toLocaleString()}</span>
                 </div>
                 <div className="order-side">
@@ -322,17 +351,17 @@ export default function SellerDashboard() {
                     className="status-select"
                     value={o.status}
                     onChange={(e) => setStatus(o.id, e.target.value)}
-                    disabled={o.status === 'completed' || o.status === 'canceled'}
+                    disabled={!SELLER_SETTABLE_STATUSES.has(o.status)}
                   >
-                    {ORDER_STATUSES.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
+                    {ORDER_STATUSES
+                      .filter((s) => SELLER_SETTABLE_STATUSES.has(s.id) || s.id === o.status)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>{s.label}</option>
+                      ))}
                   </select>
                   <button
                     className="btn btn-ghost small"
-                    onClick={() => navigate(`/chat/sc-${o.buyerId}`, {
-                      state: { buyer: { id: o.buyerId, name: o.buyerName }, order: o },
-                    })}
+                    onClick={() => messageBuyer(o)}
                   >
                     <MessageCircle size={14} /> Message buyer
                   </button>
@@ -375,7 +404,7 @@ export default function SellerDashboard() {
                 <div className="order-meta">
                   <h4>{o.title}</h4>
                   <p className="muted small">
-                    #{o.id} · {o.sellerName} · {o.method === 'escrow' ? 'Escrow' : 'Meet-up'}
+                    {o.invoiceNumber || `#${o.id}`} · {o.sellerName} · Escrow
                   </p>
                   <span className="price">GH₵ {o.price.toLocaleString()}</span>
                 </div>

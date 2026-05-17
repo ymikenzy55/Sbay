@@ -66,9 +66,22 @@ export default function Cart() {
                       <span className="price">GH₵ {it.price.toLocaleString()}</span>
                     </div>
                     <div className="cart-qty">
-                      <button onClick={() => updateQty(it.id, it.qty - 1)}><Minus size={14} /></button>
+                      <button
+                        onClick={() => updateQty(it.id, it.qty - 1)}
+                        disabled={it.qty <= 1}
+                      >
+                        <Minus size={14} />
+                      </button>
                       <span>{it.qty}</span>
-                      <button onClick={() => updateQty(it.id, it.qty + 1)}><Plus size={14} /></button>
+                      <button
+                        onClick={() => updateQty(it.id, it.qty + 1)}
+                        disabled={!!it.stock && it.qty >= it.stock}
+                        title={!!it.stock && it.qty >= it.stock
+                          ? `Only ${it.stock} in stock`
+                          : ''}
+                      >
+                        <Plus size={14} />
+                      </button>
                     </div>
                     <button className="cart-remove" onClick={() => onRemove(it.id, it.title)} aria-label="Remove">
                       <Trash2 size={16} />

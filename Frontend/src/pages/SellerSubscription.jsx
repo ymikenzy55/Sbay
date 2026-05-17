@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Crown, X, ArrowLeft as Back } from 'lucide-react';
@@ -6,13 +6,14 @@ import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
+import { sbay } from '../api/client';
 import './pages.css';
 import './Auth.css';
 import './ProductDetail.css';
 import './Sell.css';
 import './SellerSubscription.css';
 
-const PLANS = [
+const FALLBACK_PLANS = [
   {
     id: 'free',
     name: 'Free',
@@ -68,11 +69,28 @@ export default function SellerSubscription() {
   const currentPlan = user?.subscription?.plan || 'free';
   const status = user?.subscription?.status || 'free';
 
+  const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [pendingPlan, setPendingPlan] = useState(null);
   const [method, setMethod] = useState('momo');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    // Plans are admin-managed; fall back to the canonical list only
+    // if the API is unreachable so the page is never empty.
+    sbay.getPlans().then((rows) => {
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      setPlans(rows.map((p) => ({
+        id: p.code,
+        name: p.name,
+        price: p.price,
+        tag: p.tag || (p.feePct ? `${p.feePct}% per sale` : ''),
+        features: p.features || [],
+        highlight: !!p.highlight,
+      })));
+    }).catch(() => { /* keep fallback */ });
+  }, []);
 
   const choosePlan = (planId) => {
     if (planId === currentPlan) return;
@@ -111,7 +129,7 @@ export default function SellerSubscription() {
     ? new Date(user.subscription.renewsOn).toLocaleDateString()
     : null;
 
-  const pendingDetails = PLANS.find((p) => p.id === pendingPlan);
+  const pendingDetails = plans.find((p) => p.id === pendingPlan);
 
   return (
     <div className="page">
@@ -122,7 +140,7 @@ export default function SellerSubscription() {
           <div className="sub-summary-ic"><Crown size={20} /></div>
           <div style={{ flex: 1 }}>
             <strong>
-              You're on the {PLANS.find((p) => p.id === currentPlan)?.name} plan
+              You're on the {plans.find((p) => p.id === currentPlan)?.name || 'Free'} plan
             </strong>
             <p className="muted small">
               {status === 'active' && renewsOn && `Renews on ${renewsOn} via ${user?.subscription?.method?.toUpperCase()}`}
@@ -133,7 +151,7 @@ export default function SellerSubscription() {
         </section>
 
         <section className="plans-grid">
-          {PLANS.map((p) => {
+          {plans.map((p) => {
             const isCurrent = p.id === currentPlan;
             return (
               <article key={p.id} className={`plan-card ${p.highlight ? 'highlight' : ''} ${isCurrent ? 'current' : ''}`}>

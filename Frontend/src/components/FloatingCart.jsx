@@ -6,7 +6,7 @@ import { useCart } from '../store/CartContext';
 import './FloatingCart.css';
 
 // Routes that already show cart prominently or where the FAB would clash.
-const HIDE_ON = ['/cart', '/checkout', '/payment-success', '/login', '/signup', '/'];
+const HIDE_ON = ['/cart', '/checkout', '/payment-success', '/login', '/signup', '/', '/admin'];
 
 export default function FloatingCart() {
   const navigate = useNavigate();

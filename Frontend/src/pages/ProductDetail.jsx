@@ -88,7 +88,11 @@ export default function ProductDetail() {
     );
   }
 
+  const outOfStock = product?.status && product.status !== 'active';
+  const stockLeft  = product?.stock ?? 0;
+
   const handleAdd = () => {
+    if (outOfStock || stockLeft <= 0) return;
     addItem(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
@@ -270,8 +274,19 @@ export default function ProductDetail() {
           {saved ? <BookmarkCheck size={18} /> : <BookmarkPlus size={18} />}
           {saved ? 'Saved' : 'Wishlist'}
         </button>
-        <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAdd}>
-          <ShoppingCart size={18} /> Add to Cart
+        <button
+          className="btn btn-primary"
+          style={{ flex: 1 }}
+          onClick={handleAdd}
+          disabled={outOfStock || stockLeft <= 0}
+          title={outOfStock || stockLeft <= 0 ? 'This item is currently unavailable.' : ''}
+        >
+          <ShoppingCart size={18} />{' '}
+          {outOfStock || stockLeft <= 0
+            ? 'Sold out'
+            : stockLeft <= 3
+              ? `Add to Cart · only ${stockLeft} left`
+              : 'Add to Cart'}
         </button>
       </div>
 

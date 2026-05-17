@@ -32,6 +32,24 @@ import EditListing    from './pages/EditListing';
 import Categories      from './pages/Categories';
 import Trending        from './pages/Trending';
 
+import { AdminProvider } from './admin/AdminContext';
+import AdminLayout      from './admin/AdminLayout';
+import AdminDashboard   from './admin/AdminDashboard';
+import AdminUsers       from './admin/AdminUsers';
+import AdminBuyers      from './admin/AdminBuyers';
+import AdminSellers     from './admin/AdminSellers';
+import AdminAdmins      from './admin/AdminAdmins';
+import AdminSellerDetail from './admin/AdminSellerDetail';
+import AdminProducts    from './admin/AdminProducts';
+import AdminOrders      from './admin/AdminOrders';
+import AdminPlans       from './admin/AdminPlans';
+import AdminSettings    from './admin/AdminSettings';
+import AdminAudit       from './admin/AdminAudit';
+import AdminChats       from './admin/AdminChats';
+import AdminStudentVerification from './admin/AdminStudentVerification';
+import AdminSellerVerification  from './admin/AdminSellerVerification';
+import AdminSupport     from './admin/AdminSupport';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -78,6 +96,28 @@ export default function App() {
               <Route path="/seller-dashboard" element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
               <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
               <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
+
+              {/* ---------------- Admin SPA ---------------- */}
+              {/* Admins sign in via the unified /login page; role-based redirect sends them here */}
+              <Route path="/admin" element={
+                <AdminProvider><AdminLayout /></AdminProvider>
+              }>
+                <Route index           element={<AdminDashboard />} />
+                <Route path="users"                     element={<AdminUsers />} />
+                <Route path="users/buyers"              element={<AdminBuyers />} />
+                <Route path="users/sellers"             element={<AdminSellers />} />
+                <Route path="users/sellers/:id"         element={<AdminSellerDetail />} />
+                <Route path="users/admins"              element={<AdminAdmins />} />
+                <Route path="products"                  element={<AdminProducts />} />
+                <Route path="orders"                    element={<AdminOrders />} />
+                <Route path="plans"                     element={<AdminPlans />} />
+                <Route path="chats"                     element={<AdminChats />} />
+                <Route path="verification/students"     element={<AdminStudentVerification />} />
+                <Route path="verification/sellers"      element={<AdminSellerVerification />} />
+                <Route path="support"                   element={<AdminSupport />} />
+                <Route path="audit"                     element={<AdminAudit />} />
+                <Route path="settings"                  element={<AdminSettings />} />
+              </Route>
 
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>

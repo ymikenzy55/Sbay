@@ -159,3 +159,18 @@
   font-size: 0.8rem;
   min-height: 0;
 }
+
+/* Error banner on checkout */
+.co-error {
+  display: flex; align-items: center; gap: 8px;
+  background: #fdecea; color: #c0392b;
+  border: 1px solid #f5c6cb;
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-size: .9rem;
+}
+
+/* Inline spinner used in the Confirm & Pay button */
+.spin { animation: sbay-spin 1s linear infinite; }
+@keyframes sbay-spin { to { transform: rotate(360deg); } }

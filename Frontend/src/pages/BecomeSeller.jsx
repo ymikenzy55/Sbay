@@ -16,6 +16,8 @@ export default function BecomeSeller() {
   const { user, upgradeToSeller } = useAuth();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     storeName: '',
     bio: '',
@@ -44,24 +46,28 @@ export default function BecomeSeller() {
   const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
-  const finish = () => {
-    upgradeToSeller({
-      sellerProfile: { ...form, studentId: undefined },
-      role: 'seller',
-      // The submission is queued for admin review. The dashboard and the
-      // public store both surface this status. There is no separate
-      // verification flow — admins approve from the admin panel.
-      verification: {
-        status: 'pending',
-        submittedAt: Date.now(),
-        isStudent: form.isStudent,
-        university: form.university,
-        occupation: form.occupation,
-        businessReg: form.businessReg,
-      },
-      verified: false,
-    });
-    setSubmitted(true);
+  const finish = async () => {
+    setError('');
+    setSubmitting(true);
+    try {
+      await upgradeToSeller({
+        storeName: form.storeName.trim(),
+        bio: form.bio.trim() || undefined,
+        isStudent: !!form.isStudent,
+        university: form.isStudent ? form.university.trim() : undefined,
+        occupation: form.isStudent ? undefined : form.occupation.trim(),
+        businessReg: form.isStudent ? undefined : (form.businessReg.trim() || undefined),
+        location: user?.location || form.university || undefined,
+      });
+      // Note: the uploaded student ID image is kept local-only for v1
+      // (no object-store integration yet). Admins re-verify via the
+      // admin panel using whatever evidence the seller emails them.
+      setSubmitted(true);
+    } catch (e) {
+      setError(e.message || 'Could not submit your application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -228,11 +234,19 @@ export default function BecomeSeller() {
               Continue <ArrowRight size={16} />
             </button>
           ) : (
-            <button className="btn btn-primary" disabled={!canNext()} onClick={finish} style={{ marginLeft: 'auto' }}>
-              Agree & Continue <Check size={16} />
+            <button
+              className="btn btn-primary"
+              disabled={!canNext() || submitting}
+              onClick={finish}
+              style={{ marginLeft: 'auto' }}
+            >
+              {submitting ? 'Submitting…' : <>Agree & Continue <Check size={16} /></>}
             </button>
           )}
         </div>
+        {error && (
+          <p className="auth-error" style={{ marginTop: 10 }}>{error}</p>
+        )}
       </div>
     </div>
   );

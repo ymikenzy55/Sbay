@@ -1,94 +1,112 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Smile, Paperclip, Mic, Send, Package } from 'lucide-react';
-import { sbay } from '../api/client';
+import { ArrowLeft, Send, Package, Lock } from 'lucide-react';
+import { api } from '../api/client';
+import { adaptChat, adaptMessage } from '../api/adapters';
+import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './IndividualChat.css';
 
-const FALLBACK_AVATAR =
-  'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&q=80';
-
+/**
+ * A real chat thread — purchase-gated by the backend.
+ *
+ *   - `GET  /chats/:id` returns the thread + every message + the orders
+ *     it covers.
+ *   - `POST /chats/:id/messages` posts a message. If the buyer has no
+ *     order with the seller (or every order is fully confirmed and the
+ *     chat is closed) the backend returns 403/409 and we show the
+ *     reason inline.
+ */
 export default function IndividualChat() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const passed = location.state || {};
+  const { user } = useAuth();
   const [chat, setChat] = useState(null);
+  const [order, setOrder] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
-  const [typing, setTyping] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
   const endRef = useRef(null);
 
-  useEffect(() => {
-    sbay.getChats().then((cs) => {
-      const direct = cs.find((c) => c.id === id);
-      if (direct) return setChat(direct);
-      // If routed from "Message seller" with state, match by sellerId or
-      // fall back to a synthetic conversation stub for that seller.
-      if (passed.seller) {
-        const bySeller = cs.find((c) => c.sellerId === passed.seller.id);
-        if (bySeller) return setChat(bySeller);
-        return setChat({
-          id,
-          sellerId: passed.seller.id,
-          name: passed.seller.name,
-          avatar: FALLBACK_AVATAR,
-          last: '',
-          time: 'now',
-          unread: 0,
-        });
-      }
-      setChat(cs[0]);
-    });
-    sbay.getMessages(id).then(setMessages);
-  }, [id]);
+  const isSeller = user?.role === 'seller';
+
+  const load = async () => {
+    try {
+      const { data } = await api.get(`/chats/${id}`);
+      const adapted = adaptChat(data.chat, isSeller ? 'seller' : 'buyer');
+      setChat(adapted);
+      setMessages(data.messages.map((m) => adaptMessage(m, user?.id)));
+      const populatedOrders = (data.chat.orders || []).filter((o) => typeof o === 'object');
+      setOrder(populatedOrders[0] || null);
+    } catch (e) {
+      setError(e.message || 'Could not load this chat.');
+    }
+  };
+
+  useEffect(() => { if (id && user) load(); /* eslint-disable-next-line */ }, [id, user]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typing]);
+  }, [messages]);
 
-  const send = (e) => {
+  const send = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
-    const msg = { id: Date.now(), from: 'me', text: text.trim(), time: 'now' };
-    setMessages((m) => [...m, msg]);
+    if (!text.trim() || sending) return;
+    setSending(true);
+    const draft = text.trim();
     setText('');
-    // simulated reply
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      setMessages((m) => [
-        ...m,
-        { id: Date.now() + 1, from: 'them', text: 'Got it.', time: 'now' },
-      ]);
-    }, 1400);
+    // Optimistic insert
+    const tempId = `tmp-${Date.now()}`;
+    setMessages((m) => [...m, { id: tempId, from: 'me', text: draft, time: 'sending…' }]);
+    try {
+      await api.post(`/chats/${id}/messages`, { text: draft });
+      // Refetch for the canonical message id + server timestamp
+      await load();
+    } catch (err) {
+      setError(err.message || 'Could not send your message.');
+      setMessages((m) => m.filter((x) => x.id !== tempId));
+      setText(draft);
+    } finally {
+      setSending(false);
+    }
   };
 
-  if (!chat) return <div className="page"><p className="page-main muted">Loading...</p></div>;
+  if (!chat) {
+    return (
+      <div className="page chat-page">
+        <header className="chat-top">
+          <button className="round-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
+          <h4 style={{ flex: 1 }}>Chat</h4>
+        </header>
+        <main className="page-main">
+          <p className="muted">{error || 'Loading conversation…'}</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="page chat-page">
       <header className="chat-top">
         <button className="round-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
-        <div className="chat-avatar sm" style={{ backgroundImage: `url(${chat.avatar})` }} />
+        <div className="chat-avatar sm" style={{ backgroundImage: `url(${chat.avatar || ''})` }} />
         <div style={{ flex: 1 }}>
           <h4>{chat.name}</h4>
-          <p className="muted" style={{ fontSize: '.78rem' }}>online</p>
+          <p className="muted" style={{ fontSize: '.78rem' }}>
+            {chat.closed ? 'Conversation closed' : isSeller ? 'Buyer' : 'Seller'}
+          </p>
         </div>
       </header>
 
-      {passed.order ? (
+      {order && (
         <div className="order-banner">
           <Package size={16} />
-          <span>Order #{passed.order.id} · {passed.order.title}</span>
-          <strong>GH₵ {passed.order.price?.toLocaleString?.() ?? passed.order.price}</strong>
-        </div>
-      ) : (
-        <div className="order-banner">
-          <Package size={16} />
-          <span>Order #SB-2031 · iPad Pro 12.9"</span>
-          <strong>GH₵ 4,500</strong>
+          <span>
+            Order {order.invoiceNumber || order._id} · {order.items?.[0]?.title}
+          </span>
+          <strong>GH₵ {(order.total || 0).toLocaleString()}</strong>
         </div>
       )}
 
@@ -105,35 +123,30 @@ export default function IndividualChat() {
             <span className="t">{m.time}</span>
           </motion.div>
         ))}
-        <AnimatePresence>
-          {typing && (
-            <motion.div
-              className="bubble them typing"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              <span className="dot" /><span className="dot" /><span className="dot" />
-            </motion.div>
-          )}
-        </AnimatePresence>
         <div ref={endRef} />
       </main>
 
-      <form className="chat-input" onSubmit={send}>
-        <button type="button" className="ic" aria-label="Emoji"><Smile size={20} /></button>
-        <button type="button" className="ic" aria-label="Attach"><Paperclip size={20} /></button>
-        <input
-          placeholder="Type a message..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        {text ? (
-          <button type="submit" className="send" aria-label="Send"><Send size={18} /></button>
-        ) : (
-          <button type="button" className="ic" aria-label="Voice"><Mic size={20} /></button>
-        )}
-      </form>
+      {chat.closed ? (
+        <div className="chat-closed">
+          <Lock size={14} /> This chat has been closed because every order between
+          you was confirmed received. A new order will re-open the chat.
+        </div>
+      ) : (
+        <>
+          <form className="chat-input" onSubmit={send}>
+            <input
+              placeholder="Type a message…"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={sending}
+            />
+            <button type="submit" className="send" aria-label="Send" disabled={sending || !text.trim()}>
+              <Send size={18} />
+            </button>
+          </form>
+          {error && <p className="muted small" style={{ color: '#c0392b', padding: '0 14px 10px' }}>{error}</p>}
+        </>
+      )}
     </div>
   );
 }

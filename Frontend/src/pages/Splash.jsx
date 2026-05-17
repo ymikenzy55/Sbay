@@ -81,7 +81,7 @@ export default function Splash() {
           <GraduationCap size={16} color="#F5A623" />
           <span>Made for Ghanaian Students</span>
         </div>
-        <p className="footer-version">v2.0.4 · LEGON-READY</p>
+        <p className="footer-version">v2.0 · Buy & Sell Safely</p>
       </motion.div>
     </div>
   );

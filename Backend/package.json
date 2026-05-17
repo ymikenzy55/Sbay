@@ -1,18 +1,38 @@
 {
-  "name": "backend",
+  "name": "sbay-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "sBay marketplace API — auth, products, orders (atomic stock + escrow), chats (purchase-gated), and an obscured admin panel.",
+  "type": "module",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed:admin": "node src/seed/seedAdmin.js"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["sbay", "marketplace", "express", "mongoose"],
+  "author": "sBay",
   "license": "ISC",
-  "devDependencies": {
-    "nodemon": "^3.1.14"
-  },
   "dependencies": {
-    "express": "^5.2.1"
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.4.0",
+    "express-validator": "^7.2.0",
+    "helmet": "^7.1.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
   }
 }

@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, MessageCircle, TrendingUp } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '../store/CartContext';
@@ -14,8 +14,12 @@ const LINKS = [
 
 export default function DesktopNav() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { count } = useCart();
   const { user } = useAuth();
+
+  // Admin SPA has its own shell — never render the public marketplace nav there
+  if (pathname.startsWith('/admin')) return null;
 
   const goSell = () => {
     if (!user) navigate('/signup?next=' + encodeURIComponent('/become-seller'));

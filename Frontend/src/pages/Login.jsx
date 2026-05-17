@@ -20,8 +20,13 @@ export default function Login() {
     e.preventDefault();
     setErr(''); setBusy(true);
     try {
-      await login({ email, password: pw });
-      navigate(decodeURIComponent(next), { replace: true });
+      const user = await login({ email, password: pw });
+      // Admins go straight to the admin panel; everyone else to their destination
+      if (user?.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate(decodeURIComponent(next), { replace: true });
+      }
     } catch (e2) { setErr(e2.message || 'Login failed.'); }
     finally { setBusy(false); }
   };

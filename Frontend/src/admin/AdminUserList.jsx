@@ -1,0 +1,258 @@
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { adminApi } from '../api/client';
+import {
+  Search, ShieldOff, ShieldCheck, BadgeCheck, BadgeX, Trash2, ExternalLink,
+} from 'lucide-react';
+
+/**
+ * Shared user-list table. Used by:
+ *   - /admin/users         (no role filter, shows everyone)
+ *   - /admin/users/buyers  (forces role=buyer)
+ *   - /admin/users/sellers (forces role=seller, rows link to seller deep-dive)
+ *   - /admin/users/admins  (forces role=admin, super-admin can remove others)
+ *
+ * Newest accounts always sort to the top so admins immediately see
+ * recently-registered users. A small "NEW" badge marks rows created
+ * within the last 24h.
+ */
+export default function AdminUserList({
+  fixedRole = '',
+  title,
+  description,
+  showRoleFilter = true,
+  rowLinkSeller = false,
+  allowDelete = false,
+  initialQuery = '',
+}) {
+  const navigate = useNavigate();
+  const [items, setItems]           = useState([]);
+  const [me, setMe]                 = useState(null);
+  const [q, setQ]                   = useState(initialQuery);
+  const [role, setRole]             = useState('');
+  const [verified, setVerified]     = useState('');
+  const [restricted, setRestricted] = useState('');
+  const [busy, setBusy]             = useState(false);
+  const [err, setErr]               = useState('');
+
+  const effectiveRole = fixedRole || role;
+
+  const load = useCallback(async () => {
+    setBusy(true); setErr('');
+    try {
+      const params = {};
+      if (q.trim())   params.q = q.trim();
+      if (effectiveRole) params.role = effectiveRole;
+      if (verified)   params.verified = verified;
+      if (restricted) params.restricted = restricted;
+      const { data } = await adminApi.get('/users', { params });
+      // Newest first
+      const sorted = [...(data.items || [])].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setItems(sorted);
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }, [q, effectiveRole, verified, restricted]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Best-effort lookup of "me" so the admin list can flag the
+  // current user and protect them from self-actions.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await adminApi.get('/admins');
+        if (!alive) return;
+        // /admins is the canonical admin list — pluck whoever
+        // is in the local AuthContext via cached email.
+        const cachedEmail = JSON.parse(localStorage.getItem('sbay.user') || 'null')?.email;
+        setMe((data.admins || []).find((a) => a.email === cachedEmail) || null);
+      } catch { /* ok — surface won't show super-admin actions */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const verify = async (id, decision) => {
+    let reason;
+    if (decision === 'rejected') {
+      reason = window.prompt('Why are you rejecting this verification?');
+      if (reason === null) return;
+    }
+    await adminApi.post(`/users/${id}/verify`, { decision, reason });
+    load();
+  };
+
+  const restrict = async (u) => {
+    if (u.restricted) {
+      if (!confirm(`Lift restriction on ${u.email}?`)) return;
+      await adminApi.post(`/users/${u._id}/restrict`, { restricted: false });
+    } else {
+      const reason = window.prompt(`Why are you restricting ${u.email}?`);
+      if (!reason) return;
+      await adminApi.post(`/users/${u._id}/restrict`, { restricted: true, reason });
+    }
+    load();
+  };
+
+  const remove = async (u) => {
+    if (!confirm(`Permanently delete ${u.email}? This cannot be undone.`)) return;
+    try {
+      await adminApi.delete(`/users/${u._id}`);
+      load();
+    } catch (e) {
+      alert(e.message || 'Could not delete user.');
+    }
+  };
+
+  const isNew = (date) => {
+    const ms = Date.now() - new Date(date).getTime();
+    return ms < 24 * 3600 * 1000;
+  };
+
+  return (
+    <>
+      <h1>{title}</h1>
+      {description && <p className="muted">{description}</p>}
+      <p className="muted small">{items.length} matching {fixedRole || 'user'}{items.length === 1 ? '' : 's'}.</p>
+
+      <div className="admin-card">
+        <form className="admin-toolbar" onSubmit={(e) => { e.preventDefault(); load(); }}>
+          <Search size={16} />
+          <input
+            placeholder="Search name or email…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          {showRoleFilter && (
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">All roles</option>
+              <option value="buyer">Buyers</option>
+              <option value="seller">Sellers</option>
+              <option value="admin">Admins</option>
+            </select>
+          )}
+          <select value={verified} onChange={(e) => setVerified(e.target.value)}>
+            <option value="">Any verification</option>
+            <option value="true">Verified</option>
+            <option value="false">Not verified</option>
+          </select>
+          <select value={restricted} onChange={(e) => setRestricted(e.target.value)}>
+            <option value="">Any access</option>
+            <option value="false">Active</option>
+            <option value="true">Restricted</option>
+          </select>
+          <button className="btn btn-primary" disabled={busy}>{busy ? 'Loading…' : 'Apply'}</button>
+        </form>
+
+        {err && <p className="muted" style={{ color: '#a4302a' }}>{err}</p>}
+
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th style={{ width: 280 }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((u) => {
+              const goSeller = rowLinkSeller && u.role === 'seller'
+                ? () => navigate(`/admin/users/sellers/${u._id}`)
+                : null;
+              return (
+                <tr
+                  key={u._id}
+                  className={goSeller ? 'row-link' : ''}
+                  onClick={(e) => {
+                    if (!goSeller) return;
+                    if (e.target.closest('button, a')) return;
+                    goSeller();
+                  }}
+                >
+                  <td>
+                    <div>
+                      <strong>{u.name}</strong>
+                      {isNew(u.createdAt) && <span className="admin-new-badge">NEW</span>}
+                    </div>
+                    <div className="muted small">{u.email}</div>
+                  </td>
+                  <td><span className="admin-pill mute">{u.role}</span></td>
+                  <td>
+                    {u.restricted
+                      ? <span className="admin-pill bad">Restricted</span>
+                      : u.verified
+                        ? <span className="admin-pill">Verified</span>
+                        : u.verification?.status === 'pending'
+                          ? <span className="admin-pill warn">Pending review</span>
+                          : <span className="admin-pill mute">Unverified</span>}
+                  </td>
+                  <td>
+                    <div className="admin-date">
+                      <strong>{new Date(u.createdAt).toLocaleDateString()}</strong>
+                      {new Date(u.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="admin-actions">
+                      {goSeller && (
+                        <button className="btn btn-ghost" onClick={goSeller}>
+                          <ExternalLink size={14} /> View
+                        </button>
+                      )}
+                      {u.verification?.status === 'pending' && (
+                        <>
+                          <button className="btn btn-primary" onClick={() => verify(u._id, 'approved')}>
+                            <BadgeCheck size={14} /> Approve
+                          </button>
+                          <button className="btn btn-ghost" onClick={() => verify(u._id, 'rejected')}>
+                            <BadgeX size={14} /> Reject
+                          </button>
+                        </>
+                      )}
+                      {(!u.verification?.status || u.verification?.status !== 'pending') && (
+                        u.verified ? (
+                          <button className="btn btn-ghost" onClick={() => verify(u._id, 'rejected')}>
+                            <BadgeX size={14} /> Revoke
+                          </button>
+                        ) : (
+                          u.role !== 'buyer' && (
+                            <button className="btn btn-ghost" onClick={() => verify(u._id, 'approved')}>
+                              <BadgeCheck size={14} /> Verify
+                            </button>
+                          )
+                        )
+                      )}
+                      <button className="btn btn-ghost" onClick={() => restrict(u)}>
+                        {u.restricted
+                          ? <><ShieldCheck size={14} /> Unrestrict</>
+                          : <><ShieldOff size={14} /> Restrict</>}
+                      </button>
+                      {allowDelete && me?._id !== u._id && (
+                        <button className="btn btn-danger" onClick={() => remove(u)}>
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {!items.length && !busy && (
+              <tr><td colSpan={5}>
+                <div className="admin-empty">
+                  <Search size={32} />
+                  <h3>No matches</h3>
+                  <p>Try a different search or adjust the filters.</p>
+                </div>
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}

@@ -1,0 +1,40 @@
+import { env } from './config/env.js';
+import { connectDB } from './config/db.js';
+import { buildApp } from './app.js';
+import { seedAdminIfNeeded } from './seed/seedAdmin.js';
+import { seedPlansIfNeeded } from './seed/seedPlans.js';
+
+async function main() {
+  // 1. Connect to MongoDB before we accept any HTTP traffic.
+  await connectDB();
+  // eslint-disable-next-line no-console
+  console.log('[db] connected');
+
+  // 2. First-boot seeds (admin user, default plans). No-ops if data exists.
+  await seedAdminIfNeeded();
+  await seedPlansIfNeeded();
+
+  // 3. Build the Express app and start listening.
+  const app = buildApp();
+  const server = app.listen(env.PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`[server] listening on http://localhost:${env.PORT} (env=${env.NODE_ENV})`);
+    // eslint-disable-next-line no-console
+    console.log(`[server] admin API mounted at ${env.ADMIN_API_PREFIX}`);
+  });
+
+  const shutdown = async (signal) => {
+    // eslint-disable-next-line no-console
+    console.log(`\n[server] received ${signal}, shutting down…`);
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10_000).unref(); // hard-exit if hang
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}
+
+main().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error('[boot] fatal:', err);
+  process.exit(1);
+});

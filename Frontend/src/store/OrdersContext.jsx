@@ -1,16 +1,17 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { orderApi } from '../api/client';
+import { useAuth } from './AuthContext';
 
 /**
- * Shared in-memory orders store.
+ * Orders store backed by the real backend.
  *
- * The same record is the authoritative source for both:
- *   - the BUYER's "My Orders" list (filtered by buyerId)
- *   - the SELLER's "Orders received" list (filtered by sellerId)
+ * On mount (and whenever the signed-in user changes) we fetch
+ *   - /orders/mine  for the buyer view
+ *   - /orders/sales for the seller view (sellers only)
  *
- * That's why a status change made by the seller (e.g. "Shipped") is reflected
- * immediately on the buyer's order timeline — they're literally the same object.
- *
- * Real backend would store these in Postgres + push updates over websockets.
+ * Adapters normalise both lists into the same shape pages already use,
+ * with `buyerId === 'me'` flagging orders the current user placed and
+ * `sellerId === 'me'` flagging orders the current user received.
  */
 
 export const ORDER_STATUSES = [
@@ -22,122 +23,80 @@ export const ORDER_STATUSES = [
   { id: 'canceled',   label: 'Canceled',   description: 'Order was canceled' },
 ];
 
-const SEED_ORDERS = [
-  {
-    id: 'SB-3104',
-    buyerId:  'me',           // current logged-in user, when in buyer mode
-    sellerId: 's2',
-    sellerName: "Ama's Boutique",
-    buyerName: 'You',
-    buyerLocation: 'UG, Legon',
-    title: 'Logitech MX Master 3 Mouse',
-    price: 780,
-    qty: 1,
-    method: 'escrow',
-    status: 'processing',
-    placedAt: Date.now() - 3 * 24 * 3600e3,
-    eta: 'Tomorrow, by 6pm',
-    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600&q=70',
-  },
-  {
-    id: 'SB-3088',
-    buyerId:  'me',
-    sellerId: 's3',
-    sellerName: 'Yaw Electronics',
-    buyerName: 'You',
-    buyerLocation: 'UG, Legon',
-    title: 'Adjustable Standing Desk',
-    price: 2200,
-    qty: 1,
-    method: 'meetup',
-    status: 'shipped',
-    placedAt: Date.now() - 1 * 24 * 3600e3,
-    eta: 'Today, by 5pm',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&q=70',
-  },
-  {
-    id: 'SB-2980',
-    buyerId:  'me',
-    sellerId: 's1',
-    sellerName: 'Kofi Gadgets',
-    buyerName: 'You',
-    buyerLocation: 'UG, Legon',
-    title: 'Wireless Charger',
-    price: 220,
-    qty: 1,
-    method: 'escrow',
-    status: 'completed',
-    placedAt: Date.now() - 7 * 24 * 3600e3,
-    eta: 'Delivered',
-    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&q=70',
-  },
-  /* Orders received by the current seller (sellerId === 'me') */
-  {
-    id: 'SB-4011',
-    buyerId:  'b1',
-    sellerId: 'me',
-    buyerName: 'Akwasi Mensah',
-    buyerLocation: 'UG Legon · Akuafo Hall',
-    sellerName: 'Your store',
-    title: 'iPad Pro 12.9" — 256GB',
-    price: 4500,
-    qty: 1,
-    method: 'escrow',
-    status: 'pending',
-    placedAt: Date.now() - 30 * 60e3,
-    eta: 'Awaiting confirmation',
-    image: 'https://images.unsplash.com/photo-1561154464-82e9adf32764?w=600&q=70',
-  },
-  {
-    id: 'SB-4002',
-    buyerId:  'b2',
-    sellerId: 'me',
-    buyerName: 'Adwoa Osei',
-    buyerLocation: 'KNUST · Unity Hall',
-    sellerName: 'Your store',
-    title: 'iPhone 13 — 128GB',
-    price: 3800,
-    qty: 1,
-    method: 'escrow',
-    status: 'processing',
-    placedAt: Date.now() - 4 * 3600e3,
-    eta: 'Confirm shipping by tomorrow',
-    image: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=600&q=70',
-  },
-  {
-    id: 'SB-3995',
-    buyerId:  'b3',
-    sellerId: 'me',
-    buyerName: 'Yaw Boateng',
-    buyerLocation: 'UCC · Casford Hall',
-    sellerName: 'Your store',
-    title: 'Apple Watch SE',
-    price: 1200,
-    qty: 1,
-    method: 'meetup',
-    status: 'shipped',
-    placedAt: Date.now() - 26 * 3600e3,
-    eta: 'On the way',
-    image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=600&q=70',
-  },
-];
-
 const OrdersContext = createContext(null);
 
 export function OrdersProvider({ children }) {
-  const [orders, setOrders] = useState(SEED_ORDERS);
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const reload = useCallback(async () => {
+    if (!user?.id) { setOrders([]); return; }
+    setLoading(true);
+    try {
+      const buys = await orderApi.mine(user.id);
+      const sales = user.role === 'seller' ? await orderApi.sales(user.id) : [];
+      // Dedupe in case an order has the user as both (shouldn't, but
+      // belt-and-braces): take the first occurrence.
+      const seen = new Set();
+      const merged = [];
+      for (const o of [...buys, ...sales]) {
+        if (!seen.has(o._id)) { seen.add(o._id); merged.push(o); }
+      }
+      setOrders(merged);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, user?.role]);
+
+  useEffect(() => { reload(); }, [reload]);
 
   const value = useMemo(() => ({
-    orders,
-    /** Orders where the current user is the buyer. */
-    myOrders: orders.filter((o) => o.buyerId === 'me'),
-    /** Orders received by the current user as a seller. */
+    orders, loading, reload,
+    myOrders:    orders.filter((o) => o.buyerId  === 'me'),
     salesOrders: orders.filter((o) => o.sellerId === 'me'),
-    setStatus: (id, status) =>
-      setOrders((all) => all.map((o) => (o.id === id ? { ...o, status } : o))),
-    addOrder: (order) =>
-      setOrders((all) => [{ id: 'SB-' + Date.now(), ...order }, ...all]),
-  }), [orders]);
+
+    /** Seller-driven status change: processing | shipped | delivered. */
+    setStatus: async (id, status) => {
+      const o = orders.find((x) => x._id === id || x.id === id);
+      if (!o) return;
+      const updated = await orderApi.setStatus(o._id, status);
+      setOrders((all) => all.map((x) => (x._id === updated._id
+        ? { ...updated, buyerId: x.buyerId, sellerId: x.sellerId }
+        : x)));
+    },
+
+    /** Buyer confirms they received the item → releases escrow. */
+    confirmReceipt: async (id) => {
+      const o = orders.find((x) => x._id === id || x.id === id);
+      if (!o) return;
+      const updated = await orderApi.confirmReceipt(o._id);
+      setOrders((all) => all.map((x) => (x._id === updated._id
+        ? { ...updated, buyerId: x.buyerId, sellerId: x.sellerId }
+        : x)));
+    },
+
+    /** Cancel an order (pre-shipment). Backend restores stock. */
+    cancel: async (id, reason) => {
+      const o = orders.find((x) => x._id === id || x.id === id);
+      if (!o) return;
+      const updated = await orderApi.cancel(o._id, reason);
+      setOrders((all) => all.map((x) => (x._id === updated._id
+        ? { ...updated, buyerId: x.buyerId, sellerId: x.sellerId }
+        : x)));
+    },
+
+    /**
+     * Local insertion after a successful checkout. The Checkout page
+     * already gets the freshly-created Orders back from `orderApi.checkout`,
+     * but adding them to the local store means buyers see them on the
+     * next page without a refetch round-trip.
+     */
+    addOrder: (order) => {
+      const o = { ...order, buyerId: 'me' };
+      setOrders((all) => [o, ...all]);
+    },
+  }), [orders, loading, reload]);
 
   return <OrdersContext.Provider value={value}>{children}</OrdersContext.Provider>;
 }

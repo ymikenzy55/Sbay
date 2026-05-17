@@ -10,6 +10,7 @@ import BottomNav from '../components/BottomNav';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
+import { sbay } from '../api/client';
 import './pages.css';
 import './Profile.css';
 
@@ -34,7 +35,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { user, logout, updateUser } = useAuth();
-  const { myOrders, setStatus } = useOrders();
+  const { myOrders, confirmReceipt } = useOrders();
   const orders = myOrders;
   const [tab, setTab] = useState('orders');
   const [trackingOrder, setTrackingOrder] = useState(null);
@@ -76,7 +77,8 @@ export default function Profile() {
       confirmLabel: 'Yes, release funds',
     });
     if (!ok) return;
-    setStatus(id, 'completed');
+    try { await confirmReceipt(id); }
+    catch (e) { alert(e.message || 'Could not confirm receipt.'); }
   };
 
   const submitReview = () => {
@@ -96,15 +98,17 @@ export default function Profile() {
     reader.readAsDataURL(file);
   };
 
-  const messageSeller = (order) => {
-    // Use sellerId to open (or create) a conversation with that seller,
-    // carrying the order context so the chat can display it as a banner.
-    navigate(`/chat/seller-${order.sellerId}`, {
-      state: {
-        seller: { id: order.sellerId, name: order.sellerName },
-        order: { id: order.id, title: order.title, price: order.price, image: order.image },
-      },
-    });
+  const messageSeller = async (order) => {
+    // The backend's /chats/start is idempotent — it returns the
+    // existing thread for this buyer/seller pair if one already exists,
+    // or creates a new one. Either way the route is the real chat id.
+    if (!order.sellerId || order.sellerId === 'me') return;
+    try {
+      const chat = await sbay.startChat(order.sellerId);
+      navigate(`/chat/${chat._id}`);
+    } catch (e) {
+      alert(e.message || 'Could not open this chat.');
+    }
   };
 
   const saveSettings = (e) => {
@@ -209,7 +213,7 @@ export default function Profile() {
                 <div className="order-meta">
                   <h4>{o.title}</h4>
                   <p className="muted small">
-                    #{o.id} · {o.sellerName} · {o.method === 'escrow' ? 'Escrow' : 'Meet-up'}
+                    {o.invoiceNumber || `#${o.id}`} · {o.sellerName} · Escrow
                   </p>
                   <span className="price">GH₵ {o.price.toLocaleString()}</span>
                 </div>

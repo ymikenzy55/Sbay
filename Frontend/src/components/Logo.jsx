@@ -5,7 +5,7 @@ import './Logo.css';
  * sBay brand logo. Variants: `mark` (icon tile) and `wordmark` (icon + text).
  */
 export default function Logo({ variant = 'wordmark', size = 'md' }) {
-  const height = size === 'lg' ? 96 : size === 'sm' ? 32 : 56;
+  const height = size === 'lg' ? 120 : size === 'sm' ? 44 : 72;
 
   return (
     <div className={`sbay-logo size-${size} variant-${variant}`}>

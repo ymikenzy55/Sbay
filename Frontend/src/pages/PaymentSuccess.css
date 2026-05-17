@@ -36,3 +36,14 @@
   width: 8px; height: 14px;
   border-radius: 2px;
 }
+
+/* Receipt blocks on the post-payment screen */
+.ps-receipts { width: 100%; display: flex; flex-direction: column; gap: 10px; margin: 16px 0 6px; text-align: left; }
+.ps-receipt { background: rgba(255,255,255,.6); border: 1px solid var(--border, #eee); border-radius: 12px; padding: 12px 14px; }
+.ps-receipt header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ps-receipt header h4 { font-size: .95rem; display: flex; align-items: center; gap: 6px; }
+.ps-receipt ul { list-style: none; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: .88rem; }
+.ps-receipt ul li { display: flex; justify-content: space-between; }
+.ps-receipt-meta { display: flex; justify-content: space-between; font-size: .8rem; color: #6b7a6b; border-top: 1px dashed #ddd; padding-top: 6px; }
+.ps-receipt-foot { display: flex; flex-direction: column; gap: 2px; padding: 0 4px; }
+.ps-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }

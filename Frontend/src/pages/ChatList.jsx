@@ -4,16 +4,23 @@ import { Search } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { sbay } from '../api/client';
+import { useAuth } from '../store/AuthContext';
 import { SkeletonList } from '../components/Skeleton';
 import './pages.css';
 import './ChatList.css';
 
 export default function ChatList() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [chats, setChats] = useState(null);
   const [q, setQ] = useState('');
 
-  useEffect(() => { sbay.getChats().then(setChats); }, []);
+  useEffect(() => {
+    // Backend returns the same /chats payload either way; we only pick
+    // a different adapter so the row shows the *other* party's name.
+    const fetcher = user?.role === 'seller' ? sbay.getSellerChats : sbay.getChats;
+    fetcher.call(sbay).then(setChats).catch(() => setChats([]));
+  }, [user?.role]);
 
   const loading = chats === null;
   const filtered = (chats || []).filter((c) =>

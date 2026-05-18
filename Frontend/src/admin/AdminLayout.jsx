@@ -93,10 +93,7 @@ export default function AdminLayout() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bellOpen, setBellOpen]     = useState(false);
-  const [openGroup, setOpenGroup]   = useState(activeGroup(pathname));
-
-  // Re-sync the active group whenever the route changes.
-  useEffect(() => { setOpenGroup(activeGroup(pathname)); }, [pathname]);
+  const [openGroup, setOpenGroup]   = useState(null);
   // Close the mobile drawer on navigation.
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
   // Close the bell popover on outside click via Escape.

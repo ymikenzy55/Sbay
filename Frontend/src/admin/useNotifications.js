@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { adminApi } from '../api/client';
+import { useSocket } from '../hooks/useSocket';
 
 /**
- * Polled notifications layer for the admin shell.
+ * Notifications layer for the admin shell.
  *
- * Phase 1: client polls /admin/notifications every 25s and de-dupes
- * against a localStorage seen-set, so the bell badge reflects the
- * server's view across tabs. Phase 3 replaces polling with a
- * Socket.IO subscription — the public hook surface stays identical.
+ * Combines polling (every 30s) with Socket.IO real-time events.
+ * When a socket event arrives, we inject a temporary item and
+ * refresh from the server to get the full list.
  */
 
 const SEEN_KEY = 'sbay.admin.seenNotes';
@@ -25,6 +25,7 @@ function writeSeen(set) {
 export function useNotifications() {
   const [items, setItems] = useState([]);
   const seenRef = useRef(readSeen());
+  const { on, off, connected } = useSocket();
 
   const tick = useCallback(async () => {
     try {
@@ -35,15 +36,46 @@ export function useNotifications() {
       }));
       setItems(next);
     } catch {
-      // Silent — endpoint may not be live yet (Phase 3). Keep local list.
+      // Silent — endpoint may not be live yet. Keep local list.
     }
   }, []);
 
+  // Polling fallback.
   useEffect(() => {
     tick();
-    const t = setInterval(tick, 25_000);
+    const t = setInterval(tick, 30_000);
     return () => clearInterval(t);
   }, [tick]);
+
+  // Real-time socket events.
+  useEffect(() => {
+    if (!connected) return;
+
+    const handleSupport = (payload) => {
+      // Inject a temporary notification and refresh.
+      setItems((cur) => [
+        { id: `support-${Date.now()}`, kind: 'support', message: `New support ticket: ${payload.subject || 'No subject'}`, at: new Date().toISOString(), href: '/admin/support', read: false },
+        ...cur,
+      ]);
+      tick();
+    };
+
+    const handleVerification = (payload) => {
+      setItems((cur) => [
+        { id: `verification-${Date.now()}`, kind: 'verification', message: payload.message || 'New verification request', at: new Date().toISOString(), href: '/admin/verification/students', read: false },
+        ...cur,
+      ]);
+      tick();
+    };
+
+    on('support:new', handleSupport);
+    on('verification:new', handleVerification);
+
+    return () => {
+      off('support:new', handleSupport);
+      off('verification:new', handleVerification);
+    };
+  }, [connected, on, off, tick]);
 
   const markAllRead = useCallback(() => {
     const s = seenRef.current;

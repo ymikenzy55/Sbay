@@ -7,6 +7,7 @@ import RequireAuth from './components/RequireAuth';
 import ScrollToTop from './components/ScrollToTop';
 import FloatingCart from './components/FloatingCart';
 import DesktopNav from './components/DesktopNav';
+import SupportWidget from './components/SupportWidget';
 
 import Splash          from './pages/Splash';
 import Home            from './pages/Home';
@@ -60,6 +61,7 @@ export default function App() {
             <ScrollToTop />
             <DesktopNav />
             <FloatingCart />
+            <SupportWidget />
             <Routes>
               {/* Public — anyone can browse */}
               <Route path="/"             element={<Splash />} />

@@ -2,6 +2,7 @@ import { SupportTicket } from '../models/SupportTicket.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { audit } from '../utils/audit.js';
+import { emitToAdmins, emitToUser } from '../socket.js';
 
 /* ============================================================
    Public intake — used by the customer-service chat widget.
@@ -39,6 +40,9 @@ export const submitSupport = asyncHandler(async (req, res) => {
   ticket.lastMessage   = message.trim().slice(0, 240);
   ticket.lastMessageAt = new Date();
   await ticket.save();
+
+  // Notify admins of new support ticket/message.
+  emitToAdmins('support:new', { ticketId: ticket._id, subject: ticket.subject, email: ticket.email });
 
   res.status(201).json({ ticket });
 });
@@ -80,7 +84,10 @@ export const replyTicket = asyncHandler(async (req, res) => {
   await ticket.save();
 
   audit(req, 'support.reply', { kind: 'ticket', id: ticket._id });
-  // Phase 3: dispatch an email to ticket.email here.
+
+  // Notify the user if they're connected.
+  if (ticket.user) emitToUser(ticket.user.toString(), 'support:reply', { ticketId: ticket._id });
+
   res.json({ ticket });
 });
 

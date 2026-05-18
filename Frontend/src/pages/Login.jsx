@@ -44,7 +44,7 @@ export default function Login() {
           <label>Email</label>
           <div className="field-input">
             <Mail size={16} className="lead" />
-            <input type="email" placeholder="you@campus.edu.gh" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="email" placeholder="you@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
         </div>
 
@@ -52,7 +52,7 @@ export default function Login() {
           <label>Password</label>
           <div className="field-input">
             <Lock size={16} className="lead" />
-            <input type={show ? 'text' : 'password'} placeholder="••••••••" value={pw} onChange={(e) => setPw(e.target.value)} required />
+            <input type={show ? 'text' : 'password'} placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} required />
             <button type="button" className="toggle" onClick={() => setShow(!show)} aria-label="Toggle password">
               {show ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>

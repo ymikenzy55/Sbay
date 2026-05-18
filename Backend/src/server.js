@@ -1,6 +1,8 @@
+import http from 'http';
 import { env } from './config/env.js';
 import { connectDB } from './config/db.js';
 import { buildApp } from './app.js';
+import { initSocket } from './socket.js';
 import { seedAdminIfNeeded } from './seed/seedAdmin.js';
 import { seedPlansIfNeeded } from './seed/seedPlans.js';
 
@@ -14,13 +16,18 @@ async function main() {
   await seedAdminIfNeeded();
   await seedPlansIfNeeded();
 
-  // 3. Build the Express app and start listening.
+  // 3. Build the Express app, wrap in HTTP server, attach Socket.IO.
   const app = buildApp();
-  const server = app.listen(env.PORT, () => {
+  const server = http.createServer(app);
+  initSocket(server);
+
+  server.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`[server] listening on http://localhost:${env.PORT} (env=${env.NODE_ENV})`);
     // eslint-disable-next-line no-console
     console.log(`[server] admin API mounted at ${env.ADMIN_API_PREFIX}`);
+    // eslint-disable-next-line no-console
+    console.log('[socket] Socket.IO attached');
   });
 
   const shutdown = async (signal) => {

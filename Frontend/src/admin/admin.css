@@ -129,10 +129,14 @@
 .admin-group-children {
   display: grid; grid-template-rows: 0fr;
   transition: grid-template-rows .22s ease;
-  overflow: hidden;
 }
 .admin-group.open .admin-group-children { grid-template-rows: 1fr; }
-.admin-group-children > div, .admin-group-children { min-height: 0; }
+.admin-group-inner {
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .admin-group .admin-link.sub { margin: 1px 0; }
 
 /* Sidebar footer */

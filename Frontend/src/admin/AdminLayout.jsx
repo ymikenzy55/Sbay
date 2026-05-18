@@ -141,19 +141,21 @@ export default function AdminLayout() {
                 <ChevronDown size={15} className="chev" />
               </button>
               <div className="admin-group-children">
-                {item.children.map((c) => {
-                  const CIcon = c.icon;
-                  return (
-                    <NavLink
-                      key={c.to}
-                      to={c.to}
-                      end
-                      className={({ isActive }) => `admin-link sub ${isActive ? 'active' : ''}`}
-                    >
-                      <CIcon size={15} /> <span>{c.label}</span>
-                    </NavLink>
-                  );
-                })}
+                <div className="admin-group-inner">
+                  {item.children.map((c) => {
+                    const CIcon = c.icon;
+                    return (
+                      <NavLink
+                        key={c.to}
+                        to={c.to}
+                        end
+                        className={({ isActive }) => `admin-link sub ${isActive ? 'active' : ''}`}
+                      >
+                        <CIcon size={15} /> <span>{c.label}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           );

@@ -3,6 +3,81 @@ import { User } from '../models/User.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+function toTitleCase(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text === text.toUpperCase()) return text;
+  return text
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+/** GET /api/products/catalog — DB-driven categories and school groups. */
+export const listCatalogMeta = asyncHandler(async (_req, res) => {
+  const items = await Product.find({ status: 'active' })
+    .select('school city category')
+    .lean();
+
+  const categories = new Map();
+  const schools = new Map();
+
+  for (const item of items) {
+    const categoryRaw = String(item.category || '').trim();
+    const categoryKey = categoryRaw.toLowerCase();
+    const schoolRaw = String(item.school || '').trim();
+    const schoolKey = schoolRaw ? schoolRaw.toLowerCase() : 'others';
+    const cityRaw = String(item.city || '').trim();
+
+    if (categoryRaw) {
+      const currentCategory = categories.get(categoryKey) || {
+        id: categoryKey,
+        label: toTitleCase(categoryRaw),
+        count: 0,
+      };
+      currentCategory.count += 1;
+      categories.set(categoryKey, currentCategory);
+    }
+
+    const currentSchool = schools.get(schoolKey) || {
+      id: schoolKey,
+      label: schoolRaw ? toTitleCase(schoolRaw) : 'Others',
+      city: cityRaw || '',
+      count: 0,
+      categories: new Map(),
+    };
+
+    currentSchool.count += 1;
+    if (cityRaw && !currentSchool.city) currentSchool.city = cityRaw;
+
+    if (categoryRaw) {
+      const currentSchoolCategory = currentSchool.categories.get(categoryKey) || {
+        id: categoryKey,
+        label: toTitleCase(categoryRaw),
+        count: 0,
+      };
+      currentSchoolCategory.count += 1;
+      currentSchool.categories.set(categoryKey, currentSchoolCategory);
+    }
+
+    schools.set(schoolKey, currentSchool);
+  }
+
+  res.json({
+    total: items.length,
+    categories: Array.from(categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    schools: Array.from(schools.values()).map((school) => ({
+      id: school.id,
+      label: school.label,
+      city: school.city,
+      count: school.count,
+      categories: Array.from(school.categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+    })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+  });
+});
+
 /** GET /api/products — public list with filters, search, pagination. */
 export const listProducts = asyncHandler(async (req, res) => {
   const {

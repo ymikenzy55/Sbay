@@ -91,7 +91,7 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const { admin, booting, logout } = useAdmin();
   const { user } = useAuth();
-  const { unread, items: notes, markAllRead } = useNotifications();
+  const { unread, items: notes, markAllRead, markRead } = useNotifications();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [bellOpen, setBellOpen]     = useState(false);
@@ -306,7 +306,7 @@ export default function AdminLayout() {
                       <li
                         key={n.id}
                         className={n.read ? '' : 'unread'}
-                        onClick={() => { setBellOpen(false); if (n.href) navigate(n.href); }}
+                        onClick={() => { markRead(n.id); setBellOpen(false); if (n.href) navigate(n.href); }}
                       >
                         <div className="n-icon" data-kind={n.kind}>
                           {n.kind === 'order' ? <ShoppingBag size={14} />

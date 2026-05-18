@@ -19,16 +19,30 @@ export default function Categories() {
   const { catId } = useParams();
   const navigate = useNavigate();
   const [tree, setTree] = useState([]);
+  const [treeLoading, setTreeLoading] = useState(true);
   /* Sidebar view mode:
      - 'schools'    → show list of schools
      - 'categories' → show categories for the currently-selected school */
   const [sideView, setSideView] = useState('schools');
   const [scope, setScope] = useState({ schoolId: null, categoryId: null });
-  const [products, setProducts] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [query, setQuery] = useState('');
 
-  // Load sidebar tree.
-  useEffect(() => { sbay.getSchoolTree().then(setTree); }, []);
+  useEffect(() => {
+    let active = true;
+    setTreeLoading(true);
+    sbay.getSchoolTree()
+      .then((data) => {
+        if (active) setTree(data || []);
+      })
+      .finally(() => {
+        if (active) setTreeLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // If the route carries a legacy /category/:catId, pre-select that category
   // across all schools so the user still lands on relevant products.
@@ -41,19 +55,28 @@ export default function Categories() {
 
   // Fetch products for the current scope (school + category).
   useEffect(() => {
-    setProducts(null);
-    sbay.getProductsByScope(scope).then(setProducts);
+    let active = true;
+    setProductsLoading(true);
+    sbay.getProductsByScope(scope)
+      .then((data) => {
+        if (active) setProducts(data || []);
+      })
+      .finally(() => {
+        if (active) setProductsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [scope.schoolId, scope.categoryId]);
 
   const activeSchool = tree.find((s) => s.id === scope.schoolId);
-  const activeCat    = activeSchool?.categories.find((c) => c.id === scope.categoryId);
+  const activeCat = activeSchool?.categories.find((c) => c.id === scope.categoryId);
 
   const heading = activeSchool
     ? (activeCat ? `${activeCat.label} · ${activeSchool.label}` : activeSchool.label)
     : (scope.categoryId ? scope.categoryId.replace(/^./, (c) => c.toUpperCase()) : 'All Products');
 
   const filtered = useMemo(() => {
-    if (!products) return null;
     const q = query.trim().toLowerCase();
     if (!q) return products;
     return products.filter((p) => p.title.toLowerCase().includes(q));
@@ -98,11 +121,17 @@ export default function Categories() {
       <div className="cat-layout">
         {/* Two-level sidebar: schools → categories of the selected school */}
         <aside className="cat-sidebar" aria-label="Schools and categories">
-          {tree.length === 0 ? (
+          {treeLoading ? (
             <div className="cat-side-skel">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} h={36} r={6} style={{ display: 'block', margin: '6px 4px' }} />
               ))}
+            </div>
+          ) : tree.length === 0 ? (
+            <div className="empty cat-empty-state">
+              <div className="emo"><Package size={36} /></div>
+              <h3>No categories yet</h3>
+              <p className="muted">There are no active listings in the database yet.</p>
             </div>
           ) : sideView === 'schools' ? (
             <ul className="school-list">
@@ -163,7 +192,7 @@ export default function Categories() {
             )}
           </div>
 
-          {products === null ? (
+          {productsLoading ? (
             <div className="panel-skel">
               <Skeleton w={160} h={20} />
               <div className="panel-grid">
@@ -172,11 +201,15 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-          ) : filtered?.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="empty">
               <div className="emo"><Package size={44} /></div>
-              <h3>No items match</h3>
-              <p className="muted">Try a different school, category, or search term.</p>
+              <h3>No products yet</h3>
+              <p className="muted">
+                {query.trim()
+                  ? 'Try a different school, category, or search term.'
+                  : 'There are no listings for this category yet.'}
+              </p>
             </div>
           ) : (
             <section className="cat-panel">

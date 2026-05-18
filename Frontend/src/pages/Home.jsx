@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, ArrowRight, Heart, Shield, MapPin, Search as SearchIcon, Flame } from 'lucide-react';
+import { Star, ArrowRight, Heart, Shield, MapPin, Search as SearchIcon, Flame, Package } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { sbay } from '../api/client';
@@ -11,19 +11,30 @@ import './Home.css';
 export default function Home() {
   const navigate = useNavigate();
   const [trending, setTrending] = useState([]);
-  const [sellers,  setSellers]  = useState([]);
-  const [recent,   setRecent]   = useState([]);
+  const [sellers, setSellers] = useState([]);
+  const [recent, setRecent] = useState([]);
   const [saved, setSaved] = useState({});
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
+    let active = true;
+
+    Promise.allSettled([
       sbay.getTrending(),
       sbay.getSellers(),
       sbay.getRecent(),
-    ]).then(([t, s, r]) => {
-      setTrending(t); setSellers(s); setRecent(r);
+    ]).then(([trendingRes, sellersRes, recentRes]) => {
+      if (!active) return;
+      setTrending(trendingRes.status === 'fulfilled' ? trendingRes.value : []);
+      setSellers(sellersRes.status === 'fulfilled' ? sellersRes.value : []);
+      setRecent(recentRes.status === 'fulfilled' ? recentRes.value : []);
+      setLoading(false);
     });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const toggleSave = (e, id) => {
@@ -41,6 +52,7 @@ export default function Home() {
   }, [q, trending, recent]);
 
   const featuredSellers = sellers.slice(0, 2);
+  const noListingsYet = !loading && trending.length === 0 && recent.length === 0 && sellers.length === 0;
 
   return (
     <div className="home">
@@ -52,7 +64,6 @@ export default function Home() {
       />
 
       <main className="home-main">
-        {/* Search results take over when there's a query */}
         {matches !== null ? (
           <section className="section">
             <div className="section-head">
@@ -81,9 +92,16 @@ export default function Home() {
               </div>
             )}
           </section>
+        ) : noListingsYet ? (
+          <section className="section">
+            <div className="empty">
+              <div className="emo"><Package size={44} /></div>
+              <h3>No products yet</h3>
+              <p className="muted">Listings will appear here once sellers start posting items on campus.</p>
+            </div>
+          </section>
         ) : (
           <>
-            {/* Trending */}
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trending on Campus</h2>
@@ -92,76 +110,93 @@ export default function Home() {
                 </button>
               </div>
 
-              {trending.length === 0 && <SkeletonGrid count={3} />}
-              <div className="trend-scroller">
-                {trending.map((p, i) => (
-                  <motion.article
-                    key={p.id}
-                    className="trend-card"
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.3 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => navigate(`/product/${p.id}`)}
-                  >
-                    <div className="trend-img" style={{ backgroundImage: `url(${p.image})` }}>
-                      {p.badge && (
-                        <span className={`pill ${p.badge === 'TRENDING' ? 'pill-gold' : 'pill-red'}`}>
-                          {p.badge === 'TRENDING' ? <><Flame size={12} /> TRENDING</> : 'HOTTEST'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="trend-body">
-                      <div className="trend-row">
-                        <h3 className="prod-title">{p.title}</h3>
-                        <span className="price">GH₵ {p.price.toLocaleString()}</span>
+              {loading ? (
+                <SkeletonGrid count={3} />
+              ) : trending.length === 0 ? (
+                <div className="empty">
+                  <div className="emo"><Flame size={44} /></div>
+                  <h3>No trending products yet</h3>
+                  <p className="muted">Once buyers start viewing and purchasing items, the hottest listings will show up here.</p>
+                </div>
+              ) : (
+                <div className="trend-scroller">
+                  {trending.map((p, i) => (
+                    <motion.article
+                      key={p.id}
+                      className="trend-card"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => navigate(`/product/${p.id}`)}
+                    >
+                      <div className="trend-img" style={{ backgroundImage: `url(${p.image})` }}>
+                        {p.badge && (
+                          <span className={`pill ${p.badge === 'TRENDING' ? 'pill-gold' : 'pill-red'}`}>
+                            {p.badge === 'TRENDING' ? <><Flame size={12} /> TRENDING</> : 'HOTTEST'}
+                          </span>
+                        )}
                       </div>
-                      <p className="prod-meta">
-                        <MapPin size={12} /> {p.school}{p.city ? `, ${p.city}` : ''}
-                      </p>
-                    </div>
-                  </motion.article>
-                ))}
-              </div>
+                      <div className="trend-body">
+                        <div className="trend-row">
+                          <h3 className="prod-title">{p.title}</h3>
+                          <span className="price">GH₵ {p.price.toLocaleString()}</span>
+                        </div>
+                        <p className="prod-meta">
+                          <MapPin size={12} /> {p.school}{p.city ? `, ${p.city}` : ''}
+                        </p>
+                      </div>
+                    </motion.article>
+                  ))}
+                </div>
+              )}
             </section>
 
-            {/* Sellers */}
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trusted Campus Sellers</h2>
               </div>
-              {sellers.length === 0 && <Skeleton h={140} r={16} />}
-              <div className="sellers-featured">
-                {featuredSellers.map((s) => (
-                  <article
-                    key={s.id}
-                    className="seller-big"
-                    onClick={() => navigate(`/seller/${s.id}`)}
-                  >
-                    <div className="seller-avatar xl" style={{ backgroundImage: `url(${s.avatar})` }} />
-                    <div className="seller-info">
-                      <h4>
-                        {s.name}
-                        {s.verified && (
-                          <span className="verified-pill" title="Verified seller">
-                            <Shield size={11} /> Verified
-                          </span>
-                        )}
-                      </h4>
-                      <p className="muted small">{s.tagline}</p>
-                      <p className="seller-rating">
-                        <Star size={14} fill="#F5A623" color="#F5A623" />
-                        <strong>{s.rating}</strong>
-                        <span className="muted">({s.reviews} reviews)</span>
-                      </p>
-                    </div>
-                    <ArrowRight size={18} className="seller-chev" />
-                  </article>
-                ))}
-              </div>
+
+              {loading ? (
+                <Skeleton h={140} r={16} />
+              ) : sellers.length === 0 ? (
+                <div className="empty">
+                  <div className="emo"><Shield size={44} /></div>
+                  <h3>No sellers featured yet</h3>
+                  <p className="muted">Seller profiles will appear here after listings are posted.</p>
+                </div>
+              ) : (
+                <div className="sellers-featured">
+                  {featuredSellers.map((s) => (
+                    <article
+                      key={s.id}
+                      className="seller-big"
+                      onClick={() => navigate(`/seller/${s.id}`)}
+                    >
+                      <div className="seller-avatar xl" style={{ backgroundImage: `url(${s.avatar})` }} />
+                      <div className="seller-info">
+                        <h4>
+                          {s.name}
+                          {s.verified && (
+                            <span className="verified-pill" title="Verified seller">
+                              <Shield size={11} /> Verified
+                            </span>
+                          )}
+                        </h4>
+                        <p className="muted small">{s.tagline}</p>
+                        <p className="seller-rating">
+                          <Star size={14} fill="#F5A623" color="#F5A623" />
+                          <strong>{s.rating}</strong>
+                          <span className="muted">({s.reviews} reviews)</span>
+                        </p>
+                      </div>
+                      <ArrowRight size={18} className="seller-chev" />
+                    </article>
+                  ))}
+                </div>
+              )}
             </section>
 
-            {/* Recently Added */}
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Recently Added</h2>
@@ -170,20 +205,28 @@ export default function Home() {
                 </button>
               </div>
 
-              {recent.length === 0 && <SkeletonGrid count={4} />}
-
-              <div className="recent-grid">
-                {recent.map((p, i) => (
-                  <ProductCard
-                    key={p.id}
-                    p={p}
-                    i={i}
-                    saved={saved[p.id]}
-                    toggleSave={toggleSave}
-                    onClick={() => navigate(`/product/${p.id}`)}
-                  />
-                ))}
-              </div>
+              {loading ? (
+                <SkeletonGrid count={4} />
+              ) : recent.length === 0 ? (
+                <div className="empty">
+                  <div className="emo"><Package size={44} /></div>
+                  <h3>No products added yet</h3>
+                  <p className="muted">As soon as sellers publish new listings, they’ll appear here.</p>
+                </div>
+              ) : (
+                <div className="recent-grid">
+                  {recent.map((p, i) => (
+                    <ProductCard
+                      key={p.id}
+                      p={p}
+                      i={i}
+                      saved={saved[p.id]}
+                      toggleSave={toggleSave}
+                      onClick={() => navigate(`/product/${p.id}`)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
           </>
         )}

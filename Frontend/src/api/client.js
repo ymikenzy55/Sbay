@@ -48,54 +48,37 @@ function makeClient(baseURL) {
 export const api = makeClient(API_URL);
 export const adminApi = makeClient(ADMIN_URL);
 
-/* ------------------------------------------------------------------
-   Static reference data — universities & categories.
-   These don't yet live in the DB; admins can add categories per-listing
-   freely, so we keep the canonical UI list here and let products use
-   any string the seller chose. The school filter on the homepage works
-   the same way.
------------------------------------------------------------------- */
-const UNIVERSITIES = [
-  { id: 'ug',     label: 'UG',     active: true },
-  { id: 'knust',  label: 'KNUST' },
-  { id: 'ucc',    label: 'UCC' },
-  { id: 'upsa',   label: 'UPSA' },
-  { id: 'ashesi', label: 'Ashesi' },
-];
-
-const SCHOOL_INFO = {
-  ug:     { school: 'UG',     city: 'Accra' },
-  knust:  { school: 'KNUST',  city: 'Kumasi' },
-  ucc:    { school: 'UCC',    city: 'Cape Coast' },
-  upsa:   { school: 'UPSA',   city: 'Accra' },
-  ashesi: { school: 'Ashesi', city: 'Berekuso' },
-};
-
-const CATEGORIES = [
-  { id: 'all',         label: 'All Items',   icon: 'ShoppingBag' },
-  { id: 'electronics', label: 'Electronics', icon: 'Laptop'      },
-  { id: 'fashion',     label: 'Fashion',     icon: 'Shirt'       },
-  { id: 'books',       label: 'Books',       icon: 'BookOpen'    },
-  { id: 'sports',      label: 'Sports',      icon: 'Dumbbell'    },
-  { id: 'beauty',      label: 'Beauty',      icon: 'Sparkles'    },
-  { id: 'music',       label: 'Music',       icon: 'Headphones'  },
-  { id: 'gaming',      label: 'Gaming',      icon: 'Gamepad2'    },
-  { id: 'food',        label: 'Food',        icon: 'UtensilsCrossed' },
-];
-
 const NOTIFICATIONS = { Today: [], Yesterday: [] };
 
 /* ------------------------------------------------------------------
    `sbay` — same surface as before, now backed by real HTTP.
 ------------------------------------------------------------------ */
 export const sbay = {
-  async getUniversities() { return UNIVERSITIES; },
+  async getUniversities() {
+    const meta = await this.getCatalogMeta();
+    return meta.schools.map((s) => ({
+      id: s.id,
+      label: s.label,
+      active: true,
+    }));
+  },
+
+  async getCatalogMeta() {
+    const { data } = await api.get('/products/catalog');
+    return data;
+  },
 
   async getCategories() {
-    // Counts come from a quick aggregation — but we already paginate
-    // server side; for now we surface the static list and the count is
-    // best-effort via /products?category=&limit=1.
-    return CATEGORIES;
+    const meta = await this.getCatalogMeta();
+    return [
+      { id: 'all', label: 'All Items', icon: 'ShoppingBag' },
+      ...meta.categories.map((c) => ({
+        id: c.id,
+        label: c.label,
+        icon: 'Tag',
+        count: c.count,
+      })),
+    ];
   },
 
   async getTrending() {
@@ -148,40 +131,48 @@ export const sbay = {
   },
 
   async getSchoolTree() {
-    const items = (await this.getAllProducts({ limit: 60 }));
-    const schoolIds = Object.keys(SCHOOL_INFO);
-    const tree = schoolIds.map((sid) => {
-      const inSchool = items.filter((p) => p.universityId === sid);
-      const catIds = [...new Set(inSchool.map((p) => p.categoryId).filter(Boolean))];
-      return {
-        id: sid,
-        label: SCHOOL_INFO[sid].school,
-        city: SCHOOL_INFO[sid].city,
-        categories: CATEGORIES.filter((c) => c.id !== 'all' && catIds.includes(c.id)),
-      };
-    });
-    const others = items.filter((p) => !schoolIds.includes(p.universityId));
-    const otherCats = [...new Set(others.map((p) => p.categoryId).filter(Boolean))];
-    tree.push({
-      id: 'others',
-      label: 'Others',
-      city: '',
-      categories: CATEGORIES.filter((c) => c.id !== 'all' && otherCats.includes(c.id)),
-    });
-    return tree;
+    const meta = await this.getCatalogMeta();
+    const schools = meta.schools.map((school) => ({
+      id: school.id,
+      label: school.label,
+      city: school.city || '',
+      categories: school.categories.map((c) => ({
+        id: c.id,
+        label: c.label,
+        icon: 'Tag',
+        count: c.count,
+      })),
+    }));
+    if (meta.categories.length) {
+      const known = new Set(schools.flatMap((school) => school.categories.map((c) => c.id)));
+      const uncategorized = meta.categories.filter((c) => !known.has(c.id));
+      if (uncategorized.length) {
+        schools.push({
+          id: 'others',
+          label: 'Others',
+          city: '',
+          categories: uncategorized.map((c) => ({
+            id: c.id,
+            label: c.label,
+            icon: 'Tag',
+            count: c.count,
+          })),
+        });
+      }
+    }
+    return schools;
   },
 
   async getProductsByScope({ schoolId, categoryId } = {}) {
     const params = {};
-    if (schoolId && schoolId !== 'others') params.school = SCHOOL_INFO[schoolId]?.school || schoolId;
+    if (schoolId && schoolId !== 'others') {
+      const meta = await this.getCatalogMeta();
+      const school = meta.schools.find((s) => s.id === schoolId);
+      params.school = school?.label || schoolId;
+    }
     if (categoryId && categoryId !== 'all') params.category = categoryId;
     const { data } = await api.get('/products', { params });
-    let items = data.items.map(adaptProduct);
-    if (schoolId === 'others') {
-      const known = Object.values(SCHOOL_INFO).map((s) => s.school);
-      items = items.filter((p) => !known.includes(p.school));
-    }
-    return items;
+    return data.items.map(adaptProduct);
   },
 
   async searchProducts(q) {

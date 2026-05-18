@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, MapPin } from 'lucide-react';
+import { TrendingUp, MapPin, Flame } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import { SkeletonGrid } from '../components/Skeleton';
@@ -11,13 +11,21 @@ import './Trending.css';
 
 export default function Trending() {
   const navigate = useNavigate();
-  const [items, setItems] = useState(null);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Combine trending + recent for a full trending feed.
-    Promise.all([sbay.getTrending(), sbay.getRecent()]).then(([t, r]) =>
-      setItems([...t, ...r])
-    );
+    let active = true;
+    Promise.allSettled([sbay.getTrending(), sbay.getRecent()]).then(([t, r]) => {
+      if (!active) return;
+      const trending = t.status === 'fulfilled' ? t.value : [];
+      const recent = r.status === 'fulfilled' ? r.value : [];
+      setItems([...trending, ...recent]);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -33,8 +41,14 @@ export default function Trending() {
           </div>
         </div>
 
-        {items === null ? (
+        {loading ? (
           <SkeletonGrid count={8} />
+        ) : items.length === 0 ? (
+          <div className="empty">
+            <div className="emo"><Flame size={44} /></div>
+            <h3>No trending products yet</h3>
+            <p className="muted">There are no listings in the database yet, so nothing can trend right now.</p>
+          </div>
         ) : (
           <div className="trending-full-grid">
             {items.map((p, i) => (

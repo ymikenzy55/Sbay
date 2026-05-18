@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
-  listProducts, getProduct, createProduct,
+  listCatalogMeta, listProducts, getProduct, createProduct,
   updateProduct, deleteProduct, myListings,
 } from '../controllers/productController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -9,6 +9,7 @@ import { validate } from '../middleware/validate.js';
 
 const router = Router();
 
+router.get('/catalog', listCatalogMeta);
 router.get('/', listProducts);
 
 router.get('/mine', requireAuth, requireRole('seller'), myListings);

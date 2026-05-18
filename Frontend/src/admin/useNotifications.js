@@ -104,6 +104,14 @@ export function useNotifications() {
     setItems((cur) => cur.map((n) => ({ ...n, read: true })));
   }, [items]);
 
+  const markRead = useCallback((id) => {
+    if (!id) return;
+    const s = seenRef.current;
+    s.add(id);
+    writeSeen(s);
+    setItems((cur) => cur.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  }, []);
+
   const unread = items.reduce((n, x) => n + (x.read ? 0 : 1), 0);
-  return { items, unread, markAllRead, refresh: tick };
+  return { items, unread, markAllRead, markRead, refresh: tick };
 }

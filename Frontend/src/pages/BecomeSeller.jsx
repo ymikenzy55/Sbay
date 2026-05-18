@@ -26,7 +26,8 @@ export default function BecomeSeller() {
     studentId: null, // file
     occupation: '',
     businessReg: '',
-    agreed: false,
+    agreedTerms: false,
+    agreedPrivacy: false,
   });
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -39,7 +40,7 @@ export default function BecomeSeller() {
         ? !!form.studentId && !!form.university
         : !!form.occupation;
     }
-    if (step === 3) return form.agreed;
+    if (step === 3) return form.agreedTerms && form.agreedPrivacy;
     return true;
   };
 
@@ -224,21 +225,50 @@ export default function BecomeSeller() {
               <>
                 <div className="terms-box">
                   <Shield size={20} color="#0A7E3E" />
-                  <h4>sBay Seller Agreement & Privacy Policy</h4>
+                  <h4>sBay Seller Agreement</h4>
                   <div className="terms-scroll">
-                    <p><strong>1. Honest listings.</strong> You agree to list only items you own and to describe them accurately, including condition, defects, and ownership.</p>
-                    <p><strong>2. Prohibited items.</strong> No alcohol, drugs, weapons, counterfeit goods, exam papers, or stolen property. Violations result in suspension.</p>
-                    <p><strong>3. Escrow & fees.</strong> When buyers choose escrow, sBay holds funds and releases them to you after the buyer confirms receipt. A 5% service fee applies to escrow transactions.</p>
-                    <p><strong>4. Meet-up safety.</strong> For meet-ups, we recommend public, well-lit campus locations. sBay is not responsible for off-platform deals.</p>
-                    <p><strong>5. Privacy.</strong> Your phone number, ID, and verification data are encrypted and never sold. We share only your store name, ratings, and listings publicly.</p>
-                    <p><strong>6. Disputes.</strong> Disputes are reviewed by sBay's resolution team. You agree to provide evidence (chat logs, photos) when requested.</p>
-                    <p><strong>7. Account closure.</strong> sBay reserves the right to suspend accounts that violate these terms or community guidelines.</p>
+                    <p><strong>1. Eligibility.</strong> You must be at least 18 years old, or a verified student with valid school ID, to sell on sBay. Sellers must accurately represent themselves and their location (campus / city).</p>
+                    <p><strong>2. Honest listings.</strong> You may only list items you legally own and have the right to sell. Descriptions, photos, condition, prices, and availability must be accurate. Misrepresentation may result in removal of the listing, refunds to buyers, and account suspension.</p>
+                    <p><strong>3. Prohibited items.</strong> The following are strictly prohibited: alcohol, tobacco, drugs and drug paraphernalia, weapons, explosives, counterfeit goods, exam papers and academic dishonesty services, stolen property, hazardous materials, live animals, adult content, and any item illegal under Ghanaian law.</p>
+                    <p><strong>4. Escrow & fees.</strong> When a buyer pays through sBay escrow, the platform holds funds until the buyer confirms receipt. A platform service fee (default 5%, adjustable per subscription plan) is deducted from each completed escrow transaction. Cash-on-meetup transactions are not protected by escrow.</p>
+                    <p><strong>5. Fulfilment & cancellations.</strong> You agree to honour orders within 48 hours of payment or reasonable agreed timelines. Repeated cancellations, ghosting, or no-shows will result in lower seller ratings and possible suspension.</p>
+                    <p><strong>6. Meet-up safety.</strong> sBay recommends meeting in public, well-lit campus locations. You assume full responsibility for off-platform interactions. sBay is not liable for incidents that happen outside the app's escrow or chat systems.</p>
+                    <p><strong>7. Disputes & refunds.</strong> Disputes are reviewed by sBay's resolution team. You agree to provide chat logs, photos, and receipts when requested. Refund decisions made by sBay are binding within the platform.</p>
+                    <p><strong>8. Ratings & community guidelines.</strong> Buyers may rate and review your store. You may not retaliate, harass, or pressure buyers for reviews. Hate speech, harassment, scams, and spam are not tolerated and may lead to permanent ban.</p>
+                    <p><strong>9. Taxes.</strong> You are responsible for any taxes owed on your sales. sBay does not withhold or remit taxes on your behalf.</p>
+                    <p><strong>10. Account suspension & termination.</strong> sBay reserves the right to suspend or terminate accounts that violate these terms, post fraudulent listings, or pose risk to the community. You may close your account at any time, but transactional history will be retained for compliance.</p>
                   </div>
                   <label className="agree-row">
-                    <input type="checkbox" checked={form.agreed} onChange={(e) => set('agreed', e.target.checked)} />
-                    <span>I have read and agree to the Seller Agreement and Privacy Policy.</span>
+                    <input type="checkbox" checked={form.agreedTerms} onChange={(e) => set('agreedTerms', e.target.checked)} />
+                    <span>I have read and agree to the <strong>sBay Seller Agreement</strong>.</span>
                   </label>
                 </div>
+
+                <div className="terms-box" style={{ marginTop: 14 }}>
+                  <Shield size={20} color="#0A7E3E" />
+                  <h4>sBay Privacy Policy</h4>
+                  <div className="terms-scroll">
+                    <p><strong>What we collect.</strong> Account info (name, email, phone, location), seller details (store name, bio, business registration), and verification data (student ID photo, university). For transactions we keep order history, chat messages with buyers, and payment metadata. We do <em>not</em> store full card numbers — only the last 4 digits and brand.</p>
+                    <p><strong>How we use it.</strong> To run the marketplace: verify your identity, show your store and listings to buyers, process orders and escrow, resolve disputes, prevent fraud, and improve the app. We may send transactional emails (orders, password resets, admin notices) and, with your consent, occasional product updates.</p>
+                    <p><strong>Who sees what.</strong> Publicly visible: your store name, bio, location, listings, ratings, and reviews. Visible to buyers you transact with: your name and chat messages. Visible only to sBay admins: your email, phone, student ID, verification status, full order history, and dispute evidence. We <strong>never sell your personal data</strong> to advertisers or third parties.</p>
+                    <p><strong>Student ID handling.</strong> Your student ID photo is used solely to verify campus membership. It is stored encrypted, viewable only by sBay verification admins, and deleted within 30 days of account closure or upon written request, whichever comes first.</p>
+                    <p><strong>Cookies & tracking.</strong> sBay uses essential cookies/localStorage to keep you signed in and remember your cart. We use minimal analytics to count anonymous page views — no cross-site tracking, no third-party ad networks.</p>
+                    <p><strong>Your rights.</strong> You may request a copy of your data, correct it, or delete your account at any time by emailing privacy@sbay.gh. Account deletion anonymises your transaction records but does not erase them, for compliance and the safety of past counterparties.</p>
+                    <p><strong>Data retention.</strong> Active accounts: data retained while account exists. Closed accounts: PII anonymised, transaction history kept for 7 years for accounting and dispute purposes.</p>
+                    <p><strong>Security.</strong> Passwords are hashed (bcrypt). Transport is HTTPS. We follow industry best practice but no system is 100% secure — please use a strong, unique password.</p>
+                    <p><strong>Contact.</strong> Questions? Reach us at <em>privacy@sbay.gh</em> or via the in-app Support chat.</p>
+                  </div>
+                  <label className="agree-row">
+                    <input type="checkbox" checked={form.agreedPrivacy} onChange={(e) => set('agreedPrivacy', e.target.checked)} />
+                    <span>I have read and agree to the <strong>sBay Privacy Policy</strong>.</span>
+                  </label>
+                </div>
+
+                {(!form.agreedTerms || !form.agreedPrivacy) && (
+                  <p className="muted small" style={{ marginTop: 10, textAlign: 'center' }}>
+                    You must accept both the Seller Agreement and Privacy Policy to continue.
+                  </p>
+                )}
               </>
             )}
           </motion.div>

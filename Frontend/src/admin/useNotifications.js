@@ -68,12 +68,32 @@ export function useNotifications() {
       tick();
     };
 
+    const handleUser = (payload) => {
+      setItems((cur) => [
+        { id: `user-${Date.now()}`, kind: 'user', message: payload.message || 'New user joined', at: new Date().toISOString(), href: '/admin/users', read: false },
+        ...cur,
+      ]);
+      tick();
+    };
+
+    const handleOrder = (payload) => {
+      setItems((cur) => [
+        { id: `order-${Date.now()}`, kind: 'order', message: payload.message || 'New order received', at: new Date().toISOString(), href: '/admin/orders', read: false },
+        ...cur,
+      ]);
+      tick();
+    };
+
     on('support:new', handleSupport);
     on('verification:new', handleVerification);
+    on('user:new', handleUser);
+    on('order:new', handleOrder);
 
     return () => {
       off('support:new', handleSupport);
       off('verification:new', handleVerification);
+      off('user:new', handleUser);
+      off('order:new', handleOrder);
     };
   }, [connected, on, off, tick]);
 

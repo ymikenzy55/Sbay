@@ -1,9 +1,34 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Mail, Lock, User, Phone, Eye, EyeOff, ShoppingBag, Store } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User, Phone, Eye, EyeOff, ShoppingBag, Store, Check, X } from 'lucide-react';
 import Logo from '../components/Logo';
+import OAuthButtons from '../components/OAuthButtons';
 import { useAuth } from '../store/AuthContext';
 import './Auth.css';
+
+/**
+ * Score password strength based on length + variety. Returns:
+ *   { score: 0..4, label, color, checks }
+ */
+function scorePassword(pw) {
+  const checks = {
+    length:    pw.length >= 8,
+    lengthOk:  pw.length >= 12,
+    upper:     /[A-Z]/.test(pw),
+    lower:     /[a-z]/.test(pw),
+    digit:     /[0-9]/.test(pw),
+    symbol:    /[^A-Za-z0-9]/.test(pw),
+  };
+  let score = 0;
+  if (checks.length) score++;
+  if (checks.upper && checks.lower) score++;
+  if (checks.digit) score++;
+  if (checks.symbol) score++;
+  if (checks.lengthOk && score >= 3) score = 4;
+  const labels = ['Too weak', 'Weak', 'Fair', 'Strong', 'Very strong'];
+  const colors = ['#c0392b', '#e67e22', '#f1c40f', '#0a7e3e', '#065f2e'];
+  return { score, label: labels[score], color: colors[score], checks };
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -12,18 +37,34 @@ export default function Signup() {
   const { signup } = useAuth();
 
   const [role, setRole] = useState('buyer');
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const strength = useMemo(() => scorePassword(form.password), [form.password]);
+  const passwordsMatch = form.password && form.password === form.confirmPassword;
+
   const submit = async (e) => {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr('');
+
+    if (strength.score < 2) {
+      setErr('Please choose a stronger password (mix of letters, numbers, symbols).');
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setErr('Passwords do not match.');
+      return;
+    }
+
+    setBusy(true);
     try {
-      await signup({ ...form, role });
+      // eslint-disable-next-line no-unused-vars
+      const { confirmPassword, ...payload } = form;
+      await signup({ ...payload, role });
       // Sellers go through extra onboarding before getting full seller access.
       if (role === 'seller') navigate('/become-seller', { replace: true });
       else navigate(decodeURIComponent(next), { replace: true });
@@ -89,6 +130,55 @@ export default function Signup() {
               {show ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+
+          {/* Strength meter */}
+          {form.password && (
+            <div className="pw-strength" aria-live="polite">
+              <div className="pw-bar">
+                {[0, 1, 2, 3].map((i) => (
+                  <span
+                    key={i}
+                    className="pw-seg"
+                    style={{ background: i < strength.score ? strength.color : '#e6e9e3' }}
+                  />
+                ))}
+              </div>
+              <small style={{ color: strength.color, fontWeight: 600 }}>{strength.label}</small>
+              <ul className="pw-checks">
+                <li className={strength.checks.length ? 'ok' : ''}>
+                  {strength.checks.length ? <Check size={12} /> : <X size={12} />} 8+ characters
+                </li>
+                <li className={strength.checks.upper && strength.checks.lower ? 'ok' : ''}>
+                  {strength.checks.upper && strength.checks.lower ? <Check size={12} /> : <X size={12} />} Mixed case
+                </li>
+                <li className={strength.checks.digit ? 'ok' : ''}>
+                  {strength.checks.digit ? <Check size={12} /> : <X size={12} />} Number
+                </li>
+                <li className={strength.checks.symbol ? 'ok' : ''}>
+                  {strength.checks.symbol ? <Check size={12} /> : <X size={12} />} Symbol
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="field">
+          <label>Confirm password</label>
+          <div className="field-input">
+            <Lock size={16} className="lead" />
+            <input
+              type={show ? 'text' : 'password'}
+              value={form.confirmPassword}
+              onChange={(e) => set('confirmPassword', e.target.value)}
+              placeholder="Re-enter your password"
+              required
+            />
+          </div>
+          {form.confirmPassword && (
+            <small style={{ color: passwordsMatch ? '#0a7e3e' : '#c0392b', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              {passwordsMatch ? <><Check size={12} /> Passwords match</> : <><X size={12} /> Passwords do not match</>}
+            </small>
+          )}
         </div>
 
         {err && <div className="auth-error">{err}</div>}
@@ -96,6 +186,8 @@ export default function Signup() {
         <button className="btn btn-primary auth-submit" type="submit" disabled={busy}>
           {busy ? 'Creating...' : 'Create Account'}
         </button>
+
+        <OAuthButtons />
 
         <p className="auth-foot">
           Already have an account? <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>

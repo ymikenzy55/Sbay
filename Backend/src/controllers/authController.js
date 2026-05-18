@@ -2,6 +2,7 @@ import { User } from '../models/User.js';
 import { signAccessToken } from '../utils/jwt.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitToAdmins } from '../socket.js';
 
 /**
  * Public sign-up. Always creates a `buyer`. Becoming a seller happens
@@ -24,6 +25,14 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   const token = signAccessToken(user);
+
+  emitToAdmins('user:new', {
+    userId: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    message: `${user.name} just joined sBay.`,
+  });
+
   res.status(201).json({ token, user });
 });
 

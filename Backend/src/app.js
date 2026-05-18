@@ -28,7 +28,7 @@ export function buildApp() {
   app.set('trust proxy', 1); // honour X-Forwarded-For when behind a proxy
   app.use(helmet());
   app.use(compression());
-  app.use(express.json({ limit: '5mb' })); // big enough for base64 avatars + student ID cards
+  app.use(express.json({ limit: '20mb' })); // big enough for base64 product photos + student ID cards
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
   app.use(mongoSanitize());                // strip $ / . from req bodies

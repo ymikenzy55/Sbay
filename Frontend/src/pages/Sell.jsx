@@ -109,11 +109,42 @@ export default function Sell() {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const addPhotoSlot = () => {
-    // In a real app this would open the file picker. For the mock, we add
-    // a deterministic-ish placeholder using picsum so the seller can preview.
-    setPhotos((p) => [...p, `https://picsum.photos/seed/${Date.now() + Math.random()}/500`]);
+  /** Convert a File to a base64 data URL so it can be stored inline on the product. */
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const room = 6 - photos.length;
+    const next = files.slice(0, room);
+
+    setError('');
+    try {
+      const dataUrls = await Promise.all(next.map(async (file) => {
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`"${file.name}" is not an image.`);
+        }
+        if (file.size > 4 * 1024 * 1024) {
+          throw new Error(`"${file.name}" is too large. Max 4 MB per photo.`);
+        }
+        return fileToDataUrl(file);
+      }));
+      setPhotos((p) => [...p, ...dataUrls]);
+    } catch (err) {
+      setError(err.message || 'Could not read photo.');
+    } finally {
+      // Reset the input so the same file can be re-selected.
+      e.target.value = '';
+    }
   };
+
   const removePhoto = (i) => setPhotos((p) => p.filter((_, idx) => idx !== i));
 
   const isCustomCat = form.category === '__custom';
@@ -239,10 +270,17 @@ export default function Sell() {
                     </div>
                   ))}
                   {photos.length < 6 && (
-                    <button type="button" className="photo add" onClick={addPhotoSlot}>
+                    <label className="photo add">
                       <Camera size={22} />
                       <span>Add photo</span>
-                    </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleFileSelect}
+                        hidden
+                      />
+                    </label>
                   )}
                 </div>
                 <p className="muted small" style={{ marginTop: 10 }}>
@@ -351,8 +389,10 @@ export default function Sell() {
               <div className="preview-card">
                 <div
                   className="preview-img"
-                  style={{ backgroundImage: `url(${photos[0] || 'https://picsum.photos/seed/preview/600'})` }}
-                />
+                  style={photos[0] ? { backgroundImage: `url(${photos[0]})` } : { background: '#f0f3ec', display: 'grid', placeItems: 'center', color: '#888', fontSize: '0.85rem' }}
+                >
+                  {!photos[0] && <span>No photo yet</span>}
+                </div>
                 <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <h4>{form.title || 'Untitled item'}</h4>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>

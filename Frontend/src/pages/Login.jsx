@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Logo from '../components/Logo';
+import OAuthButtons from '../components/OAuthButtons';
 import { useAuth } from '../store/AuthContext';
 import './Auth.css';
 
@@ -71,6 +72,8 @@ export default function Login() {
         <button className="btn btn-primary auth-submit" type="submit" disabled={busy}>
           {busy ? 'Signing in...' : 'Sign In'}
         </button>
+
+        <OAuthButtons />
 
         <p className="auth-foot">
           New to sBay? <Link to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>

@@ -7,6 +7,7 @@ import { Chat } from '../models/Chat.js';
 import { User } from '../models/User.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitToAdmins, emitToUser } from '../socket.js';
 
 /**
  * Atomically reserve `qty` units of a product. Returns the updated
@@ -167,6 +168,16 @@ export const checkout = asyncHandler(async (req, res) => {
     });
   } finally {
     session.endSession();
+  }
+
+  // Notify admins + each seller in real time.
+  emitToAdmins('order:new', {
+    count: orders.length,
+    total: orders.reduce((s, o) => s + (o.total || 0), 0),
+    message: `${orders.length} new order${orders.length === 1 ? '' : 's'} just came in.`,
+  });
+  for (const o of orders) {
+    if (o.seller) emitToUser(o.seller.toString(), 'order:new', { orderId: o._id });
   }
 
   res.status(201).json({ orders });

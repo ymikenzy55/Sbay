@@ -3,20 +3,20 @@
  * Admins join an "admin" room to receive live events.
  */
 import { Server } from 'socket.io';
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from './utils/jwt.js';
+import { User } from './models/User.js';
 import { env } from './config/env.js';
 
 let io = null;
 
 /**
  * Initialise Socket.IO on an existing HTTP server.
- * @param {import('http').Server} httpServer
+ * Mirrors the HTTP auth middleware so role changes take effect immediately.
  */
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
       origin: (origin, cb) => {
-        // Same CORS logic as Express: allow any localhost in dev.
         if (!origin) return cb(null, true);
         if (env.NODE_ENV === 'development' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
           return cb(null, true);
@@ -29,13 +29,15 @@ export function initSocket(httpServer) {
     },
   });
 
-  // Authenticate socket connections via JWT in auth handshake.
-  io.use((socket, next) => {
+  // Authenticate socket connections via JWT in handshake auth.
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Authentication required'));
     try {
-      const decoded = jwt.verify(token, env.JWT_SECRET);
-      socket.user = decoded;
+      const decoded = verifyAccessToken(token);  // { sub, role }
+      const user = await User.findById(decoded.sub).select('_id role restricted');
+      if (!user || user.restricted) return next(new Error('Account unavailable'));
+      socket.user = { id: user._id.toString(), role: user.role };
       next();
     } catch {
       next(new Error('Invalid token'));
@@ -44,23 +46,13 @@ export function initSocket(httpServer) {
 
   io.on('connection', (socket) => {
     const { user } = socket;
-    // Join user-specific room for personal notifications.
     socket.join(`user:${user.id}`);
-
-    // Admins join the admin room for dashboard events.
-    if (user.role === 'admin') {
-      socket.join('admin');
-    }
-
-    socket.on('disconnect', () => {
-      // Cleanup if needed.
-    });
+    if (user.role === 'admin') socket.join('admin');
   });
 
   return io;
 }
 
-/** Get the Socket.IO server instance. */
 export function getIO() {
   if (!io) throw new Error('Socket.IO not initialised');
   return io;

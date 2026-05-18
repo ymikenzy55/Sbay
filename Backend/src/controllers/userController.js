@@ -2,6 +2,7 @@ import { User } from '../models/User.js';
 import { Product } from '../models/Product.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitToAdmins } from '../socket.js';
 
 /** Update the current user's own profile. Role and restriction flags
  *  are NEVER editable here — those are admin-only. */
@@ -61,6 +62,16 @@ export const becomeSeller = asyncHandler(async (req, res) => {
   };
   user.verified = false;
   await user.save();
+
+  // Notify all admins in real time so the verification queue refreshes.
+  emitToAdmins('verification:new', {
+    userId: user._id.toString(),
+    name: user.name,
+    storeName: user.sellerProfile?.storeName,
+    isStudent: !!isStudent,
+    message: `${user.name || user.email} submitted a seller application${isStudent ? ' with student ID' : ''}.`,
+  });
+
   res.json({ user });
 });
 

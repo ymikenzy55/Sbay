@@ -37,6 +37,7 @@
   border: 2px dashed var(--border-strong);
   color: var(--primary);
   font-weight: 600; font-size: 0.82rem;
+  cursor: pointer;
 }
 .photo.add:hover { background: var(--primary-50); border-color: var(--primary); }
 

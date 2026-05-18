@@ -41,11 +41,23 @@ export default function Checkout() {
   const [editingLoc, setEditingLoc] = useState(!user?.location);
   const [reviewOpen, setReviewOpen] = useState(false);
 
-  // Mock payment method — sBay's real Paystack integration is out of
-  // scope for v1. The backend records cardBrand + last4 only.
-  const [payMethod, setPayMethod] = useState('card');
-  const [card, setCard] = useState({ brand: 'Visa', last4: '4242', holder: user?.name || '' });
-  const [momo, setMomo] = useState({ brand: 'MTN MoMo', last4: '0123', holder: user?.name || '' });
+  // Payment method state — initialised from any saved methods on the
+  // user account; otherwise blank until the user fills in details.
+  // Paystack integration is out of scope for v1; the backend only
+  // records cardBrand + last4 for receipts.
+  const savedCard = user?.paymentMethods?.find((m) => m.method !== 'momo');
+  const savedMomo = user?.paymentMethods?.find((m) => m.method === 'momo');
+  const [payMethod, setPayMethod] = useState(savedMomo && !savedCard ? 'momo' : 'card');
+  const [card, setCard] = useState({
+    brand: savedCard?.brand || '',
+    last4: savedCard?.last4 || '',
+    holder: savedCard?.holder || user?.name || '',
+  });
+  const [momo, setMomo] = useState({
+    brand: savedMomo?.brand || 'MTN MoMo',
+    last4: savedMomo?.last4 || '',
+    holder: savedMomo?.holder || user?.name || '',
+  });
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');

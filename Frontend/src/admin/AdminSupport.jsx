@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { adminApi } from '../api/client';
 import { LifeBuoy, Mail, Phone, Search, Send, User } from 'lucide-react';
+import { useSocket } from '../hooks/useSocket';
 
 /**
  * Customer-support inbox.
@@ -37,6 +38,15 @@ export default function AdminSupport() {
   }, [filter, q]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Real-time refresh when a new support ticket comes in.
+  const { on, off, connected } = useSocket();
+  useEffect(() => {
+    if (!connected) return;
+    const handler = () => load();
+    on('support:new', handler);
+    return () => off('support:new', handler);
+  }, [connected, on, off, load]);
 
   const sendReply = async (e) => {
     e.preventDefault();

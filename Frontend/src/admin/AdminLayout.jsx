@@ -7,6 +7,7 @@ import {
   UserCog, Store, ShoppingCart, IdCard, Shield,
 } from 'lucide-react';
 import { useAdmin } from './AdminContext';
+import { useAuth } from '../store/AuthContext';
 import { useNotifications } from './useNotifications';
 import './admin.css';
 
@@ -89,6 +90,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { admin, booting, logout } = useAdmin();
+  const { user } = useAuth();
   const { unread, items: notes, markAllRead } = useNotifications();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -112,7 +114,33 @@ export default function AdminLayout() {
       </div>
     );
   }
-  if (!admin) return <Navigate to="/login" replace />;
+  if (!admin) {
+    // Signed in but not an admin in the database → show a clear message
+    // rather than silently bouncing to /login (which the user reads as
+    // "forbidden, even though I'm a super admin").
+    if (user) {
+      return (
+        <div className="admin-boot" style={{ flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+          <ShieldCheck size={32} />
+          <h2 style={{ margin: 0 }}>Admin access required</h2>
+          <p style={{ maxWidth: 480, color: '#666' }}>
+            You are signed in as <strong>{user.email}</strong> ({user.role}), but the admin
+            panel is restricted to accounts with the <code>admin</code> role in the database.
+            Ask an existing admin to elevate your account, or sign in with an admin account.
+          </p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-ghost" onClick={() => { logout(); navigate('/login', { replace: true }); }}>
+              Sign out
+            </button>
+            <button className="btn btn-primary" onClick={() => navigate('/home', { replace: true })}>
+              Back to sBay
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return <Navigate to="/login" replace />;
+  }
 
   const onSearch = (e) => {
     e.preventDefault();

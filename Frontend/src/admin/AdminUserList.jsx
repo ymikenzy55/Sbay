@@ -160,17 +160,21 @@ export default function AdminUserList({
           </thead>
           <tbody>
             {items.map((u) => {
-              const goSeller = rowLinkSeller && u.role === 'seller'
-                ? () => navigate(`/admin/users/sellers/${u._id}`)
-                : null;
+              // Sellers keep their dedicated deep-dive URL; everyone else
+              // uses the generic admin user detail page so admins can
+              // click any row and see that user's activity at a glance.
+              const go = () => navigate(
+                u.role === 'seller'
+                  ? `/admin/users/sellers/${u._id}`
+                  : `/admin/users/${u._id}`
+              );
               return (
                 <tr
                   key={u._id}
-                  className={goSeller ? 'row-link' : ''}
+                  className="row-link"
                   onClick={(e) => {
-                    if (!goSeller) return;
                     if (e.target.closest('button, a')) return;
-                    goSeller();
+                    go();
                   }}
                 >
                   <td>
@@ -198,11 +202,9 @@ export default function AdminUserList({
                   </td>
                   <td>
                     <div className="admin-actions">
-                      {goSeller && (
-                        <button className="btn btn-ghost" onClick={goSeller}>
-                          <ExternalLink size={14} /> View
-                        </button>
-                      )}
+                      <button className="btn btn-ghost" onClick={go}>
+                        <ExternalLink size={14} /> View
+                      </button>
                       {u.verification?.status === 'pending' && (
                         <>
                           <button className="btn btn-primary" onClick={() => verify(u._id, 'approved')}>

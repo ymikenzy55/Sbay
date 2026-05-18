@@ -41,6 +41,7 @@ import AdminBuyers      from './admin/AdminBuyers';
 import AdminSellers     from './admin/AdminSellers';
 import AdminAdmins      from './admin/AdminAdmins';
 import AdminSellerDetail from './admin/AdminSellerDetail';
+import AdminUserDetail   from './admin/AdminUserDetail';
 import AdminProducts    from './admin/AdminProducts';
 import AdminOrders      from './admin/AdminOrders';
 import AdminPlans       from './admin/AdminPlans';
@@ -110,6 +111,7 @@ export default function App() {
                 <Route path="users/sellers"             element={<AdminSellers />} />
                 <Route path="users/sellers/:id"         element={<AdminSellerDetail />} />
                 <Route path="users/admins"              element={<AdminAdmins />} />
+                <Route path="users/:id"                 element={<AdminUserDetail />} />
                 <Route path="products"                  element={<AdminProducts />} />
                 <Route path="orders"                    element={<AdminOrders />} />
                 <Route path="plans"                     element={<AdminPlans />} />

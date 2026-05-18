@@ -84,7 +84,8 @@ const userSchema = new mongoose.Schema(
     // Hash, not the password. `select: false` means it never comes back
     // from a plain `User.find` — we have to ask for it explicitly with
     // `.select('+passwordHash')`. Defence-in-depth.
-    passwordHash: { type: String, required: true, select: false },
+    passwordHash: { type: String, select: false },
+    googleId:     { type: String, sparse: true, index: true },
 
     role:    { type: String, enum: ROLES, default: 'buyer', index: true },
     avatar:  String,
@@ -121,6 +122,7 @@ userSchema.methods.toJSON = function toJSON() {
 };
 
 userSchema.methods.checkPassword = function checkPassword(plain) {
+  if (!this.passwordHash) return Promise.resolve(false);
   return bcrypt.compare(plain, this.passwordHash);
 };
 

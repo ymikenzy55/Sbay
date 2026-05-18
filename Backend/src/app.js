@@ -15,6 +15,7 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -28,7 +29,12 @@ export function buildApp() {
   app.set('trust proxy', 1); // honour X-Forwarded-For when behind a proxy
   app.use(helmet());
   app.use(compression());
-  app.use(express.json({ limit: '20mb' })); // big enough for base64 product photos + student ID cards
+  app.use(express.json({
+    limit: '20mb',
+    verify: (req, _res, buf) => {
+      if (req.originalUrl?.includes('/payments/webhook')) req.rawBody = buf;
+    },
+  }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
   app.use(mongoSanitize());                // strip $ / . from req bodies
@@ -64,6 +70,7 @@ export function buildApp() {
   app.use('/api/users', userRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
+  app.use('/api/payments', paymentRoutes);
   app.use('/api/chats', chatRoutes);
   app.use('/api', publicRoutes);                       // /api/plans, /api/settings
   app.use('/api/support', supportRoutes);              // public support ticket submission

@@ -3,68 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Shield, MapPin, Check, Lock, Edit3, ChevronDown, ChevronUp,
-  CreditCard, Smartphone, AlertTriangle, Loader,
+  AlertTriangle, Loader, CreditCard,
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
-import { useOrders } from '../store/OrdersContext';
-import { orderApi } from '../api/client';
+import { paymentApi } from '../api/client';
 import './pages.css';
 import './Checkout.css';
 
-/**
- * Escrow-only checkout.
- *
- * Per product spec, sBay no longer offers cash-on-meetup as a payment
- * path — every order is held in escrow until the buyer confirms
- * receipt. Meet-up is still possible (the seller can mark "delivered"
- * and the buyer can confirm), it's just always paid through escrow.
- *
- * On submit, the buyer's cart is sent to the backend in one request.
- * The backend will:
- *   1. Validate every line and atomically reserve stock.
- *   2. Split the cart into one Order per seller (so a single cart can
- *      span multiple sellers — each gets its own escrow record).
- *   3. Open / extend the buyer↔seller chat for each order.
- *
- * If anything fails (insufficient stock, banned listing, etc.) the
- * server rolls back, returns a 4xx, and we surface a clear message.
- */
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, subtotal, clear } = useCart();
   const { user, updateUser } = useAuth();
-  const { addOrder, reload } = useOrders();
 
   const [location, setLocation] = useState(user?.location || '');
   const [editingLoc, setEditingLoc] = useState(!user?.location);
   const [reviewOpen, setReviewOpen] = useState(false);
-
-  // Payment method state — initialised from any saved methods on the
-  // user account; otherwise blank until the user fills in details.
-  // Paystack integration is out of scope for v1; the backend only
-  // records cardBrand + last4 for receipts.
-  const savedCard = user?.paymentMethods?.find((m) => m.method !== 'momo');
-  const savedMomo = user?.paymentMethods?.find((m) => m.method === 'momo');
-  const [payMethod, setPayMethod] = useState(savedMomo && !savedCard ? 'momo' : 'card');
-  const [card, setCard] = useState({
-    brand: savedCard?.brand || '',
-    last4: savedCard?.last4 || '',
-    holder: savedCard?.holder || user?.name || '',
-  });
-  const [momo, setMomo] = useState({
-    brand: savedMomo?.brand || 'MTN MoMo',
-    last4: savedMomo?.last4 || '',
-    holder: savedMomo?.holder || user?.name || '',
-  });
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Service fee is informational on this screen — the BACKEND has the
-  // final say (it uses the seller's plan to decide). The 5% default
-  // matches the platform-wide setting.
   const fee = Math.round(subtotal * 0.05);
   const total = subtotal + fee;
 
@@ -77,41 +35,27 @@ export default function Checkout() {
     return true;
   };
 
-  const place = async () => {
+  const handlePay = async () => {
     if (editingLoc && !saveLocation()) return;
     if (!location.trim()) {
       setError('Please set a delivery / pickup location first.');
       setEditingLoc(true);
       return;
     }
+
     setSubmitting(true);
     setError('');
+
     try {
-      const payment = payMethod === 'card' ? card : momo;
-      const orders = await orderApi.checkout({
+      const { authorization_url } = await paymentApi.initialize({
         items: items.map((it) => ({ productId: it._id || it.id, qty: it.qty })),
-        payment: { brand: payment.brand, last4: payment.last4, holder: payment.holder },
+        deliveryLocation: location.trim(),
       });
-      // Update local store optimistically and refetch in the background.
-      orders.forEach((o) => addOrder(o));
-      reload?.();
+
       clear();
-      // Hand off to the receipt screen with the placed orders.
-      navigate('/payment-success', {
-        replace: true,
-        state: {
-          orders,
-          method: 'escrow',
-          total,
-          location: location.trim(),
-          payment: { brand: payment.brand, last4: payment.last4 },
-        },
-      });
+      window.location.href = authorization_url;
     } catch (e) {
-      // Backend returns clean messages like:
-      //   "Sorry — only 0 of "iPad Pro" left."
-      setError(e.message || 'Could not place your order. Please try again.');
-    } finally {
+      setError(e.message || 'Could not start payment. Please try again.');
       setSubmitting(false);
     }
   };
@@ -135,7 +79,6 @@ export default function Checkout() {
       <TopBar showBack title="Checkout" showSearch={false} />
 
       <main className="page-main">
-        {/* Order Summary */}
         <section className="card">
           <h3 className="page-h2">Order Summary</h3>
           <div className="co-items">
@@ -152,7 +95,6 @@ export default function Checkout() {
           </div>
         </section>
 
-        {/* Delivery / Pickup Location */}
         <section className="card co-location">
           <div className="co-loc-head">
             <h3 className="page-h2"><MapPin size={16} /> Delivery / Pickup Location</h3>
@@ -184,7 +126,6 @@ export default function Checkout() {
           )}
         </section>
 
-        {/* Escrow notice (single payment path) */}
         <section className="card method-card active" style={{ cursor: 'default' }}>
           <div className="m-icon"><Lock size={22} /></div>
           <h4>Escrow Payment <span className="rec">Buyer-protected</span></h4>
@@ -199,34 +140,15 @@ export default function Checkout() {
           </ul>
         </section>
 
-        {/* Payment method */}
-        <section className="card">
-          <h3 className="page-h2">Payment method</h3>
-          <div className="method-grid" style={{ marginTop: 8 }}>
-            <button
-              type="button"
-              className={`method-card ${payMethod === 'card' ? 'active' : ''}`}
-              onClick={() => setPayMethod('card')}
-            >
-              <div className="m-icon"><CreditCard size={22} /></div>
-              <h4>Card</h4>
-              <p className="muted small">{card.brand} ending in {card.last4}</p>
-              {payMethod === 'card' && <span className="m-check"><Check size={16} /></span>}
-            </button>
-            <button
-              type="button"
-              className={`method-card ${payMethod === 'momo' ? 'active' : ''}`}
-              onClick={() => setPayMethod('momo')}
-            >
-              <div className="m-icon"><Smartphone size={22} /></div>
-              <h4>Mobile Money</h4>
-              <p className="muted small">{momo.brand} ending in {momo.last4}</p>
-              {payMethod === 'momo' && <span className="m-check"><Check size={16} /></span>}
-            </button>
-          </div>
+        <section className="card method-card" style={{ cursor: 'default', borderColor: '#0a7e3e', background: 'var(--primary-50)' }}>
+          <div className="m-icon" style={{ background: '#0a7e3e' }}><CreditCard size={22} /></div>
+          <h4>Pay via Paystack</h4>
+          <p className="muted small">
+            Card, Mobile Money, Bank Transfer and more — all secured by Paystack.
+            You'll be redirected to complete payment safely.
+          </p>
         </section>
 
-        {/* Totals + Review */}
         <section className="card co-totals">
           <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
           <div className="row"><span>Service fee (5%)</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
@@ -267,18 +189,19 @@ export default function Checkout() {
             </div>
           )}
 
-          <button
+          <motion.button
             className="btn btn-primary"
             style={{ width: '100%', marginTop: 14 }}
-            onClick={place}
+            onClick={handlePay}
             disabled={submitting}
+            whileTap={{ scale: 0.97 }}
           >
             {submitting
-              ? <><Loader size={16} className="spin" /> Processing payment…</>
-              : <><Shield size={16} /> Confirm & Pay GH₵ {total.toLocaleString()} with Escrow</>}
-          </button>
+              ? <><Loader size={16} className="spin" /> Redirecting to Paystack…</>
+              : <><Shield size={16} /> Pay GH₵ {total.toLocaleString()} securely</>}
+          </motion.button>
           <p className="muted small" style={{ textAlign: 'center', marginTop: 8 }}>
-            Funds held in escrow · Secured by sBay
+            Secured by Paystack · Funds held in escrow by sBay
           </p>
         </section>
       </main>

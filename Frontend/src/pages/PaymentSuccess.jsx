@@ -1,34 +1,92 @@
-import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Home, LayoutDashboard, Receipt, Shield, MessageCircle } from 'lucide-react';
+import { Check, Home, LayoutDashboard, Receipt, Shield, MessageCircle, Loader } from 'lucide-react';
+import { paymentApi } from '../api/client';
+import { adaptOrder } from '../api/adapters';
+import { useOrders } from '../store/OrdersContext';
 import './pages.css';
 import './PaymentSuccess.css';
 
-/**
- * Post-checkout confirmation + lightweight receipt.
- *
- * The Checkout page hands us the freshly-created Orders, so we can
- * show invoice numbers, line items and the breakdown without an extra
- * round-trip. Buttons jump straight into the relevant chat (so the
- * buyer can coordinate handover with the seller) or to their profile
- * where the full order tracking lives.
- */
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const orders = Array.isArray(state?.orders) ? state.orders : [];
-  const total = state?.total ?? orders.reduce((s, o) => s + (o.total || 0), 0);
+  const [searchParams] = useSearchParams();
+  const { addOrder, reload } = useOrders();
+
+  const reference = searchParams.get('reference') || searchParams.get('trxref');
+
+  const [verifying, setVerifying] = useState(!!reference);
+  const [orders, setOrders] = useState(
+    Array.isArray(state?.orders) ? state.orders : []
+  );
+  const [total, setTotal] = useState(
+    state?.total ?? (state?.orders || []).reduce((s, o) => s + (o.total || 0), 0)
+  );
+  const [verifyError, setVerifyError] = useState('');
+  const verified = useRef(false);
+
+  useEffect(() => {
+    if (!reference || verified.current) return;
+    verified.current = true;
+
+    paymentApi.verify(reference)
+      .then((data) => {
+        if (data.pending) {
+          setTimeout(() => {
+            verified.current = false;
+            paymentApi.verify(reference).then(handleVerifySuccess).catch(handleVerifyError);
+          }, 3000);
+          return;
+        }
+        handleVerifySuccess(data);
+      })
+      .catch(handleVerifyError);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reference]);
+
+  function handleVerifySuccess(data) {
+    const rawOrders = data.orders || [];
+    const adapted = rawOrders.map((o) => adaptOrder(o));
+    adapted.forEach((o) => addOrder(o));
+    reload?.();
+    setOrders(adapted);
+    setTotal(adapted.reduce((s, o) => s + (o.total || 0), 0));
+    setVerifying(false);
+  }
+
+  function handleVerifyError(e) {
+    navigate(`/payment-failed?reason=${encodeURIComponent(e.message || 'Payment verification failed')}`, { replace: true });
+  }
+
+  useEffect(() => {
+    if (!reference && !state) navigate('/home', { replace: true });
+  }, [reference, state, navigate]);
+
+  if (verifying) {
+    return (
+      <div className="ps-page kente-bg">
+        <motion.div
+          className="ps-card"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+        >
+          <div className="ps-check" style={{ background: '#0a7e3e' }}>
+            <Loader size={36} color="#fff" className="spin" />
+          </div>
+          <h2>Confirming Payment…</h2>
+          <p className="muted">Please wait while we verify your payment with Paystack.</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   const location = state?.location || '';
   const payment = state?.payment;
 
-  useEffect(() => {
-    if (!state) navigate('/home', { replace: true });
-  }, [state, navigate]);
-
   return (
     <div className="ps-page kente-bg">
-      {/* Confetti dots */}
       {Array.from({ length: 18 }).map((_, i) => (
         <motion.span
           key={i}
@@ -64,7 +122,6 @@ export default function PaymentSuccess() {
           only after you confirm receipt from your profile.
         </p>
 
-        {/* Per-order receipts */}
         {orders.length > 0 && (
           <div className="ps-receipts">
             {orders.map((o) => (
@@ -97,6 +154,10 @@ export default function PaymentSuccess() {
               </div>
             )}
           </div>
+        )}
+
+        {verifyError && (
+          <p style={{ color: '#c0392b', fontSize: '0.85rem', marginTop: 12 }}>{verifyError}</p>
         )}
 
         <div className="ps-actions">

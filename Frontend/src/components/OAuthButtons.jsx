@@ -1,11 +1,34 @@
+import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../store/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import './OAuthButtons.css';
 
-/**
- * Google + Apple sign-in buttons.
- * Currently non-functional placeholders — they show a "Coming soon" alert
- * until the OAuth flows are wired up. Drop in actual provider SDKs later.
- */
 export default function OAuthButtons() {
+  const { googleLogin } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState(null);
+
+  const handleGoogleSuccess = async (tokenResponse) => {
+    setError(null);
+    try {
+      const u = await googleLogin(tokenResponse.access_token);
+      if (u.role === 'admin') navigate('/admin');
+      else navigate('/');
+    } catch (e) {
+      setError(e.message || 'Google sign-in failed. Please try again.');
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed.');
+  };
+
+  const signInWithGoogle = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
+  });
+
   const todo = (provider) => () => {
     // eslint-disable-next-line no-alert
     alert(`Sign in with ${provider} is coming soon. Please use your email for now.`);
@@ -16,11 +39,12 @@ export default function OAuthButtons() {
       <div className="oauth-divider">
         <span>or continue with</span>
       </div>
+      {error && <p style={{ color: '#c0392b', fontSize: '0.82rem', textAlign: 'center', margin: 0 }}>{error}</p>}
       <div className="oauth-buttons">
         <button
           type="button"
           className="oauth-btn oauth-google"
-          onClick={todo('Google')}
+          onClick={() => signInWithGoogle()}
           aria-label="Sign in with Google"
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

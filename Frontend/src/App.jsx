@@ -17,6 +17,7 @@ import SellerProfile   from './pages/SellerProfile';
 import Cart            from './pages/Cart';
 import Checkout        from './pages/Checkout';
 import PaymentSuccess  from './pages/PaymentSuccess';
+import PaymentFailed   from './pages/PaymentFailed';
 import Notifications   from './pages/Notifications';
 import ChatList        from './pages/ChatList';
 import IndividualChat  from './pages/IndividualChat';
@@ -89,6 +90,7 @@ export default function App() {
               {/* Sensitive — sign-in required */}
               <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
               <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
+              <Route path="/payment-failed"  element={<PaymentFailed />} />
               <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
               <Route path="/profile"         element={<Profile />} />
 

@@ -67,3 +67,54 @@ export const changePassword = asyncHandler(async (req, res) => {
   await user.save();
   res.json({ ok: true });
 });
+
+export const googleAuth = asyncHandler(async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) throw new HttpError(400, 'Google access token is required');
+
+  let googleId, email, name, picture;
+  try {
+    const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!resp.ok) throw new Error('userinfo fetch failed');
+    const info = await resp.json();
+    googleId = info.sub;
+    email = info.email;
+    name = info.name;
+    picture = info.picture;
+  } catch {
+    throw new HttpError(401, 'Invalid Google access token');
+  }
+  if (!email) throw new HttpError(400, 'Google account has no email');
+
+  let user = await User.findOne({ $or: [{ googleId }, { email: email.toLowerCase() }] });
+
+  if (user) {
+    if (!user.googleId) {
+      user.googleId = googleId;
+      if (!user.avatar && picture) user.avatar = picture;
+      await user.save();
+    }
+    if (user.restricted) throw new HttpError(403, 'Account is restricted', { reason: user.restrictReason });
+    user.lastLoginAt = new Date();
+    await user.save();
+  } else {
+    user = await User.create({
+      name: name?.trim() || email.split('@')[0],
+      email: email.toLowerCase(),
+      googleId,
+      avatar: picture || undefined,
+      role: 'buyer',
+    });
+    emitToAdmins('user:new', {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      message: `${user.name} just joined sBay via Google.`,
+    });
+  }
+
+  const token = signAccessToken(user);
+  res.json({ token, user });
+});

@@ -48,6 +48,12 @@ export const env = Object.freeze({
   RATE_LIMIT_WINDOW_MS: num('RATE_LIMIT_WINDOW_MS', 60_000),
   RATE_LIMIT_MAX: num('RATE_LIMIT_MAX', 120),
   AUTH_RATE_LIMIT_MAX: num('AUTH_RATE_LIMIT_MAX', 10),
+
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+
+  PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || '',
+  PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5173/payment-success',
 });
 
 export const isProd = env.NODE_ENV === 'production';

@@ -245,6 +245,10 @@ export const authApi = {
     const { data } = await api.post('/auth/change-password', payload);
     return data;
   },
+  async googleAuth(accessToken) {
+    const { data } = await api.post('/auth/oauth/google', { accessToken });
+    return { token: data.token, user: adaptUser(data.user) };
+  },
   async addPaymentMethod(payload) {
     const { data } = await api.post('/users/me/payment-methods', payload);
     return adaptUser(data.user);
@@ -263,6 +267,17 @@ export const productApi = {
   async update(id, payload)    { const { data } = await api.patch(`/products/${id}`, payload); return adaptProduct(data.product); },
   async remove(id)             { await api.delete(`/products/${id}`); return true; },
   async mine()                 { const { data } = await api.get('/products/mine'); return data.items.map(adaptProduct); },
+};
+
+export const paymentApi = {
+  async initialize(payload) {
+    const { data } = await api.post('/payments/initialize', payload);
+    return data;
+  },
+  async verify(reference) {
+    const { data } = await api.post('/payments/verify', { reference });
+    return data;
+  },
 };
 
 export const orderApi = {

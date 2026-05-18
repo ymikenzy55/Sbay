@@ -62,6 +62,13 @@ export function AuthProvider({ children }) {
 
   const logout = () => { setToken(null); setUser(null); };
 
+  const googleLogin = async (credential) => {
+    const { token, user: u } = await authApi.googleAuth(credential);
+    setToken(token);
+    setUser(u);
+    return u;
+  };
+
   /** Promote current user to seller via backend. */
   const upgradeToSeller = async (sellerInfo = {}) => {
     const u = await authApi.becomeSeller(sellerInfo);
@@ -176,7 +183,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, booting,
-      login, signup, logout,
+      login, signup, logout, googleLogin,
       upgradeToSeller, updateUser, refreshMe,
       submitVerification, subscribe, cancelSubscription,
       requestPasswordReset, verifyResetCode, resetPassword,

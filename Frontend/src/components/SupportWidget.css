@@ -1,59 +1,93 @@
-/* Support Chat Widget */
+/* ============================================================
+   Support Chat Widget — draggable FAB + chat panel
+   Positioned above the mobile bottom nav (height ~64px).
+   ============================================================ */
+
+/* --- Draggable FAB --- */
 .support-fab {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 90px;          /* above bottom nav on mobile */
+  right: 20px;
   z-index: 9999;
-  width: 56px;
-  height: 56px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   background: linear-gradient(135deg, #0a7e3e 0%, #065f2e 100%);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  gap: 2px;
+  touch-action: none;       /* prevent scroll while dragging */
+  user-select: none;
+  transition: box-shadow 0.2s;
 }
-.support-fab:hover {
-  transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+.support-fab:active { cursor: grabbing; }
+.support-fab:hover { box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35); }
+.support-grip {
+  opacity: 0.45;
+  flex-shrink: 0;
 }
 
+/* Desktop: no bottom nav, can sit lower */
+@media (min-width: 961px) {
+  .support-fab { bottom: 28px; right: 28px; }
+}
+
+/* --- Chat panel --- */
 .support-panel {
   position: fixed;
-  bottom: 96px;
-  right: 24px;
+  bottom: 156px;         /* above FAB on mobile */
+  right: 20px;
   z-index: 9998;
-  width: 340px;
-  max-width: calc(100vw - 48px);
-  max-height: 480px;
+  width: 350px;
+  max-width: calc(100vw - 32px);
+  max-height: min(480px, calc(100vh - 200px));
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideUp 0.25s ease-out;
+  animation: sw-up 0.22s ease-out;
 }
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes sw-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (min-width: 961px) {
+  .support-panel { bottom: 96px; right: 28px; }
 }
 
+/* --- Header --- */
 .support-header {
   background: linear-gradient(135deg, #0a7e3e 0%, #065f2e 100%);
   color: #fff;
-  padding: 14px 16px;
+  padding: 13px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
+  flex-shrink: 0;
 }
+.support-close {
+  margin-left: auto;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.support-close:hover { background: rgba(255,255,255,.28); }
 
+/* --- Guest details form --- */
 .support-form {
   padding: 18px 16px;
   display: flex;
@@ -64,18 +98,23 @@
   margin: 0 0 4px;
   font-size: 14px;
   color: #444;
+  line-height: 1.4;
 }
 .support-form input {
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
+  font-family: inherit;
+  transition: border-color .15s;
 }
 .support-form input:focus {
   outline: none;
   border-color: #0a7e3e;
+  box-shadow: 0 0 0 3px rgba(10,126,62,.12);
 }
 
+/* --- Messages --- */
 .support-messages {
   flex: 1;
   overflow-y: auto;
@@ -90,10 +129,11 @@
   font-size: 13px;
   text-align: center;
   margin: auto;
+  padding: 20px 0;
 }
 
 .support-msg {
-  max-width: 80%;
+  max-width: 82%;
   padding: 10px 14px;
   border-radius: 14px;
   font-size: 14px;
@@ -113,6 +153,7 @@
   border-bottom-left-radius: 4px;
 }
 
+/* --- Input bar --- */
 .support-input {
   display: flex;
   align-items: flex-end;
@@ -120,6 +161,7 @@
   padding: 10px 12px;
   border-top: 1px solid #eee;
   background: #fff;
+  flex-shrink: 0;
 }
 .support-input textarea {
   flex: 1;
@@ -136,8 +178,8 @@
   border-color: #0a7e3e;
 }
 .support-input button {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: #0a7e3e;
   color: #fff;
@@ -147,12 +189,15 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: background .15s;
 }
+.support-input button:hover { background: #0d9c4d; }
 .support-input button:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
+/* --- Spinner --- */
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -161,14 +206,11 @@
   to { transform: rotate(360deg); }
 }
 
+/* --- Small screens --- */
 @media (max-width: 480px) {
   .support-panel {
-    right: 12px;
-    bottom: 88px;
-    width: calc(100vw - 24px);
-  }
-  .support-fab {
-    right: 16px;
-    bottom: 16px;
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 210px);
   }
 }

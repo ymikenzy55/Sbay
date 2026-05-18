@@ -27,6 +27,13 @@ const verificationSchema = new mongoose.Schema(
     university: String,
     occupation: String,
     businessReg: String,
+    /**
+     * Data URL (base64) of an uploaded student-ID card. Stored inline
+     * for v1 — when we move to S3, this becomes a key/url pair. It's
+     * only set when isStudent === true and review is pending.
+     */
+    idCardUrl: String,
+    idCardUploadedAt: Date,
   },
   { _id: false }
 );

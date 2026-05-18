@@ -34,3 +34,28 @@ export const adminAuthLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many admin login attempts.' },
 });
+
+/**
+ * Admin write-path limiter — applied to mutation endpoints (delete user,
+ * elevate admin, escrow refund, etc.). Generous for normal moderator
+ * activity, restrictive enough to make automated scripted abuse loud.
+ */
+export const adminMutationLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5-minute window
+  max: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many admin mutations in a short window — slow down.' },
+});
+
+/**
+ * Customer-support submission limiter — applies to the public ticket
+ * intake endpoint so a single IP can't flood the inbox.
+ */
+export const supportSubmitLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10-minute window
+  max: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'You have sent too many support messages. Please wait a few minutes.' },
+});

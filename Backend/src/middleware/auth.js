@@ -40,3 +40,28 @@ export const requireRole = (...roles) => (req, _res, next) => {
 };
 
 export const requireAdmin = requireRole('admin');
+
+/**
+ * `optionalAuth` — populates req.user when the request carries a valid
+ * token, but never blocks the request. Useful for public endpoints
+ * that personalise their response when the caller happens to be signed
+ * in (e.g. the support widget stitches the ticket to the user document).
+ */
+export async function optionalAuth(req, _res, next) {
+  try {
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return next();
+    let payload;
+    try { payload = verifyAccessToken(token); }
+    catch { return next(); }
+    const user = await User.findById(payload.sub);
+    if (user && !user.restricted) {
+      req.user = user;
+      req.userId = user._id;
+    }
+    next();
+  } catch {
+    next();
+  }
+}

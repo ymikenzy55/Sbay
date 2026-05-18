@@ -30,6 +30,9 @@ router.post(
   body('occupation').optional().isString().isLength({ max: 120 }),
   body('businessReg').optional().isString().isLength({ max: 80 }),
   body('location').optional().isString().isLength({ max: 120 }),
+  // Inline base64 data-URL student ID. Validation cap is generous; the
+  // controller enforces the byte budget more strictly.
+  body('idCardUrl').optional().isString().isLength({ max: 6_000_000 }),
   validate,
   becomeSeller
 );

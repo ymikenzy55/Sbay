@@ -176,14 +176,198 @@ export const listAdmins = asyncHandler(async (_req, res) => {
 
 export const createAdmin = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
-  const existing = await User.findOne({ email: email.toLowerCase() });
-  if (existing) throw new HttpError(409, 'An account with this email already exists');
+  const lowerEmail = email.toLowerCase();
+  const existing = await User.findOne({ email: lowerEmail });
+
+  // Elevate-existing mode: only email is supplied. The user must already
+  // exist on the platform — admins are intentionally never created from
+  // thin air without a verified email/password trail.
+  if (existing) {
+    if (existing.role === 'admin') throw new HttpError(409, 'User is already an admin');
+    if (existing.restricted)       throw new HttpError(400, 'Cannot elevate a restricted user');
+    existing.role = 'admin';
+    existing.verified = true;
+    await existing.save();
+    audit(req, 'admin.elevate', { kind: 'user', id: existing._id });
+    return res.status(200).json({ admin: existing });
+  }
+
+  // Create-fresh mode: full name + password required.
+  if (!name || !password) {
+    throw new HttpError(404, 'No user with that email. Provide name + password to create a fresh admin account.');
+  }
   const passwordHash = await User.hashPassword(password);
   const admin = await User.create({
-    name, email: email.toLowerCase(), passwordHash, role: 'admin', verified: true,
+    name, email: lowerEmail, passwordHash, role: 'admin', verified: true,
   });
   audit(req, 'admin.create', { kind: 'user', id: admin._id });
   res.status(201).json({ admin });
+});
+
+/* ----------------------- User Deletion ------------------------ */
+
+/**
+ * DELETE /users/:id — soft-delete an account.
+ *
+ * We never hard-delete because every order, listing, and audit row
+ * references this _id. Instead we anonymise PII, mark the account
+ * deleted, and prevent further logins. The user's transactional
+ * history is preserved for compliance / dispute resolution.
+ */
+export const deleteUser = asyncHandler(async (req, res) => {
+  if (req.params.id === req.user._id.toString()) {
+    throw new HttpError(400, 'You cannot delete your own account from this surface.');
+  }
+  const target = await User.findById(req.params.id);
+  if (!target) throw new HttpError(404, 'User not found');
+
+  // Refuse to delete the last admin so the platform never locks itself out.
+  if (target.role === 'admin') {
+    const remaining = await User.countDocuments({ role: 'admin', _id: { $ne: target._id } });
+    if (remaining < 1) throw new HttpError(400, 'Cannot delete the last admin.');
+  }
+
+  // Hide all of the seller's listings so buyers can't browse a ghost store.
+  if (target.role === 'seller') {
+    await Product.updateMany({ seller: target._id, status: { $ne: 'removed' } }, {
+      $set: { status: 'removed', removedReason: 'Account deleted', removedBy: req.user._id },
+    });
+  }
+
+  const stamp = Date.now();
+  target.name        = 'Deleted user';
+  target.email       = `deleted-${stamp}-${target._id}@sbay.invalid`;
+  target.phone       = undefined;
+  target.avatar      = undefined;
+  target.location    = undefined;
+  target.restricted  = true;
+  target.restrictReason = 'Account deleted';
+  target.restrictedAt   = new Date();
+  target.restrictedBy   = req.user._id;
+  target.passwordHash   = await User.hashPassword(`__deleted_${stamp}__`);
+  await target.save();
+
+  audit(req, 'user.delete', { kind: 'user', id: target._id });
+  res.json({ ok: true });
+});
+
+/* ----------------------- Student Verification Queue ------------------------ */
+
+/**
+ * GET /verification/students — list users who claim student status,
+ * along with their submitted ID image (if any). Defaults to the
+ * pending queue so the admin's first hit is always actionable.
+ */
+export const listStudentVerifications = asyncHandler(async (req, res) => {
+  const { status = 'pending' } = req.query;
+  const filter = {
+    'verification.isStudent': true,
+    'verification.idCardUrl': { $exists: true, $ne: null },
+  };
+  if (status) filter['verification.status'] = status;
+
+  const users = await User.find(filter).sort({ 'verification.submittedAt': -1, createdAt: -1 }).limit(200);
+  // Flatten to a verification-centric shape for the admin UI.
+  const items = users.map((u) => ({
+    _id: u._id,
+    user: { _id: u._id, name: u.name, email: u.email },
+    name: u.name,
+    email: u.email,
+    university: u.verification?.university,
+    idCardUrl: u.verification?.idCardUrl,
+    submittedAt: u.verification?.submittedAt,
+    status: u.verification?.status || 'pending',
+  }));
+  res.json({ items });
+});
+
+/**
+ * POST /verification/students/:id/decide — same shape as verifyUser
+ * but additionally clears the ID image on rejection (so a rejected
+ * applicant can re-submit a corrected card) and emits a more
+ * specific audit row.
+ */
+export const decideStudentVerification = asyncHandler(async (req, res) => {
+  const { decision, reason } = req.body;
+  const user = await User.findById(req.params.id);
+  if (!user) throw new HttpError(404, 'User not found');
+  if (!user.verification?.isStudent) throw new HttpError(400, 'User has not submitted a student application');
+
+  if (decision === 'approved') {
+    user.verified = true;
+    user.verification.status = 'verified';
+  } else if (decision === 'rejected') {
+    user.verified = false;
+    user.verification.status = 'rejected';
+    user.verification.reason = reason;
+    user.verification.idCardUrl = undefined; // allow re-upload
+  } else {
+    throw new HttpError(400, 'decision must be "approved" or "rejected"');
+  }
+  user.verification.reviewedAt = new Date();
+  user.verification.reviewedBy = req.user._id;
+  await user.save();
+
+  audit(req, 'verification.student.decide', { kind: 'user', id: user._id }, { decision, reason });
+  res.json({ user });
+});
+
+/* ----------------------- Notifications ------------------------ */
+
+/**
+ * GET /notifications — lightweight aggregator that surfaces actionable
+ * items for the bell popover. Phase 1 derives notifications from the
+ * existing data model (pending verifications, held escrow, new orders);
+ * Phase 3 will replace it with a Socket.IO subscription that pushes
+ * deltas in real time. Both shapes return the same JSON contract so
+ * the UI doesn't change.
+ */
+export const listNotifications = asyncHandler(async (_req, res) => {
+  const since = new Date(Date.now() - 24 * 3600e3);
+  const [pendingUsers, recentOrders, recentChats] = await Promise.all([
+    User.find({
+      'verification.status': 'pending',
+      'verification.submittedAt': { $exists: true },
+    }).sort({ 'verification.submittedAt': -1 }).limit(10),
+    Order.find({ createdAt: { $gte: since } })
+      .sort({ createdAt: -1 }).limit(10)
+      .populate('buyer', 'name email'),
+    Chat.find({ updatedAt: { $gte: since } })
+      .sort({ updatedAt: -1 }).limit(5)
+      .populate('buyer', 'name'),
+  ]);
+
+  const items = [];
+  for (const u of pendingUsers) {
+    items.push({
+      id: `verif-${u._id}`,
+      kind: u.verification?.isStudent ? 'verification' : 'verification',
+      message: `${u.name} submitted a ${u.verification?.isStudent ? 'student ID' : 'seller'} application`,
+      href:    u.verification?.isStudent ? '/admin/verification/students' : '/admin/verification/sellers',
+      at:      u.verification?.submittedAt || u.createdAt,
+    });
+  }
+  for (const o of recentOrders) {
+    items.push({
+      id: `order-${o._id}`,
+      kind: 'order',
+      message: `New order ${o.invoiceNumber || ''} from ${o.buyer?.name || 'a buyer'} — GH₵ ${Math.round(o.total)}`,
+      href: '/admin/orders',
+      at:   o.createdAt,
+    });
+  }
+  for (const c of recentChats) {
+    items.push({
+      id: `chat-${c._id}-${new Date(c.updatedAt).getTime()}`,
+      kind: 'chat',
+      message: `Chat activity with ${c.buyer?.name || 'a buyer'}`,
+      href: `/admin/chats?id=${c._id}`,
+      at:   c.updatedAt,
+    });
+  }
+  // Newest first, capped.
+  items.sort((a, b) => new Date(b.at) - new Date(a.at));
+  res.json({ items: items.slice(0, 25) });
 });
 
 export const removeAdmin = asyncHandler(async (req, res) => {
@@ -206,9 +390,10 @@ export const removeAdmin = asyncHandler(async (req, res) => {
 /* ----------------------- Products ------------------------ */
 
 export const listAllProducts = asyncHandler(async (req, res) => {
-  const { status, q, page = 1, limit = 30 } = req.query;
+  const { status, q, sellerId, page = 1, limit = 30 } = req.query;
   const filter = {};
   if (status) filter.status = status;
+  if (sellerId) filter.seller = sellerId;
   if (q) filter.title = { $regex: q, $options: 'i' };
   const lim = Math.min(Number(limit) || 30, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * lim;
@@ -235,10 +420,12 @@ export const moderateProduct = asyncHandler(async (req, res) => {
 /* ----------------------- Orders & Escrow ------------------------ */
 
 export const listAllOrders = asyncHandler(async (req, res) => {
-  const { status, escrowStatus, q, page = 1, limit = 30 } = req.query;
+  const { status, escrowStatus, q, sellerId, buyerId, page = 1, limit = 30 } = req.query;
   const filter = {};
   if (status) filter.status = status;
   if (escrowStatus) filter['escrow.status'] = escrowStatus;
+  if (sellerId) filter.seller = sellerId;
+  if (buyerId)  filter.buyer  = buyerId;
   if (q) filter.invoiceNumber = { $regex: q, $options: 'i' };
   const lim = Math.min(Number(limit) || 30, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * lim;
@@ -387,10 +574,12 @@ export const salesReport = asyncHandler(async (req, res) => {
 /* ----------------------- Chat moderation ------------------------ */
 
 export const listAllChats = asyncHandler(async (req, res) => {
-  const { closed, page = 1, limit = 30 } = req.query;
+  const { closed, sellerId, buyerId, page = 1, limit = 30 } = req.query;
   const filter = {};
   if (closed === 'true') filter.closed = true;
   if (closed === 'false') filter.closed = false;
+  if (sellerId) filter.seller = sellerId;
+  if (buyerId)  filter.buyer  = buyerId;
   const lim = Math.min(Number(limit) || 30, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * lim;
   const [items, total] = await Promise.all([

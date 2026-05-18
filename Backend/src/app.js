@@ -18,6 +18,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
 
 export function buildApp() {
   const app = express();
@@ -27,7 +28,7 @@ export function buildApp() {
   app.set('trust proxy', 1); // honour X-Forwarded-For when behind a proxy
   app.use(helmet());
   app.use(compression());
-  app.use(express.json({ limit: '2mb' })); // big enough for base64 avatars
+  app.use(express.json({ limit: '5mb' })); // big enough for base64 avatars + student ID cards
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
   app.use(mongoSanitize());                // strip $ / . from req bodies
@@ -65,6 +66,7 @@ export function buildApp() {
   app.use('/api/orders', orderRoutes);
   app.use('/api/chats', chatRoutes);
   app.use('/api', publicRoutes);                       // /api/plans, /api/settings
+  app.use('/api/support', supportRoutes);              // public support ticket submission
 
   // Admin API mounted at obscured prefix from env.
   app.use(env.ADMIN_API_PREFIX, adminRoutes);

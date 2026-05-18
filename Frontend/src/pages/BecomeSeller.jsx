@@ -46,10 +46,29 @@ export default function BecomeSeller() {
   const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
+  /** Convert a File to a base64 data URL. */
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const finish = async () => {
     setError('');
     setSubmitting(true);
     try {
+      // Convert student ID image to base64 if present.
+      let idCardUrl;
+      if (form.isStudent && form.studentId) {
+        // Validate file size client-side (3 MB limit).
+        if (form.studentId.size > 3 * 1024 * 1024) {
+          throw new Error('Student ID image is too large. Please upload a smaller photo (max 3 MB).');
+        }
+        idCardUrl = await fileToDataUrl(form.studentId);
+      }
+
       await upgradeToSeller({
         storeName: form.storeName.trim(),
         bio: form.bio.trim() || undefined,
@@ -58,10 +77,8 @@ export default function BecomeSeller() {
         occupation: form.isStudent ? undefined : form.occupation.trim(),
         businessReg: form.isStudent ? undefined : (form.businessReg.trim() || undefined),
         location: user?.location || form.university || undefined,
+        idCardUrl,
       });
-      // Note: the uploaded student ID image is kept local-only for v1
-      // (no object-store integration yet). Admins re-verify via the
-      // admin panel using whatever evidence the seller emails them.
       setSubmitted(true);
     } catch (e) {
       setError(e.message || 'Could not submit your application. Please try again.');

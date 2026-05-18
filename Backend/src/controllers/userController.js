@@ -23,10 +23,25 @@ export const updateMe = asyncHandler(async (req, res) => {
  * profile until an admin verifies them.
  */
 export const becomeSeller = asyncHandler(async (req, res) => {
-  const { storeName, bio, isStudent, university, occupation, businessReg, location } = req.body;
+  const {
+    storeName, bio, isStudent, university, occupation, businessReg, location,
+    idCardUrl, // base64 data URL — accepted for v1; replace with S3 in prod
+  } = req.body;
 
   const user = await User.findById(req.user._id);
   if (user.role === 'admin') throw new HttpError(400, 'Admins cannot also be sellers');
+
+  // If the seller claims student status, the ID card is mandatory so
+  // the verification queue is meaningful. Reject early instead of
+  // creating an un-actionable application row.
+  if (isStudent && !idCardUrl) {
+    throw new HttpError(400, 'Please attach a clear photo of your student ID.');
+  }
+  // Cap the inline image size to ~3 MB worth of base64 (≈ 4 MB of data URL)
+  // so abusers can't blow up the user document.
+  if (idCardUrl && typeof idCardUrl === 'string' && idCardUrl.length > 4_400_000) {
+    throw new HttpError(413, 'Student ID image is too large. Please upload a smaller photo.');
+  }
 
   user.role = 'seller';
   user.sellerProfile = {
@@ -41,6 +56,8 @@ export const becomeSeller = asyncHandler(async (req, res) => {
     university: university?.trim(),
     occupation: occupation?.trim(),
     businessReg: businessReg?.trim(),
+    idCardUrl: isStudent ? idCardUrl : undefined,
+    idCardUploadedAt: isStudent && idCardUrl ? new Date() : undefined,
   };
   user.verified = false;
   await user.save();

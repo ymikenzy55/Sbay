@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import {
   adminLogin, dashboard,
-  listUsers, getUserDetail, verifyUser, restrictUser,
+  listUsers, getUserDetail, verifyUser, restrictUser, deleteUser,
   listAdmins, createAdmin, removeAdmin,
   listAllProducts, moderateProduct,
   listAllOrders, releaseEscrow, refundEscrow,
@@ -10,10 +10,15 @@ import {
   getSettings, updateSettings,
   listAuditLog, salesReport,
   listAllChats, getAdminChat, closeChat,
+  listStudentVerifications, decideStudentVerification,
+  listNotifications,
 } from '../controllers/adminController.js';
+import {
+  listTickets, replyTicket, closeTicket,
+} from '../controllers/supportController.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
-import { adminAuthLimiter } from '../middleware/rateLimit.js';
+import { adminAuthLimiter, adminMutationLimiter } from '../middleware/rateLimit.js';
 
 const router = Router();
 
@@ -44,22 +49,32 @@ router.post(
 );
 router.post(
   '/users/:id/restrict',
+  adminMutationLimiter,
   param('id').isMongoId(),
   body('restricted').isBoolean(),
   body('reason').optional().isString().isLength({ max: 500 }),
   validate, restrictUser
+);
+router.delete(
+  '/users/:id',
+  adminMutationLimiter,
+  param('id').isMongoId(),
+  validate, deleteUser
 );
 
 /* Admin management */
 router.get('/admins', listAdmins);
 router.post(
   '/admins',
-  body('name').isString().trim().isLength({ min: 2, max: 80 }),
+  adminMutationLimiter,
   body('email').isEmail().normalizeEmail(),
-  body('password').isString().isLength({ min: 10 }).withMessage('Admin passwords must be at least 10 characters'),
+  // name + password are only required when creating a fresh admin from scratch.
+  // Elevate-existing-by-email mode validates these in the controller.
+  body('name').optional().isString().trim().isLength({ min: 2, max: 80 }),
+  body('password').optional().isString().isLength({ min: 10 }).withMessage('Admin passwords must be at least 10 characters'),
   validate, createAdmin
 );
-router.delete('/admins/:id', param('id').isMongoId(), validate, removeAdmin);
+router.delete('/admins/:id', adminMutationLimiter, param('id').isMongoId(), validate, removeAdmin);
 
 /* Products */
 router.get('/products', listAllProducts);
@@ -116,6 +131,36 @@ router.get(
   query('from').optional().isISO8601(),
   query('to').optional().isISO8601(),
   validate, salesReport
+);
+
+/* Notifications (bell popover) */
+router.get('/notifications', listNotifications);
+
+/* Student verification queue */
+router.get('/verification/students', listStudentVerifications);
+router.post(
+  '/verification/students/:id/decide',
+  adminMutationLimiter,
+  param('id').isMongoId(),
+  body('decision').isIn(['approved', 'rejected']),
+  body('reason').optional().isString().isLength({ max: 500 }),
+  validate, decideStudentVerification
+);
+
+/* Support inbox */
+router.get('/support/tickets', listTickets);
+router.post(
+  '/support/tickets/:id/reply',
+  adminMutationLimiter,
+  param('id').isMongoId(),
+  body('body').isString().trim().isLength({ min: 1, max: 4000 }),
+  validate, replyTicket
+);
+router.post(
+  '/support/tickets/:id/close',
+  adminMutationLimiter,
+  param('id').isMongoId(),
+  validate, closeTicket
 );
 
 /* Chats moderation */

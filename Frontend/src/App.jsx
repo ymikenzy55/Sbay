@@ -24,6 +24,9 @@ import ChatList        from './pages/ChatList';
 import IndividualChat  from './pages/IndividualChat';
 import Sell            from './pages/Sell';
 import Profile         from './pages/Profile';
+import ProfileOrders   from './pages/ProfileOrders';
+import ProfileWishlist from './pages/ProfileWishlist';
+import ProfileSettings from './pages/ProfileSettings';
 import Login           from './pages/Login';
 import Signup          from './pages/Signup';
 import ForgotPassword  from './pages/ForgotPassword';
@@ -89,13 +92,16 @@ export default function App() {
               <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
               <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
 
-              {/* Sensitive — sign-in required */}
+{/* Sensitive — sign-in required */}}
               <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
               <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
               <Route path="/payment-failed"  element={<PaymentFailed />} />
               <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
               <Route path="/profile"         element={<Profile />} />
-              <Route path="/orders"           element={<RequireAuth><Profile /></RequireAuth>} />
+              <Route path="/profile/orders"   element={<RequireAuth><ProfileOrders /></RequireAuth>} />
+              <Route path="/profile/wishlist" element={<RequireAuth><ProfileWishlist /></RequireAuth>} />
+              <Route path="/profile/settings" element={<RequireAuth><ProfileSettings /></RequireAuth>} />
+              <Route path="/orders"           element={<Navigate to="/profile/orders" replace />} />
 
               {/* Seller flow — auth + seller role */}
               <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />

@@ -5,6 +5,7 @@ import { Check, Home, LayoutDashboard, Receipt, Shield, MessageCircle, Loader } 
 import { paymentApi } from '../api/client';
 import { adaptOrder } from '../api/adapters';
 import { useOrders } from '../store/OrdersContext';
+import { useCart } from '../store/CartContext';
 import './pages.css';
 import './PaymentSuccess.css';
 
@@ -13,6 +14,7 @@ export default function PaymentSuccess() {
   const { state } = useLocation();
   const [searchParams] = useSearchParams();
   const { addOrder, reload } = useOrders();
+  const { clear } = useCart();
 
   const reference = searchParams.get('reference') || searchParams.get('trxref');
 
@@ -50,6 +52,7 @@ export default function PaymentSuccess() {
     const adapted = rawOrders.map((o) => adaptOrder(o));
     adapted.forEach((o) => addOrder(o));
     reload?.();
+    clear();
     setOrders(adapted);
     setTotal(adapted.reduce((s, o) => s + (o.total || 0), 0));
     setVerifying(false);

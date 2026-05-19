@@ -14,7 +14,7 @@ import './Checkout.css';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal } = useCart();
   const { user, updateUser } = useAuth();
 
   const [location, setLocation] = useState(user?.location || '');
@@ -52,7 +52,6 @@ export default function Checkout() {
         deliveryLocation: location.trim(),
       });
 
-      clear();
       window.location.href = authorization_url;
     } catch (e) {
       setError(e.message || 'Could not start payment. Please try again.');

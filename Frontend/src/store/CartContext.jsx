@@ -1,13 +1,21 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const CartContext = createContext(null);
+const CART_KEY = 'sbay.cart';
+
+function loadCart() {
+  try { return JSON.parse(sessionStorage.getItem(CART_KEY)) || []; }
+  catch { return []; }
+}
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(loadCart);
 
-  // Quantities must be positive whole numbers; if the product carries a
-  // stock count we cap there so the user can't queue up more than is
-  // actually available. Backend re-checks before reserving stock.
+  useEffect(() => {
+    try { sessionStorage.setItem(CART_KEY, JSON.stringify(items)); }
+    catch { /* quota exceeded — ignore */ }
+  }, [items]);
+
   const clamp = (item, qty) => {
     const n = Math.max(1, Math.floor(Number(qty) || 1));
     if (item.stock && Number.isFinite(item.stock)) return Math.min(n, item.stock);
@@ -37,7 +45,10 @@ export function CartProvider({ children }) {
   const removeItem = (id) =>
     setItems((prev) => prev.filter((i) => i.id !== id));
 
-  const clear = () => setItems([]);
+  const clear = () => {
+    setItems([]);
+    try { sessionStorage.removeItem(CART_KEY); } catch { /* ignore */ }
+  };
 
   const count    = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);
   const subtotal = useMemo(() => items.reduce((s, i) => s + i.qty * i.price, 0), [items]);

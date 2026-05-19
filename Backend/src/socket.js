@@ -9,6 +9,14 @@ import { env } from './config/env.js';
 
 let io = null;
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (env.NODE_ENV === 'development' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    return true;
+  }
+  return env.CORS_ORIGINS.includes(origin);
+}
+
 /**
  * Initialise Socket.IO on an existing HTTP server.
  * Mirrors the HTTP auth middleware so role changes take effect immediately.
@@ -17,13 +25,8 @@ export function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
       origin: (origin, cb) => {
-        if (!origin) return cb(null, true);
-        if (env.NODE_ENV === 'development' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-          return cb(null, true);
-        }
-        const allowed = (env.CORS_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
-        if (allowed.includes(origin)) return cb(null, true);
-        cb(new Error('CORS not allowed'));
+        if (isAllowedOrigin(origin)) return cb(null, true);
+        return cb(new Error('CORS not allowed'));
       },
       credentials: true,
     },

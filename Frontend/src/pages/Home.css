@@ -402,8 +402,54 @@
 
 /* Desktop layout: wider content, centered columns */
 @media (min-width: 961px) {
-  .home-main { max-width: 1400px; margin: 0 auto; padding: 10px 28px 60px; }
-  .uni-chips { max-width: 1400px; margin: 10px auto 0; padding: 0 28px; }
+  .home { padding-bottom: 40px; }
+  .home-main { max-width: 1400px; margin: 0 auto; padding: 24px 48px 60px; gap: 40px; }
+  .uni-chips { max-width: 1400px; margin: 10px auto 0; padding: 0 48px; }
+  .section-title { font-size: 1.3rem; }
+
+  /* Trending: horizontal scroller → 3-column grid on desktop */
+  .trend-scroller {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    overflow: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
+    gap: 20px;
+  }
+  .trend-scroller .trend-card {
+    flex: unset;
+    width: auto;
+  }
+  .trend-img { height: 200px; }
+  .trend-body { padding: 16px 18px 18px; }
+
+  /* Recent: horizontal scroller → 4-column grid on desktop */
+  .recent-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    overflow: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
+    gap: 18px;
+  }
+  .recent-grid > * { flex: unset; width: auto; }
+  .recent-img { height: 180px; }
+  .recent-body { padding: 12px 14px 14px; }
+
+  /* Sellers */
+  .sellers-featured { gap: 18px; }
+  .seller-big { padding: 20px 22px; }
+  .seller-avatar.xl { width: 72px; height: 72px; }
+}
+
+@media (min-width: 1200px) {
+  .home-main { padding: 28px 60px 60px; }
+  /* Trending: 4 columns on very wide screens */
+  .trend-scroller { grid-template-columns: repeat(4, 1fr); }
+  /* Recent: 5 columns on very wide screens */
+  .recent-grid { grid-template-columns: repeat(5, 1fr); }
+  /* 3 sellers on wide screens */
+  .sellers-featured { grid-template-columns: repeat(3, 1fr); }
 }
 
 .filter-panel {

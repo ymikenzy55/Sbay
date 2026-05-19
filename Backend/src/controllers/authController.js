@@ -3,6 +3,24 @@ import { signAccessToken } from '../utils/jwt.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitToAdmins } from '../socket.js';
+import { env } from '../config/env.js';
+import crypto from 'crypto';
+
+function hashResetToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function frontendUrl() {
+  const firstAllowed = env.CORS_ORIGINS?.[0];
+  return (process.env.FRONTEND_URL || firstAllowed || 'http://localhost:5173').replace(/\/$/, '');
+}
+
+async function sendPasswordResetEmail(user, resetUrl) {
+  // Mail transport is deployment-specific. Keep the endpoint functional
+  // and log the link until SMTP/provider credentials are added.
+  // eslint-disable-next-line no-console
+  console.log(`[auth] password reset link for ${user.email}: ${resetUrl}`);
+}
 
 /**
  * Public sign-up. Always creates a `buyer`. Becoming a seller happens
@@ -10,7 +28,7 @@ import { emitToAdmins } from '../socket.js';
  * via this endpoint — only via the seed script or by another admin.
  */
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, location } = req.body;
+  const { name, email, password, phone, location } = req.body;
 
   const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) throw new HttpError(409, 'An account with this email already exists');
@@ -20,6 +38,7 @@ export const register = asyncHandler(async (req, res) => {
     name: name.trim(),
     email: email.toLowerCase().trim(),
     passwordHash,
+    phone: phone?.trim(),
     location: location?.trim(),
     role: 'buyer',
   });
@@ -65,6 +84,48 @@ export const changePassword = asyncHandler(async (req, res) => {
   if (!ok) throw new HttpError(400, 'Current password is incorrect');
   user.passwordHash = await User.hashPassword(newPassword);
   await user.save();
+  res.json({ ok: true });
+});
+
+export const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+resetPasswordTokenHash +resetPasswordExpiresAt');
+
+  // Always return ok so attackers cannot enumerate accounts.
+  if (!user) return res.json({ ok: true });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  user.resetPasswordTokenHash = hashResetToken(token);
+  user.resetPasswordExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  await user.save();
+
+  const resetUrl = `${frontendUrl()}/forgot-password?token=${token}&email=${encodeURIComponent(user.email)}`;
+  await sendPasswordResetEmail(user, resetUrl);
+
+  res.json({
+    ok: true,
+    ...(env.NODE_ENV === 'production' ? {} : { resetUrl }),
+  });
+});
+
+export const resetPasswordWithToken = asyncHandler(async (req, res) => {
+  const { email, token, newPassword } = req.body;
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash +resetPasswordTokenHash +resetPasswordExpiresAt');
+  if (!user || !user.resetPasswordTokenHash || !user.resetPasswordExpiresAt) {
+    throw new HttpError(400, 'Reset link is invalid or expired.');
+  }
+  if (user.resetPasswordExpiresAt.getTime() < Date.now()) {
+    throw new HttpError(400, 'Reset link is invalid or expired.');
+  }
+  if (hashResetToken(token) !== user.resetPasswordTokenHash) {
+    throw new HttpError(400, 'Reset link is invalid or expired.');
+  }
+
+  user.passwordHash = await User.hashPassword(newPassword);
+  user.resetPasswordTokenHash = undefined;
+  user.resetPasswordExpiresAt = undefined;
+  await user.save();
+
   res.json({ ok: true });
 });
 

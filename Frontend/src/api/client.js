@@ -39,6 +39,9 @@ function makeClient(baseURL) {
         e.details = data.details;
         return Promise.reject(e);
       }
+      if (!err.response && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sbay:network-error'));
+      }
       return Promise.reject(err);
     }
   );
@@ -49,6 +52,14 @@ export const api = makeClient(API_URL);
 export const adminApi = makeClient(ADMIN_URL);
 
 const NOTIFICATIONS = { Today: [], Yesterday: [] };
+const cache = new Map();
+const cached = async (key, ttlMs, fetcher) => {
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < ttlMs) return hit.value;
+  const value = await fetcher();
+  cache.set(key, { at: Date.now(), value });
+  return value;
+};
 
 /* ------------------------------------------------------------------
    `sbay` — same surface as before, now backed by real HTTP.
@@ -64,8 +75,10 @@ export const sbay = {
   },
 
   async getCatalogMeta() {
-    const { data } = await api.get('/products/catalog');
-    return data;
+    return cached('catalog-meta', 60_000, async () => {
+      const { data } = await api.get('/products/catalog');
+      return data;
+    });
   },
 
   async getCategories() {
@@ -82,13 +95,17 @@ export const sbay = {
   },
 
   async getTrending() {
-    const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
-    return data.items.map(adaptProduct);
+    return cached('products-trending', 30_000, async () => {
+      const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
+      return data.items.map(adaptProduct);
+    });
   },
 
   async getRecent() {
-    const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
-    return data.items.map(adaptProduct);
+    return cached('products-recent', 30_000, async () => {
+      const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
+      return data.items.map(adaptProduct);
+    });
   },
 
   async getAllProducts(params = {}) {
@@ -245,6 +262,14 @@ export const authApi = {
     const { data } = await api.post('/auth/change-password', payload);
     return data;
   },
+  async requestPasswordReset(email) {
+    const { data } = await api.post('/auth/forgot-password', { email });
+    return data;
+  },
+  async resetPassword(payload) {
+    const { data } = await api.post('/auth/reset-password', payload);
+    return data;
+  },
   async googleAuth(accessToken) {
     const { data } = await api.post('/auth/oauth/google', { accessToken });
     return { token: data.token, user: adaptUser(data.user) };
@@ -256,6 +281,13 @@ export const authApi = {
   async removePaymentMethod(cardId) {
     const { data } = await api.delete(`/users/me/payment-methods/${cardId}`);
     return adaptUser(data.user);
+  },
+};
+
+export const notificationApi = {
+  async mine() {
+    const { data } = await api.get('/users/me/notifications');
+    return data.items || [];
   },
 };
 

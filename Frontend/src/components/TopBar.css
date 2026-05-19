@@ -4,8 +4,8 @@
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 14px 22px;
+  gap: 14px;
+  padding: 14px 18px;
   background: rgba(244, 248, 238, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(10, 126, 62, 0.06);
@@ -15,6 +15,11 @@
   font-weight: 700;
   color: var(--text);
   flex: 1;
+}
+.topbar-brand {
+  display: inline-flex;
+  margin-left: 0;
+  flex: 0 0 auto;
 }
 .back-btn {
   width: 40px;
@@ -147,10 +152,17 @@
 }
 
 @media (max-width: 720px) {
-  .topbar { gap: 10px; padding: 10px 14px; }
+  .topbar { gap: 8px; padding: 10px 10px 10px 0; }
   .topbar .sbay-logo-word { display: none; }
-  .topbar-actions { gap: 8px; }
-  .topbar-actions .icon-btn:nth-child(1) { display: none; }
+  .topbar-actions { gap: 6px; }
+  .topbar-actions .avatar,
+  .topbar-actions .icon-btn[aria-label="Cart"] { display: none; }
+  .topbar .icon-btn {
+    width: 38px;
+    height: 38px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(10, 60, 30, 0.08);
+  }
   .search-wrap {
     flex: 1;
     max-width: none;
@@ -160,7 +172,8 @@
   }
   .search-wrap .search-icon { left: 12px; }
   /* When actions are visible, keep search compact so they fit. */
-  .topbar:not(.no-actions) .search-wrap { max-width: 200px; }
+  .topbar:not(.no-actions) .search-wrap { max-width: none; }
+  .topbar-brand .sbay-logo-image { height: 54px !important; }
 }
 
 /* Hide TopBar on desktop unless it's carrying a back button for sub-pages. */

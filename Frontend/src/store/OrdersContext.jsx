@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { orderApi } from '../api/client';
 import { useAuth } from './AuthContext';
+import { useSocket } from '../hooks/useSocket';
 
 /**
  * Orders store backed by the real backend.
@@ -27,6 +28,7 @@ const OrdersContext = createContext(null);
 
 export function OrdersProvider({ children }) {
   const { user } = useAuth();
+  const { on, off, connected } = useSocket();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -50,6 +52,17 @@ export function OrdersProvider({ children }) {
   }, [user?.id, user?.role]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  useEffect(() => {
+    if (!connected || !user?.id) return undefined;
+    const refresh = () => reload();
+    on('order:new', refresh);
+    on('order:updated', refresh);
+    return () => {
+      off('order:new', refresh);
+      off('order:updated', refresh);
+    };
+  }, [connected, user?.id, on, off, reload]);
 
   const value = useMemo(() => ({
     orders, loading, reload,

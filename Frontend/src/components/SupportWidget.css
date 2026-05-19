@@ -6,8 +6,8 @@
 /* --- Draggable FAB --- */
 .support-fab {
   position: fixed;
-  bottom: 90px;          /* above bottom nav on mobile */
-  right: 20px;
+  bottom: 96px;          /* above bottom nav and cart actions on mobile */
+  left: 16px;
   z-index: 9999;
   width: 54px;
   height: 54px;
@@ -40,8 +40,8 @@
 /* --- Chat panel --- */
 .support-panel {
   position: fixed;
-  bottom: 156px;         /* above FAB on mobile */
-  right: 20px;
+  bottom: 160px;         /* above FAB on mobile */
+  left: 16px;
   z-index: 9998;
   width: 350px;
   max-width: calc(100vw - 32px);
@@ -209,7 +209,8 @@
 /* --- Small screens --- */
 @media (max-width: 480px) {
   .support-panel {
-    right: 8px;
+    left: 8px;
+    right: auto;
     width: calc(100vw - 16px);
     max-height: calc(100vh - 210px);
   }

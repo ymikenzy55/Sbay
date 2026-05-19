@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, LayoutGrid, MessageCircle, User, Plus, Store } from 'lucide-react';
+import { Home, LayoutGrid, User, Plus, Store, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import './BottomNav.css';
 
@@ -12,7 +12,7 @@ const BUYER_ITEMS = [
   { id: 'home',       label: 'Home',       path: '/home',       icon: Home },
   { id: 'categories', label: 'Categories', path: '/categories', icon: LayoutGrid },
   { id: 'sell',       label: 'Sell',       path: '/sell',       icon: Plus, center: true },
-  { id: 'chat',       label: 'Chat',       path: '/chats',      icon: MessageCircle },
+  { id: 'orders',     label: 'Orders',     path: '/profile',    icon: ShoppingBag },
   { id: 'profile',    label: 'Profile',    path: '/profile',    icon: User },
 ];
 
@@ -21,7 +21,6 @@ const BUYER_ITEMS = [
 const SELLER_ITEMS = [
   { id: 'home',       label: 'Home',       path: '/home',            icon: Home },
   { id: 'categories', label: 'Categories', path: '/categories',      icon: LayoutGrid },
-  { id: 'chat',       label: 'Chat',       path: '/chats',           icon: MessageCircle },
   { id: 'dashboard',  label: 'Dashboard',  path: '/seller-dashboard', icon: Store },
 ];
 
@@ -34,7 +33,7 @@ export default function BottomNav() {
   const handleClick = (item) => {
     if (item.id === 'sell') {
       // Smart routing for the sell CTA.
-      if (!user) navigate('/signup?next=' + encodeURIComponent('/become-seller'));
+      if (!user) navigate('/login?mode=seller&next=' + encodeURIComponent('/become-seller'));
       else if (user.role !== 'seller') navigate('/become-seller');
       else navigate('/sell');
       return;
@@ -49,7 +48,6 @@ export default function BottomNav() {
         // Center button never highlights as "active" — it's a standalone CTA.
         const active = !center && (
           pathname === path ||
-          (path === '/chats' && pathname.startsWith('/chat')) ||
           (path === '/categories' && pathname.startsWith('/category')) ||
           (path === '/seller-dashboard' && pathname.startsWith('/seller'))
         );

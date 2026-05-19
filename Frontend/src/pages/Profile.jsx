@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Settings, LogOut, Shield, ChevronRight,
@@ -33,11 +33,12 @@ const STATUS_INDEX = { pending: 0, processing: 1, shipped: 2, delivered: 3, comp
 
 export default function Profile() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const confirm = useConfirm();
   const { user, logout, updateUser } = useAuth();
   const { myOrders, confirmReceipt } = useOrders();
   const orders = myOrders;
-  const [tab, setTab] = useState('orders');
+  const [tab, setTab] = useState(params.get('tab') || 'orders');
   const [trackingOrder, setTrackingOrder] = useState(null);
   const [reviewing, setReviewing]         = useState(null);
   const [draft, setDraft] = useState({ rating: 5, text: '' });

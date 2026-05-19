@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Plus, Edit2, Trash2, Eye, MessageCircle, Package, TrendingUp, Wallet,
@@ -27,12 +27,13 @@ const STATUS_LABEL = ORDER_STATUSES.reduce((m, s) => (m[s.id] = s.label, m), {})
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { user } = useAuth();
   const confirm = useConfirm();
   const [listings, setListings] = useState([]);
   const [chats, setChats] = useState([]);
   const { myOrders: purchases, salesOrders, setStatus, confirmReceipt } = useOrders();
-  const [tab, setTab] = useState('listings');
+  const [tab, setTab] = useState(params.get('tab') || 'listings');
   const [listingCat, setListingCat] = useState('all');
 
   useEffect(() => {

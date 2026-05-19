@@ -14,7 +14,12 @@
   gap: 14px;
 }
 @media (min-width: 961px) {
-  .trending-full-grid { grid-template-columns: repeat(4, 1fr); }
+  .trending-full-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .trend-banner { padding: 28px 32px; border-radius: var(--r-xl); }
+  .trend-banner h2 { font-size: 1.3rem; }
+}
+@media (min-width: 1200px) {
+  .trending-full-grid { grid-template-columns: repeat(5, 1fr); }
 }
 @media (min-width: 720px) and (max-width: 960px) {
   .trending-full-grid { grid-template-columns: repeat(3, 1fr); }

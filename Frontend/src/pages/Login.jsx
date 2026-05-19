@@ -10,6 +10,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/home';
+  const sellerMode = params.get('mode') === 'seller';
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -39,7 +40,9 @@ export default function Login() {
 
       <form className="auth-card" onSubmit={submit}>
         <h2>Sign in</h2>
-        <p className="lede">Sign in to chat, checkout and manage your sBay activity.</p>
+        <p className="lede">
+          {sellerMode ? 'Sign in to continue to seller registration.' : 'Sign in to checkout and manage your sBay activity.'}
+        </p>
 
         <div className="field">
           <label>Email</label>
@@ -76,7 +79,7 @@ export default function Login() {
         <OAuthButtons />
 
         <p className="auth-foot">
-          New to sBay? <Link to={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
+          New to sBay? <Link to={`/signup?${sellerMode ? 'mode=seller&' : ''}next=${encodeURIComponent(next)}`}>Create an account</Link>
         </p>
       </form>
     </div>

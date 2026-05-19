@@ -18,6 +18,8 @@ import { emitToAdmins, emitToUser } from '../socket.js';
 export const submitSupport = asyncHandler(async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
   if (!message?.trim()) throw new HttpError(400, 'Message is required.');
+  if (!email?.trim()) throw new HttpError(400, 'Gmail is required.');
+  if (!phone?.trim()) throw new HttpError(400, 'Contact number is required.');
 
   const lowerEmail = email.toLowerCase().trim();
 

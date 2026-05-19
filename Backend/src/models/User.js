@@ -49,6 +49,21 @@ const sellerProfileSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const payoutSchema = new mongoose.Schema(
+  {
+    method: {
+      type: String,
+      enum: ['mtn-momo', 'vodafone-cash', 'airteltigo-money', 'bank'],
+      default: 'mtn-momo',
+    },
+    account: { type: String, trim: true, maxlength: 30 },
+    accountName: { type: String, trim: true, maxlength: 80 },
+    network: { type: String, trim: true, maxlength: 40 },
+    updatedAt: Date,
+  },
+  { _id: false }
+);
+
 const subscriptionSchema = new mongoose.Schema(
   {
     plan: { type: String, default: 'free' }, // matches Plan.code
@@ -102,6 +117,7 @@ const userSchema = new mongoose.Schema(
     verification:  { type: verificationSchema, default: () => ({}) },
 
     sellerProfile: sellerProfileSchema,
+    payout: payoutSchema,
     subscription:  { type: subscriptionSchema, default: () => ({ plan: 'free', status: 'active' }) },
 
     // Saved payment methods (mock). The real implementation would
@@ -109,6 +125,9 @@ const userSchema = new mongoose.Schema(
     paymentMethods: [cardSchema],
 
     lastLoginAt: Date,
+
+    resetPasswordTokenHash: { type: String, select: false },
+    resetPasswordExpiresAt: { type: Date, select: false },
   },
   { timestamps: true }
 );

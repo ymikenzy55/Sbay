@@ -91,6 +91,7 @@ export function adaptUser(u) {
     verification: u.verification,
     restricted: u.restricted,
     sellerProfile: u.sellerProfile,
+    payout: u.payout,
     subscription: u.subscription,
     paymentMethods: u.paymentMethods || [],
     createdAt: u.createdAt,

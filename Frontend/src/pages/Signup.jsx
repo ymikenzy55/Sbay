@@ -34,9 +34,10 @@ export default function Signup() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = params.get('next') || '/home';
+  const sellerOnly = params.get('mode') === 'seller';
   const { signup } = useAuth();
 
-  const [role, setRole] = useState('buyer');
+  const [role, setRole] = useState(sellerOnly ? 'seller' : 'buyer');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -82,9 +83,9 @@ export default function Signup() {
 
       <form className="auth-card" onSubmit={submit}>
         <h2>Join sBay</h2>
-        <p className="lede">Pick how you want to start.</p>
+        <p className="lede">{sellerOnly ? 'Create your seller account to continue.' : 'Pick how you want to start.'}</p>
 
-        <div className="role-grid">
+        {!sellerOnly && <div className="role-grid">
           <button type="button" className={`role-card ${role === 'buyer' ? 'active' : ''}`} onClick={() => setRole('buyer')}>
             <span className="role-emo"><ShoppingBag size={22} /></span>
             <strong>Buyer</strong>
@@ -95,7 +96,7 @@ export default function Signup() {
             <strong>Seller</strong>
             <span>Earn on campus</span>
           </button>
-        </div>
+        </div>}
 
         <div className="field">
           <label>Full name</label>
@@ -114,10 +115,18 @@ export default function Signup() {
         </div>
 
         <div className="field">
-          <label>Phone (+233)</label>
+          <label>Phone number</label>
           <div className="field-input">
             <Phone size={16} className="lead" />
-            <input value={form.phone} onChange={(e) => set('phone', e.target.value)} placeholder="+233 24 000 0000" required />
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={form.phone}
+              onChange={(e) => set('phone', e.target.value.replace(/\D/g, ''))}
+              placeholder="number"
+              required
+            />
           </div>
         </div>
 

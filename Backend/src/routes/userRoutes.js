@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
   updateMe, becomeSeller, getSellerById,
-  addPaymentMethod, removePaymentMethod,
+  addPaymentMethod, removePaymentMethod, myNotifications,
 } from '../controllers/userController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -16,9 +16,13 @@ router.patch(
   body('avatar').optional().isString().isLength({ max: 1_000_000 }),
   body('phone').optional().isString().isLength({ max: 30 }),
   body('location').optional().isString().isLength({ max: 120 }),
+  body('sellerProfile').optional().isObject(),
+  body('payout').optional().isObject(),
   validate,
   updateMe
 );
+
+router.get('/me/notifications', requireAuth, myNotifications);
 
 router.post(
   '/me/become-seller',
@@ -30,6 +34,11 @@ router.post(
   body('occupation').optional().isString().isLength({ max: 120 }),
   body('businessReg').optional().isString().isLength({ max: 80 }),
   body('location').optional().isString().isLength({ max: 120 }),
+  body('payout').isObject().withMessage('Payout account is required'),
+  body('payout.method').optional().isIn(['mtn-momo', 'vodafone-cash', 'airteltigo-money', 'bank']),
+  body('payout.account').isString().trim().isLength({ min: 9, max: 30 }).withMessage('Enter a valid payout phone or account number'),
+  body('payout.accountName').optional().isString().trim().isLength({ max: 80 }),
+  body('payout.network').optional().isString().trim().isLength({ max: 40 }),
   // Inline base64 data-URL student ID. Validation cap is generous; the
   // controller enforces the byte budget more strictly.
   body('idCardUrl').optional().isString().isLength({ max: 6_000_000 }),

@@ -25,9 +25,9 @@ export default function SellerSettings() {
     location:  user?.location || 'UG, Legon',
     avatar:    user?.avatar || '',
 
-    payoutMethod: user?.payout?.method || 'momo',
+    payoutMethod: user?.payout?.method || 'mtn-momo',
     payoutAccount: user?.payout?.account || '',
-    payoutName: user?.payout?.name || user?.name || '',
+    payoutName: user?.payout?.accountName || user?.name || '',
 
     vacationMode: user?.vacationMode || false,
     notifyOrders:    user?.notifications?.orders ?? true,
@@ -61,7 +61,7 @@ export default function SellerSettings() {
       phone: form.phone,
       location: form.location,
       sellerProfile: { ...(user?.sellerProfile || {}), storeName: form.storeName, bio: form.bio },
-      payout: { method: form.payoutMethod, account: form.payoutAccount, name: form.payoutName },
+      payout: { method: form.payoutMethod, account: form.payoutAccount, accountName: form.payoutName },
       vacationMode: form.vacationMode,
       notifications: {
         orders: form.notifyOrders,
@@ -191,8 +191,9 @@ export default function SellerSettings() {
             <p className="muted small">How you'd like to receive your earnings.</p>
             <div className="pay-methods">
               {[
-                { id: 'momo', label: 'MTN MoMo' },
-                { id: 'card', label: 'Bank card' },
+                { id: 'mtn-momo', label: 'MTN MoMo' },
+                { id: 'vodafone-cash', label: 'Vodafone Cash' },
+                { id: 'airteltigo-money', label: 'AirtelTigo Money' },
                 { id: 'bank', label: 'Bank transfer' },
               ].map((m) => (
                 <label key={m.id} className={`pay-method ${form.payoutMethod === m.id ? 'active' : ''}`}>
@@ -210,8 +211,10 @@ export default function SellerSettings() {
               <span>Account / number</span>
               <input
                 value={form.payoutAccount}
-                onChange={(e) => set('payoutAccount', e.target.value)}
-                placeholder={form.payoutMethod === 'momo' ? '02XX XXX XXXX' : 'Account number'}
+                onChange={(e) => set('payoutAccount', e.target.value.replace(/\D/g, ''))}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="number"
               />
             </label>
             <label className="field">

@@ -178,6 +178,7 @@ export const checkout = asyncHandler(async (req, res) => {
   });
   for (const o of orders) {
     if (o.seller) emitToUser(o.seller.toString(), 'order:new', { orderId: o._id });
+    if (o.buyer) emitToUser(o.buyer.toString(), 'order:new', { orderId: o._id });
   }
 
   res.status(201).json({ orders });
@@ -239,6 +240,7 @@ export const updateStatusBySeller = asyncHandler(async (req, res) => {
   pushTimeline(o, req.user._id, 'status', `Seller set status to ${status}`);
   await o.save();
   await maybeCloseChat(o);
+  emitToUser(o.buyer.toString(), 'order:updated', { orderId: o._id, status: o.status, href: '/profile?tab=orders' });
   res.json({ order: o });
 });
 
@@ -263,6 +265,7 @@ export const buyerConfirmReceipt = asyncHandler(async (req, res) => {
   pushTimeline(o, req.user._id, 'escrow', 'Buyer confirmed receipt; escrow released to seller.');
   await o.save();
   await maybeCloseChat(o);
+  emitToUser(o.seller.toString(), 'order:updated', { orderId: o._id, status: o.status, href: '/seller-dashboard?tab=sales' });
   res.json({ order: o });
 });
 

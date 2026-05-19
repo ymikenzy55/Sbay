@@ -121,6 +121,22 @@ export default function Categories() {
       <div className="cat-layout">
         {/* Two-level sidebar: schools → categories of the selected school */}
         <aside className="cat-sidebar" aria-label="Schools and categories">
+          {/* Desktop-only search bar at top of sidebar */}
+          <div className="cat-sidebar-search">
+            <SearchIcon size={14} className="cat-search-ic" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter listings..."
+              aria-label="Search within categories"
+            />
+            {query && (
+              <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
+                <X size={13} />
+              </button>
+            )}
+          </div>
           {treeLoading ? (
             <div className="cat-side-skel">
               {Array.from({ length: 6 }).map((_, i) => (

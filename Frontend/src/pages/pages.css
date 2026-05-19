@@ -52,6 +52,22 @@
   .page-h1 { font-size: 1.25rem; }
 }
 
+@media (min-width: 961px) {
+  .page { padding-bottom: 60px; }
+  .page-main {
+    max-width: 1200px;
+    padding: 28px 48px 40px;
+    gap: 24px;
+  }
+  .page-h1 { font-size: 1.8rem; }
+  .page-h2 { font-size: 1.15rem; }
+  .card { padding: 20px 22px; }
+}
+
+@media (min-width: 1200px) {
+  .page-main { max-width: 1400px; padding: 32px 60px 48px; }
+}
+
 /* Verified pill (shared) */
 .verified-pill {
   display: inline-flex;

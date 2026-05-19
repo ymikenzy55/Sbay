@@ -11,6 +11,9 @@
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
   transition: background .15s ease;
+  text-align: left;
+  width: 100%;
+  color: inherit;
 }
 .notif-row:hover { background: var(--surface-2); }
 .notif-row.read { opacity: 0.6; }

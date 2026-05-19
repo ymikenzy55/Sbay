@@ -34,7 +34,6 @@ export default function SupportWidget() {
   useEffect(() => {
     if (user) {
       setForm({ name: user.name || '', email: user.email || '', phone: user.phone || '' });
-      setStarted(true);
     }
   }, [user]);
 
@@ -79,7 +78,7 @@ export default function SupportWidget() {
     const maxX = window.innerWidth - 72;
     const maxY = window.innerHeight - 140; // keep above bottom nav
     setPos({
-      x: clamp(ds.startPosX + dx, -(maxX), 0),
+      x: clamp(ds.startPosX + dx, 0, maxX),
       y: clamp(ds.startPosY + dy, -(maxY), 0),
     });
   }, []);
@@ -95,7 +94,7 @@ export default function SupportWidget() {
   // ---- Chat logic ----
   const startChat = (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
+    if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) return;
     setStarted(true);
   };
 
@@ -170,16 +169,17 @@ export default function SupportWidget() {
               />
               <input
                 type="email"
-                placeholder="Email address *"
+                placeholder="Gmail address *"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 required
               />
               <input
                 type="tel"
-                placeholder="Phone number"
+                placeholder="Contact number *"
                 value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
+                required
               />
               <button type="submit" className="btn btn-primary">Start Chat</button>
             </form>

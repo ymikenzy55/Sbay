@@ -226,3 +226,25 @@
   .order-side { grid-column: span 2; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .wishlist-grid { grid-template-columns: 1fr 1fr; }
 }
+
+@media (min-width: 961px) {
+  .profile-hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 48px 12px;
+  }
+  .profile-avatar { width: 84px; height: 84px; }
+  .profile-info h2 { font-size: 1.4rem; }
+  .stats-row { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .order-card { padding: 16px; }
+  .order-card .thumb { width: 90px; height: 90px; }
+  .wishlist-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .dash-tabs { gap: 24px; }
+  .settings-form .card { padding: 24px; }
+  .spend-card { padding: 22px; }
+  .spend-card .big-num { font-size: 1.8rem; }
+}
+
+@media (min-width: 1200px) {
+  .profile-hero { max-width: 1400px; padding: 32px 60px 12px; }
+}

@@ -57,7 +57,7 @@ export default function Home() {
   return (
     <div className="home">
       <TopBar
-        hideActions
+        hideActions={false}
         searchValue={query}
         onSearchChange={setQuery}
         searchPlaceholder="Search phones, books, sneakers, snacks..."

@@ -1,89 +1,76 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Lock, KeyRound, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../store/AuthContext';
 import './Auth.css';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const { requestPasswordReset, verifyResetCode, resetPassword } = useAuth();
+  const [params] = useSearchParams();
+  const token = params.get('token') || '';
+  const emailFromLink = params.get('email') || '';
+  const { requestPasswordReset, resetPassword } = useAuth();
 
-  // step: 'request' | 'verify' | 'reset' | 'done'
-  const [step, setStep] = useState('request');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [email, setEmail] = useState(emailFromLink);
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [show, setShow] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const [devCode, setDevCode] = useState('');
+  const [sent, setSent] = useState(false);
+  const [devLink, setDevLink] = useState('');
+  const [done, setDone] = useState(false);
 
-  const sendCode = async (e) => {
+  const sendLink = async (e) => {
     e.preventDefault();
-    setErr(''); setBusy(true);
+    setErr('');
+    setBusy(true);
     try {
       const res = await requestPasswordReset(email.trim());
-      setDevCode(res.devCode || '');
-      setStep('verify');
-    } catch (e2) { setErr(e2.message || 'Could not send code.'); }
-    finally { setBusy(false); }
-  };
-
-  const checkCode = async (e) => {
-    e.preventDefault();
-    setErr(''); setBusy(true);
-    try {
-      await verifyResetCode(email.trim(), code.trim());
-      setStep('reset');
-    } catch (e2) { setErr(e2.message || 'Verification failed.'); }
-    finally { setBusy(false); }
+      setDevLink(res.resetUrl || '');
+      setSent(true);
+    } catch (e2) {
+      setErr(e2.message || 'Could not send reset link.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const savePassword = async (e) => {
     e.preventDefault();
     setErr('');
-    if (pw !== pw2) { setErr('Passwords do not match.'); return; }
+    if (pw !== pw2) return setErr('Passwords do not match.');
     setBusy(true);
     try {
-      await resetPassword(email.trim(), pw);
-      setStep('done');
-    } catch (e2) { setErr(e2.message || 'Could not reset password.'); }
-    finally { setBusy(false); }
-  };
-
-  const resend = async () => {
-    setErr('');
-    try {
-      const res = await requestPasswordReset(email.trim());
-      setDevCode(res.devCode || '');
-    } catch (e2) { setErr(e2.message || 'Could not resend.'); }
+      await resetPassword({ email: email.trim(), token, newPassword: pw });
+      setDone(true);
+    } catch (e2) {
+      setErr(e2.message || 'Could not reset password.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <div className="auth-page kente-bg">
-      <button
-        className="auth-back"
-        onClick={() => (step === 'request' ? navigate(-1) : setStep(step === 'verify' ? 'request' : 'verify'))}
-        aria-label="Back"
-      >
+      <button className="auth-back" onClick={() => navigate(-1)} aria-label="Back">
         <ArrowLeft size={20} />
       </button>
       <div className="auth-logo"><Logo size="lg" /></div>
 
-      {step === 'request' && (
-        <form className="auth-card" onSubmit={sendCode}>
+      {!token && (
+        <form className="auth-card" onSubmit={sendLink}>
           <h2>Forgot password</h2>
-          <p className="lede">Enter your email and we'll send you a 6-digit reset code.</p>
+          <p className="lede">Enter the Gmail you registered with. We'll send a secure reset link.</p>
 
           <div className="field">
-            <label>Email</label>
+            <label>Gmail</label>
             <div className="field-input">
               <Mail size={16} className="lead" />
               <input
                 type="email"
-                placeholder="you@campus.edu.gh"
+                placeholder="you@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -93,9 +80,15 @@ export default function ForgotPassword() {
           </div>
 
           {err && <div className="auth-error">{err}</div>}
+          {sent && (
+            <div className="auth-hint">
+              Check your Gmail for the reset link.
+              {devLink && <><br /><a href={devLink}>Open development reset link</a></>}
+            </div>
+          )}
 
           <button className="btn btn-primary auth-submit" type="submit" disabled={busy}>
-            {busy ? 'Sending...' : 'Send reset code'}
+            {busy ? 'Sending...' : 'Send reset link'}
           </button>
 
           <p className="auth-foot">
@@ -104,52 +97,10 @@ export default function ForgotPassword() {
         </form>
       )}
 
-      {step === 'verify' && (
-        <form className="auth-card" onSubmit={checkCode}>
-          <h2>Enter your code</h2>
-          <p className="lede">
-            We sent a 6-digit code to <strong>{email}</strong>.
-          </p>
-
-          {devCode && (
-            <div className="auth-hint">
-              Dev mode: your code is <strong>{devCode}</strong>
-            </div>
-          )}
-
-          <div className="field">
-            <label>Verification code</label>
-            <div className="field-input">
-              <KeyRound size={16} className="lead" />
-              <input
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                placeholder="123456"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                required
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {err && <div className="auth-error">{err}</div>}
-
-          <button className="btn btn-primary auth-submit" type="submit" disabled={busy || code.length < 6}>
-            {busy ? 'Verifying...' : 'Verify code'}
-          </button>
-
-          <p className="auth-foot">
-            Didn't get it? <a onClick={resend} style={{ cursor: 'pointer' }}>Resend code</a>
-          </p>
-        </form>
-      )}
-
-      {step === 'reset' && (
+      {token && !done && (
         <form className="auth-card" onSubmit={savePassword}>
-          <h2>Choose a new password</h2>
-          <p className="lede">Pick something strong and easy for you to remember.</p>
+          <h2>Set new password</h2>
+          <p className="lede">Create and confirm a new password for {email || 'your account'}.</p>
 
           <div className="field">
             <label>New password</label>
@@ -157,10 +108,10 @@ export default function ForgotPassword() {
               <Lock size={16} className="lead" />
               <input
                 type={show ? 'text' : 'password'}
-                placeholder="••••••••"
+                placeholder="At least 8 characters"
                 value={pw}
                 onChange={(e) => setPw(e.target.value)}
-                minLength={6}
+                minLength={8}
                 required
                 autoFocus
               />
@@ -176,10 +127,10 @@ export default function ForgotPassword() {
               <Lock size={16} className="lead" />
               <input
                 type={show ? 'text' : 'password'}
-                placeholder="••••••••"
+                placeholder="Re-enter new password"
                 value={pw2}
                 onChange={(e) => setPw2(e.target.value)}
-                minLength={6}
+                minLength={8}
                 required
               />
             </div>
@@ -193,18 +144,14 @@ export default function ForgotPassword() {
         </form>
       )}
 
-      {step === 'done' && (
+      {done && (
         <div className="auth-card" style={{ textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
             <CheckCircle2 size={48} color="#0A7E3E" />
           </div>
           <h2>Password updated</h2>
           <p className="lede">You can now sign in with your new password.</p>
-          <button
-            className="btn btn-primary auth-submit"
-            type="button"
-            onClick={() => navigate('/login', { replace: true })}
-          >
+          <button className="btn btn-primary auth-submit" type="button" onClick={() => navigate('/login', { replace: true })}>
             Back to sign in
           </button>
         </div>

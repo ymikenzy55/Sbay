@@ -174,3 +174,20 @@
 /* Inline spinner used in the Confirm & Pay button */
 .spin { animation: sbay-spin 1s linear infinite; }
 @keyframes sbay-spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 961px) {
+  .checkout-page .page-main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+    gap: 28px;
+  }
+  .co-details-col { display: flex; flex-direction: column; gap: 20px; }
+  .co-summary-col { position: sticky; top: 84px; }
+  .method-grid { grid-template-columns: 1fr 1fr; }
+  .co-item .thumb { width: 60px; height: 60px; }
+}
+
+@media (min-width: 1200px) {
+  .checkout-page .page-main { grid-template-columns: 1fr 420px; }
+}

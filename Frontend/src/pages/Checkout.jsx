@@ -74,10 +74,11 @@ export default function Checkout() {
   }
 
   return (
-    <div className="page">
+    <div className="page checkout-page">
       <TopBar showBack title="Checkout" showSearch={false} />
 
       <main className="page-main">
+        <div className="co-details-col">
         <section className="card">
           <h3 className="page-h2">Order Summary</h3>
           <div className="co-items">
@@ -148,7 +149,8 @@ export default function Checkout() {
           </p>
         </section>
 
-        <section className="card co-totals">
+        </div>
+        <section className="card co-totals co-summary-col">
           <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
           <div className="row"><span>Service fee (5%)</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
           <div className="divider" />

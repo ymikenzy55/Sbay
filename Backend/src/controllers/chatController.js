@@ -4,6 +4,7 @@ import { Order } from '../models/Order.js';
 import { User } from '../models/User.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { emitToUser } from '../socket.js';
 
 /**
  * Strict purchase-gating — a buyer may only chat a seller if at least
@@ -80,6 +81,14 @@ export const sendMessage = asyncHandler(async (req, res) => {
   chat.lastMessagePreview = text.slice(0, 140);
   if (isBuyer) chat.unreadBySeller += 1; else chat.unreadByBuyer += 1;
   await chat.save();
+
+  const recipient = isBuyer ? chat.seller : chat.buyer;
+  emitToUser(recipient.toString(), 'message:new', {
+    chatId: chat._id,
+    messageId: msg._id,
+    text: text.slice(0, 140),
+    href: `/chat/${chat._id}`,
+  });
 
   res.status(201).json({ message: msg });
 });

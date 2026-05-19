@@ -189,6 +189,20 @@
 /* Make the page scroll-locked on desktop & mobile */
 @media (min-width: 961px) {
   .cat-page { background: var(--bg); }
+  .cat-top { display: none; }
+  .cat-sidebar { padding-bottom: 40px; padding-top: 0; }
+  .cat-main { padding: 20px 36px 60px; gap: 20px; }
+  .cat-title { font-size: 1.5rem; }
+  .cat-panel { padding: 20px 24px 24px; }
+  .panel-cell:hover .cell-thumb { transform: scale(1.04); box-shadow: var(--shadow-md); }
+  .cell-thumb { border-radius: var(--r-lg); }
+  .cell-label { font-size: 0.82rem; }
+  .cell-price { font-size: 0.9rem; }
+  .school-head { padding: 16px 14px; font-size: 0.95rem; }
+  .cat-sub { padding: 14px 14px; font-size: 0.88rem; }
+}
+@media (min-width: 1100px) {
+  .cat-main { padding: 24px 48px 60px; }
 }
 
 /* Custom top bar for the Categories page — logo + shifted-left live search. */
@@ -242,6 +256,43 @@
   cursor: pointer;
   padding: 2px;
   display: inline-flex;
+}
+
+/* Desktop-only search bar inside the sidebar */
+.cat-sidebar-search {
+  display: none;
+}
+@media (min-width: 961px) {
+  .cat-sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 14px 10px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    padding: 8px 10px;
+  }
+  .cat-sidebar-search:focus-within { border-color: var(--primary); background: #fff; }
+  .cat-sidebar-search .cat-search-ic { color: var(--text-muted); flex-shrink: 0; }
+  .cat-sidebar-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: var(--text);
+    min-width: 0;
+  }
+  .cat-sidebar-search .cat-search-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: inline-flex;
+  }
 }
 
 /* Two-level sidebar — stacked views (schools ↔ categories). */

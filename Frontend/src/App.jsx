@@ -8,6 +8,7 @@ import ScrollToTop from './components/ScrollToTop';
 import FloatingCart from './components/FloatingCart';
 import DesktopNav from './components/DesktopNav';
 import SupportWidget from './components/SupportWidget';
+import NetworkBanner from './components/NetworkBanner';
 
 import Splash          from './pages/Splash';
 import Home            from './pages/Home';
@@ -62,6 +63,7 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <DesktopNav />
+            <NetworkBanner />
             <FloatingCart />
             <SupportWidget />
             <Routes>

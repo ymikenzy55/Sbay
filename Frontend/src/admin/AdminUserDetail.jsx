@@ -238,6 +238,13 @@ export default function AdminUserDetail() {
                   <tr><th>Subscription</th><td>{user.subscription?.plan || 'free'} · {user.subscription?.status || 'inactive'}</td></tr>
                 </>
               )}
+              {user.role === 'seller' && (
+                <>
+                  <tr><th>Payout method</th><td>{user.payout?.method || 'not set'}</td></tr>
+                  <tr><th>Payout number</th><td>{user.payout?.account || 'not set'}</td></tr>
+                  <tr><th>Payout name</th><td>{user.payout?.accountName || 'not set'}</td></tr>
+                </>
+              )}
               <tr><th>Verification</th><td>{user.verification?.status || (user.verified ? 'approved' : 'unverified')}</td></tr>
               <tr><th>Student?</th><td>{user.verification?.isStudent ? `Yes (${user.verification?.university || '—'})` : 'No'}</td></tr>
               <tr><th>Status</th><td>{user.restricted ? <span className="admin-pill bad">Restricted: {user.restrictReason || '—'}</span> : <span className="admin-pill">Active</span>}</td></tr>

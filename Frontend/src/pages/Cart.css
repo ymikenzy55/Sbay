@@ -43,3 +43,19 @@
 .cart-summary .row { display: flex; justify-content: space-between; }
 .cart-summary .row.total { font-size: 1.1rem; }
 .cart-summary .row.total strong { color: var(--primary); }
+
+@media (min-width: 961px) {
+  .cart-page .page-main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+    gap: 28px;
+  }
+  .cart-row { padding: 16px; gap: 18px; }
+  .cart-thumb { width: 80px; height: 80px; border-radius: var(--r-lg); }
+  .cart-summary { position: sticky; top: 84px; }
+}
+
+@media (min-width: 1200px) {
+  .cart-page .page-main { grid-template-columns: 1fr 420px; }
+}

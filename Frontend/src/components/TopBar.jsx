@@ -2,6 +2,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '../store/CartContext';
+import { useAuth } from '../store/AuthContext';
+import { useUserNotifications } from '../hooks/useUserNotifications';
 import './TopBar.css';
 
 /**
@@ -29,6 +31,8 @@ export default function TopBar({
 }) {
   const navigate = useNavigate();
   const { count } = useCart();
+  const { user } = useAuth();
+  const { unread } = useUserNotifications();
   const isLive = typeof onSearchChange === 'function';
 
   return (
@@ -85,7 +89,7 @@ export default function TopBar({
             onClick={() => navigate('/notifications')}
           >
             <Bell size={20} />
-            <span className="dot" />
+            {unread > 0 && <span className="badge">{unread}</span>}
           </button>
           <button
             className="icon-btn"
@@ -97,11 +101,11 @@ export default function TopBar({
           </button>
           <button
             className="avatar"
-            onClick={() => navigate('/profile')}
-            aria-label="Profile"
+            onClick={() => navigate(user?.role === 'seller' ? '/seller-dashboard' : '/profile')}
+            aria-label={user?.role === 'seller' ? 'Seller dashboard' : 'Profile'}
             style={{
               backgroundImage:
-                'url(https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&q=80)',
+                `url(${user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&q=80'})`,
             }}
           />
         </div>

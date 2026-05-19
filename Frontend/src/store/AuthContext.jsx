@@ -53,8 +53,8 @@ export function AuthProvider({ children }) {
     return u;
   };
 
-  const signup = async ({ name, email, password, location }) => {
-    const { token, user: u } = await authApi.register({ name, email, password, location });
+  const signup = async ({ name, email, password, phone, location }) => {
+    const { token, user: u } = await authApi.register({ name, email, password, phone, location });
     setToken(token);
     setUser(u);
     return u;
@@ -147,32 +147,13 @@ export function AuthProvider({ children }) {
    */
   const requestPasswordReset = async (email) => {
     if (!email) throw new Error('Enter your email.');
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    sessionStorage.setItem('sbay.reset', JSON.stringify({
-      email, code, expiresAt: Date.now() + 10 * 60 * 1000,
-    }));
-    return { email, devCode: code };
+    return authApi.requestPasswordReset(email);
   };
 
-  const verifyResetCode = async (email, code) => {
-    const raw = sessionStorage.getItem('sbay.reset');
-    if (!raw) throw new Error('No reset request found. Start again.');
-    const t = JSON.parse(raw);
-    if (t.email !== email) throw new Error('Email does not match request.');
-    if (Date.now() > t.expiresAt) throw new Error('Code expired. Request a new one.');
-    if (String(code).trim() !== t.code) throw new Error('Incorrect code.');
-    sessionStorage.setItem('sbay.reset', JSON.stringify({ ...t, verified: true }));
-    return true;
-  };
-
-  const resetPassword = async (email, newPassword) => {
-    const raw = sessionStorage.getItem('sbay.reset');
-    if (!raw) throw new Error('No reset request found.');
-    const t = JSON.parse(raw);
-    if (!t.verified || t.email !== email) throw new Error('Verify your code first.');
+  const resetPassword = async ({ email, token, newPassword }) => {
+    if (!email || !token) throw new Error('Reset link is missing or invalid.');
     if (!newPassword || newPassword.length < 8) throw new Error('Password must be at least 8 characters.');
-    sessionStorage.removeItem('sbay.reset');
-    return true;
+    return authApi.resetPassword({ email, token, newPassword });
   };
 
   /** Kept for legacy callers — verification is now created by
@@ -186,7 +167,7 @@ export function AuthProvider({ children }) {
       login, signup, logout, googleLogin,
       upgradeToSeller, updateUser, refreshMe,
       submitVerification, subscribe, cancelSubscription,
-      requestPasswordReset, verifyResetCode, resetPassword,
+      requestPasswordReset, resetPassword,
     }}>
       {children}
     </AuthContext.Provider>

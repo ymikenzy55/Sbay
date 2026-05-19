@@ -1,15 +1,15 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, MessageCircle, TrendingUp } from 'lucide-react';
+import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, TrendingUp } from 'lucide-react';
 import Logo from './Logo';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
+import { useUserNotifications } from '../hooks/useUserNotifications';
 import './DesktopNav.css';
 
 const LINKS = [
   { to: '/home',       label: 'Home',       icon: HomeIc },
   { to: '/categories', label: 'Categories', icon: LayoutGrid },
   { to: '/trending',   label: 'Trending',   icon: TrendingUp },
-  { to: '/chats',      label: 'Messages',   icon: MessageCircle },
 ];
 
 export default function DesktopNav() {
@@ -17,12 +17,13 @@ export default function DesktopNav() {
   const { pathname } = useLocation();
   const { count } = useCart();
   const { user } = useAuth();
+  const { unread } = useUserNotifications();
 
   // Admin SPA has its own shell — never render the public marketplace nav there
   if (pathname.startsWith('/admin')) return null;
 
   const goSell = () => {
-    if (!user) navigate('/signup?next=' + encodeURIComponent('/become-seller'));
+    if (!user) navigate('/login?mode=seller&next=' + encodeURIComponent('/become-seller'));
     else if (user.role !== 'seller') navigate('/become-seller');
     else navigate('/sell');
   };
@@ -62,7 +63,7 @@ export default function DesktopNav() {
           </button>
           <button className="icon-btn" aria-label="Notifications" onClick={() => navigate('/notifications')}>
             <Bell size={20} />
-            <span className="dot" />
+            {unread > 0 && <span className="badge">{unread}</span>}
           </button>
           <button className="icon-btn" aria-label="Cart" onClick={() => navigate('/cart')}>
             <ShoppingCart size={20} />

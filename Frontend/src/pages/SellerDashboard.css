@@ -256,6 +256,14 @@
 .status-select:disabled { opacity: .55; cursor: not-allowed; }
 
 
+@media (min-width: 961px) {
+  .sd-hero { padding: 28px 32px; border-radius: var(--r-xl); }
+  .sd-hero h2 { font-size: 1.5rem; }
+  .sd-stats { grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .sd-tabs { gap: 28px; }
+  .sd-tab { padding: 16px 4px; font-size: 1rem; }
+}
+
 /* Listing category filter pills */
 .sd-listing-filter {
   display: flex;

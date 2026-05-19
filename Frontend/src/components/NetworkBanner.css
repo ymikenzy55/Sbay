@@ -1,0 +1,35 @@
+.network-banner {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(92vw, 520px);
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff7e6;
+  color: #5c3700;
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  box-shadow: 0 14px 34px rgba(44, 32, 0, 0.16);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.network-banner button {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: inherit;
+  background: rgba(92, 55, 0, 0.08);
+}
+@media (max-width: 720px) {
+  .network-banner {
+    top: 64px;
+    font-size: 0.86rem;
+  }
+}

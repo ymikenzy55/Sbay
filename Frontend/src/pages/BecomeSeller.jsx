@@ -9,7 +9,7 @@ import { useAuth } from '../store/AuthContext';
 import './Auth.css';
 import './BecomeSeller.css';
 
-const STEPS = ['Details', 'About You', 'Verification', 'Terms'];
+const STEPS = ['Details', 'About You', 'Verification', 'Payout', 'Terms'];
 
 export default function BecomeSeller() {
   const navigate = useNavigate();
@@ -26,6 +26,9 @@ export default function BecomeSeller() {
     studentId: null, // file
     occupation: '',
     businessReg: '',
+    payoutMethod: 'mtn-momo',
+    payoutAccount: '',
+    payoutName: user?.name || '',
     agreedTerms: false,
     agreedPrivacy: false,
   });
@@ -40,7 +43,8 @@ export default function BecomeSeller() {
         ? !!form.studentId && !!form.university
         : !!form.occupation;
     }
-    if (step === 3) return form.agreedTerms && form.agreedPrivacy;
+    if (step === 3) return form.payoutAccount.replace(/\D/g, '').length >= 9 && form.payoutName.trim().length >= 2;
+    if (step === 4) return form.agreedTerms && form.agreedPrivacy;
     return true;
   };
 
@@ -78,6 +82,11 @@ export default function BecomeSeller() {
         occupation: form.isStudent ? undefined : form.occupation.trim(),
         businessReg: form.isStudent ? undefined : (form.businessReg.trim() || undefined),
         location: user?.location || form.university || undefined,
+        payout: {
+          method: form.payoutMethod,
+          account: form.payoutAccount,
+          accountName: form.payoutName,
+        },
         idCardUrl,
       });
       setSubmitted(true);
@@ -222,6 +231,41 @@ export default function BecomeSeller() {
             )}
 
             {step === 3 && (
+              <>
+                <div className="field">
+                  <label>Payment network</label>
+                  <div className="field-input">
+                    <select value={form.payoutMethod} onChange={(e) => set('payoutMethod', e.target.value)}>
+                      <option value="mtn-momo">MTN MoMo</option>
+                      <option value="vodafone-cash">Vodafone Cash</option>
+                      <option value="airteltigo-money">AirtelTigo Money</option>
+                      <option value="bank">Bank account</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="field">
+                  <label>Payment number</label>
+                  <div className="field-input">
+                    <input
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={form.payoutAccount}
+                      onChange={(e) => set('payoutAccount', e.target.value.replace(/\D/g, ''))}
+                      placeholder="number"
+                    />
+                  </div>
+                  <p className="muted small">Enter a valid phone or account number for receiving buyer payments.</p>
+                </div>
+                <div className="field">
+                  <label>Account name</label>
+                  <div className="field-input">
+                    <input value={form.payoutName} onChange={(e) => set('payoutName', e.target.value)} placeholder="Name registered on the account" />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {step === 4 && (
               <>
                 <div className="terms-box">
                   <Shield size={20} color="#0A7E3E" />

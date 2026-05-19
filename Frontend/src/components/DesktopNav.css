@@ -144,3 +144,7 @@
     .dnav-link { padding: 10px; }
   }
 }
+
+@media (min-width: 1400px) {
+  .dnav-inner { max-width: 1600px; padding: 14px 48px; }
+}

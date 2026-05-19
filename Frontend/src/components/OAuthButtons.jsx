@@ -1,10 +1,10 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import { useAuth } from '../store/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../store/AuthContext';
 import './OAuthButtons.css';
 
-export default function OAuthButtons() {
+export default function OAuthButtons({ role = 'buyer', next = '/home', remember = true }) {
   const { googleLogin } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState(null);
@@ -12,9 +12,10 @@ export default function OAuthButtons() {
   const handleGoogleSuccess = async (tokenResponse) => {
     setError(null);
     try {
-      const u = await googleLogin(tokenResponse.access_token);
-      if (u.role === 'admin') navigate('/admin');
-      else navigate('/');
+      const u = await googleLogin(tokenResponse.access_token, remember, role);
+      if (u.role === 'admin') navigate('/admin', { replace: true });
+      else if (role === 'seller') navigate('/become-seller', { replace: true });
+      else navigate(decodeURIComponent(next), { replace: true });
     } catch (e) {
       setError(e.message || 'Google sign-in failed. Please try again.');
     }

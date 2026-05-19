@@ -7,7 +7,6 @@
   background: #fff;
   border-top: 1px solid var(--border);
   box-shadow: 0 -6px 24px rgba(10, 60, 30, 0.06);
-  /* Flex distributes evenly for buyer (5) or seller (4) item counts. */
   display: flex;
   justify-content: space-around;
   align-items: stretch;
@@ -32,14 +31,16 @@
   background: transparent;
   transition: color .15s ease;
 }
+
 .nav-icon {
   width: 32px;
   height: 32px;
   display: grid;
   place-items: center;
   border-radius: 10px;
-  transition: background .15s ease, color .15s ease;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
 }
+
 .nav-item.active { color: var(--primary); }
 .nav-item.active .nav-icon { background: var(--primary-50); }
 
@@ -48,21 +49,31 @@
   position: relative;
   color: var(--text-soft);
 }
+
 .nav-item.center .nav-icon {
   width: 48px;
   height: 48px;
   margin-top: -18px; /* lift above the bar */
   background: var(--secondary);
-  color: #2A1F00;
+  color: #fff;
   border-radius: 50%;
   border: 4px solid #fff;
   box-shadow: 0 8px 18px rgba(245, 166, 35, 0.45);
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
 }
-.nav-item.center:hover .nav-icon { transform: translateY(-2px); }
+
+.nav-item.center:hover .nav-icon,
+.nav-item.center:active .nav-icon {
+  background: #e0a208;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(224, 162, 8, 0.5);
+}
+
 .nav-item.center.active { color: var(--text-soft); }
+
 .nav-item.center.active .nav-icon {
   background: var(--secondary);
-  color: #2A1F00;
-  /* never use the green "active" background here */
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(245, 166, 35, 0.55);
 }

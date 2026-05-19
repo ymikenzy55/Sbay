@@ -15,6 +15,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [show, setShow] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -22,7 +23,7 @@ export default function Login() {
     e.preventDefault();
     setErr(''); setBusy(true);
     try {
-      const user = await login({ email, password: pw });
+      const user = await login({ email, password: pw, remember });
       // Admins go straight to the admin panel; everyone else to their destination
       if (user?.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -67,7 +68,8 @@ export default function Login() {
 
         <div className="auth-meta">
           <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-            <input type="checkbox" /> Remember me
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            Remember me
           </label>
           <Link to="/forgot-password">Forgot password?</Link>
         </div>

@@ -95,6 +95,7 @@ export default function App() {
               <Route path="/payment-failed"  element={<PaymentFailed />} />
               <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
               <Route path="/profile"         element={<Profile />} />
+              <Route path="/orders"           element={<RequireAuth><Profile /></RequireAuth>} />
 
               {/* Seller flow — auth + seller role */}
               <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />

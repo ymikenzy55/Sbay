@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Shield, MapPin, MessageCircle, Send, Zap, BadgeCheck, Trophy, Clock } from 'lucide-react';
+import { ArrowLeft, Star, Shield, MapPin, Send, Zap, BadgeCheck, Trophy, Clock } from 'lucide-react';
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
@@ -23,7 +23,6 @@ export default function SellerProfile() {
   const [reviews, setReviews] = useState(SEED_REVIEWS);
   const [draft, setDraft] = useState({ rating: 5, text: '' });
 
-  const onChat = () => navigate('/chat/c1');
 
   const submitReview = (e) => {
     e.preventDefault();
@@ -154,9 +153,6 @@ export default function SellerProfile() {
         )}
       </main>
 
-      <button className="floating-msg" onClick={onChat}>
-        <MessageCircle size={18} /> Message Seller
-      </button>
     </div>
   );
 }

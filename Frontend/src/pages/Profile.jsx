@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Settings, LogOut, Shield, ChevronRight,
-  Check, Store, Star, MapPin, Lock, Camera, Package, Truck, MessageCircle,
+  Settings, LogOut, ChevronRight, Check, Store, Star, MapPin, Lock, Camera,
+  Package, Truck, MessageCircle, Heart,
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
@@ -15,21 +15,25 @@ import './pages.css';
 import './Profile.css';
 
 const STATUS_LABEL = ORDER_STATUSES.reduce((m, s) => (m[s.id] = s.label, m), {});
-
-const WISHLIST = [
-  { id: 't2', title: 'iPhone 13 128GB', price: 3800, image: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=600&q=70' },
-  { id: 'r3', title: 'MacBook Pro 2019', price: 7500, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=70' },
-];
+const WISHLIST = [];
 
 const TIMELINE = [
-  { key: 'pending',    label: 'Order placed',     icon: Check },
-  { key: 'processing', label: 'Seller preparing', icon: Shield },
-  { key: 'shipped',    label: 'Out for delivery', icon: Truck },
-  { key: 'delivered',  label: 'Delivered',        icon: Package },
-  { key: 'completed',  label: 'You confirmed',    icon: Star },
+  { key: 'pending', label: 'Order placed', icon: Check },
+  { key: 'processing', label: 'Seller preparing', icon: Store },
+  { key: 'shipped', label: 'Out for delivery', icon: Truck },
+  { key: 'delivered', label: 'Delivered', icon: Package },
+  { key: 'completed', label: 'You confirmed', icon: Star },
 ];
 
 const STATUS_INDEX = { pending: 0, processing: 1, shipped: 2, delivered: 3, completed: 4 };
+
+const PROFILE_NAV = [
+  { id: 'orders', label: 'My Orders', icon: Package },
+  { id: 'wishlist', label: 'Wishlist', icon: Heart },
+  { id: 'become-seller', label: 'Become a Seller', icon: Store, action: true },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'signout', label: 'Sign Out', icon: LogOut, danger: true },
+];
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -40,10 +44,9 @@ export default function Profile() {
   const orders = myOrders;
   const [tab, setTab] = useState(params.get('tab') || 'orders');
   const [trackingOrder, setTrackingOrder] = useState(null);
-  const [reviewing, setReviewing]         = useState(null);
+  const [reviewing, setReviewing] = useState(null);
   const [draft, setDraft] = useState({ rating: 5, text: '' });
 
-  // Settings form state — initialised lazily from current user.
   const [settings, setSettings] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -55,8 +58,10 @@ export default function Profile() {
 
   const isGuest = !user;
 
-  // Sellers manage everything (account, settings, orders, purchases) from
-  // their dashboard — they should never see the buyer Profile page.
+  const wishlistCount = useMemo(() => WISHLIST.length, []);
+
+  // Sellers manage everything from their dashboard — they should never
+  // see the buyer Profile page.
   if (user?.role === 'seller') {
     return <Navigate to="/seller-dashboard" replace />;
   }
@@ -84,9 +89,6 @@ export default function Profile() {
 
   const submitReview = () => {
     if (!draft.text.trim()) return;
-    // In a real app this would POST to the seller. For the mock, we just
-    // mark the order as reviewed and close the modal.
-    // Reviewed flag is local-only in the mock; status stays as-is.
     setReviewing(null);
     setDraft({ rating: 5, text: '' });
   };
@@ -100,9 +102,6 @@ export default function Profile() {
   };
 
   const messageSeller = async (order) => {
-    // The backend's /chats/start is idempotent — it returns the
-    // existing thread for this buyer/seller pair if one already exists,
-    // or creates a new one. Either way the route is the real chat id.
     if (!order.sellerId || order.sellerId === 'me') return;
     try {
       const chat = await sbay.startChat(order.sellerId);
@@ -112,17 +111,183 @@ export default function Profile() {
     }
   };
 
-  const saveSettings = (e) => {
+  const saveSettings = async (e) => {
     e.preventDefault();
-    updateUser?.({
-      name: settings.name,
-      email: settings.email,
-      location: settings.location,
-      avatar: settings.avatar,
-    });
-    // Clear password fields after save.
-    setSettings((s) => ({ ...s, password: '', newPassword: '' }));
+    try {
+      await updateUser?.({
+        name: settings.name,
+        email: settings.email,
+        location: settings.location,
+        avatar: settings.avatar,
+      });
+      setSettings((s) => ({ ...s, password: '', newPassword: '' }));
+    } catch (err) {
+      alert(err.message || 'Could not save changes.');
+    }
   };
+
+  const onNavClick = async (item) => {
+    if (item.id === 'signout') {
+      await onLogout();
+      return;
+    }
+    if (item.id === 'become-seller') {
+      navigate('/become-seller');
+      return;
+    }
+    setTab(item.id);
+  };
+
+  const renderOrders = () => (
+    <div className="orders-list">
+      {orders.length === 0 && <p className="muted">No orders yet — start browsing!</p>}
+      {orders.map((o) => (
+        <motion.article
+          key={o.id}
+          className="order-card"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="thumb" style={{ backgroundImage: `url(${o.image})` }} />
+          <div className="order-meta">
+            <h4>{o.title}</h4>
+            <p className="muted small">
+              {o.invoiceNumber || `#${o.id}`} · {o.sellerName} · Escrow
+            </p>
+            <span className="price">GH₵ {o.price.toLocaleString()}</span>
+          </div>
+          <div className="order-side">
+            <span className={`status ${o.status}`}>
+              {STATUS_LABEL[o.status] || o.status}
+            </span>
+            <p className="muted small">{o.eta}</p>
+            <button className="btn btn-ghost small" onClick={() => setTrackingOrder(o)}>
+              <Truck size={14} /> Track
+            </button>
+            <button className="btn btn-ghost small" onClick={() => messageSeller(o)}>
+              <MessageCircle size={14} /> Message seller
+            </button>
+            {o.status === 'delivered' && (
+              <button className="btn btn-primary" onClick={() => onConfirmReceipt(o.id)}>
+                <Check size={14} /> Confirm Receipt
+              </button>
+            )}
+            {o.status === 'completed' && !o.reviewed && (
+              <button className="btn btn-ghost" onClick={() => setReviewing(o)}>
+                <Star size={14} /> Leave Review
+              </button>
+            )}
+            {o.reviewed && <span className="muted small"><Check size={12} /> Reviewed</span>}
+          </div>
+        </motion.article>
+      ))}
+    </div>
+  );
+
+  const renderWishlist = () => (
+    <div className="wishlist-grid">
+      {WISHLIST.length === 0 ? (
+        <div className="empty">
+          <Heart size={48} color="#C9D4BD" />
+          <h3>No wishlist items yet</h3>
+          <p className="muted">Save products you like and they’ll appear here.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/home')}>
+            Browse marketplace
+          </button>
+        </div>
+      ) : (
+        WISHLIST.map((w) => (
+          <article
+            key={w.id}
+            className="result-card"
+            onClick={() => navigate(`/product/${w.id}`)}
+          >
+            <div className="result-img" style={{ backgroundImage: `url(${w.image})` }} />
+            <div className="result-body">
+              <h4 className="prod-title">{w.title}</h4>
+              <span className="price">GH₵ {w.price.toLocaleString()}</span>
+            </div>
+          </article>
+        ))
+      )}
+    </div>
+  );
+
+  const renderSettings = () => (
+    <form className="settings-form" onSubmit={saveSettings}>
+      <section className="card">
+        <h3 className="page-h2">Profile picture</h3>
+        <div className="avatar-row">
+          <div
+            className="avatar-preview"
+            style={{ backgroundImage: `url(${settings.avatar || user.avatar})` }}
+          />
+          <label className="btn btn-ghost">
+            <Camera size={16} /> Change photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              hidden
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="card">
+        <h3 className="page-h2">Personal info</h3>
+        <label className="field">
+          <span>Full name</span>
+          <input
+            type="text"
+            value={settings.name}
+            onChange={(e) => setSettings({ ...settings, name: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>Email</span>
+          <input
+            type="email"
+            value={settings.email}
+            onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span><MapPin size={14} /> Default pickup location</span>
+          <input
+            type="text"
+            value={settings.location}
+            onChange={(e) => setSettings({ ...settings, location: e.target.value })}
+            placeholder="e.g. Night Market, UG Legon"
+          />
+        </label>
+      </section>
+
+      <section className="card">
+        <h3 className="page-h2"><Lock size={16} /> Change password</h3>
+        <label className="field">
+          <span>Current password</span>
+          <input
+            type="password"
+            value={settings.password}
+            onChange={(e) => setSettings({ ...settings, password: e.target.value })}
+          />
+        </label>
+        <label className="field">
+          <span>New password</span>
+          <input
+            type="password"
+            value={settings.newPassword}
+            onChange={(e) => setSettings({ ...settings, newPassword: e.target.value })}
+          />
+        </label>
+      </section>
+
+      <button className="btn btn-primary" type="submit">
+        <Check size={16} /> Save changes
+      </button>
+    </form>
+  );
 
   if (isGuest) {
     return (
@@ -155,205 +320,37 @@ export default function Profile() {
         </div>
       </section>
 
-      <main className="page-main">
-        <div className="stats-row">
-          <div className="stat-card"><strong>{orders.length}</strong><span>Orders</span></div>
-          <div className="stat-card"><strong>{WISHLIST.length}</strong><span>Wishlist</span></div>
-        </div>
-
-        {user.role === 'seller' && (
-          <button className="card seller-banner" onClick={() => navigate('/seller-dashboard')}>
-            <Store size={20} color="#0A7E3E" />
-            <div style={{ flex: 1 }}>
-              <strong>Seller Dashboard</strong>
-              <p className="muted small">Manage listings, orders, and buyer messages</p>
-            </div>
-            <ChevronRight size={16} />
-          </button>
-        )}
-
-        {user.role !== 'seller' && (
-          <button
-            className="card become-seller-cta"
-            onClick={() => navigate('/become-seller')}
-          >
-            <Store size={20} />
-            <div style={{ flex: 1 }}>
-              <strong>Become a Seller</strong>
-              <p className="small">Start earning on campus today</p>
-            </div>
-            <ChevronRight size={16} />
-          </button>
-        )}
-
-        {/* Tabs */}
-        <div className="dash-tabs">
-          {['orders', 'wishlist', 'settings'].map((t) => (
-            <button
-              key={t}
-              className={`dash-tab ${tab === t ? 'active' : ''}`}
-              onClick={() => setTab(t)}
-            >
-              {t === 'orders' ? 'My Orders' : t === 'wishlist' ? 'Wishlist' : 'Settings'}
-            </button>
-          ))}
-        </div>
-
-        {/* Orders */}
-        {tab === 'orders' && (
-          <div className="orders-list">
-            {orders.length === 0 && <p className="muted">No orders yet — start browsing!</p>}
-            {orders.map((o) => (
-              <motion.article
-                key={o.id}
-                className="order-card"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+      <main className="page-main profile-layout">
+        <section className="card profile-nav-card">
+          <h3 className="page-h2">Quick access</h3>
+          <div className="profile-nav-list">
+            {PROFILE_NAV.map((item) => (
+              <button
+                key={item.id}
+                className={`profile-nav-row ${tab === item.id ? 'active' : ''} ${item.danger ? 'danger' : ''}`}
+                onClick={() => onNavClick(item)}
+                type="button"
               >
-                <div className="thumb" style={{ backgroundImage: `url(${o.image})` }} />
-                <div className="order-meta">
-                  <h4>{o.title}</h4>
-                  <p className="muted small">
-                    {o.invoiceNumber || `#${o.id}`} · {o.sellerName} · Escrow
-                  </p>
-                  <span className="price">GH₵ {o.price.toLocaleString()}</span>
-                </div>
-                <div className="order-side">
-                  <span className={`status ${o.status}`}>
-                    {STATUS_LABEL[o.status] || o.status}
-                  </span>
-                  <p className="muted small">{o.eta}</p>
-                  <button className="btn btn-ghost small" onClick={() => setTrackingOrder(o)}>
-                    <Truck size={14} /> Track
-                  </button>
-                  <button className="btn btn-ghost small" onClick={() => messageSeller(o)}>
-                    <MessageCircle size={14} /> Message seller
-                  </button>
-                  {o.status === 'delivered' && (
-                    <button className="btn btn-primary" onClick={() => onConfirmReceipt(o.id)}>
-                      <Check size={14} /> Confirm Receipt
-                    </button>
-                  )}
-                  {o.status === 'completed' && !o.reviewed && (
-                    <button className="btn btn-ghost" onClick={() => setReviewing(o)}>
-                      <Star size={14} /> Leave Review
-                    </button>
-                  )}
-                  {o.reviewed && <span className="muted small"><Check size={12} /> Reviewed</span>}
-                </div>
-              </motion.article>
+                <span className="profile-nav-icon"><item.icon size={18} /></span>
+                <span className="profile-nav-label">{item.label}</span>
+                <ChevronRight size={16} className="muted" />
+              </button>
             ))}
           </div>
-        )}
+        </section>
 
-        {/* Wishlist */}
-        {tab === 'wishlist' && (
-          <div className="wishlist-grid">
-            {WISHLIST.map((w) => (
-              <article
-                key={w.id}
-                className="result-card"
-                onClick={() => navigate(`/product/${w.id}`)}
-              >
-                <div className="result-img" style={{ backgroundImage: `url(${w.image})` }} />
-                <div className="result-body">
-                  <h4 className="prod-title">{w.title}</h4>
-                  <span className="price">GH₵ {w.price.toLocaleString()}</span>
-                </div>
-              </article>
-            ))}
+        <section className="profile-content">
+          <div className="stats-row">
+            <div className="stat-card"><strong>{orders.length}</strong><span>Orders</span></div>
+            <div className="stat-card"><strong>{wishlistCount}</strong><span>Wishlist</span></div>
           </div>
-        )}
 
-        {/* Settings */}
-        {tab === 'settings' && (
-          <form className="settings-form" onSubmit={saveSettings}>
-            <section className="card">
-              <h3 className="page-h2">Profile picture</h3>
-              <div className="avatar-row">
-                <div
-                  className="avatar-preview"
-                  style={{ backgroundImage: `url(${settings.avatar || user.avatar})` }}
-                />
-                <label className="btn btn-ghost">
-                  <Camera size={16} /> Change photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    hidden
-                  />
-                </label>
-              </div>
-            </section>
-
-            <section className="card">
-              <h3 className="page-h2">Personal info</h3>
-              <label className="field">
-                <span>Full name</span>
-                <input
-                  type="text"
-                  value={settings.name}
-                  onChange={(e) => setSettings({ ...settings, name: e.target.value })}
-                />
-              </label>
-              <label className="field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={settings.email}
-                  onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                />
-              </label>
-              <label className="field">
-                <span><MapPin size={14} /> Default pickup location</span>
-                <input
-                  type="text"
-                  value={settings.location}
-                  onChange={(e) => setSettings({ ...settings, location: e.target.value })}
-                  placeholder="e.g. Night Market, UG Legon"
-                />
-              </label>
-            </section>
-
-            <section className="card">
-              <h3 className="page-h2"><Lock size={16} /> Change password</h3>
-              <label className="field">
-                <span>Current password</span>
-                <input
-                  type="password"
-                  value={settings.password}
-                  onChange={(e) => setSettings({ ...settings, password: e.target.value })}
-                />
-              </label>
-              <label className="field">
-                <span>New password</span>
-                <input
-                  type="password"
-                  value={settings.newPassword}
-                  onChange={(e) => setSettings({ ...settings, newPassword: e.target.value })}
-                />
-              </label>
-            </section>
-
-            <button className="btn btn-primary" type="submit">
-              <Check size={16} /> Save changes
-            </button>
-          </form>
-        )}
-
-        {/* Settings list */}
-        <section className="link-list">
-          <button className="link-row" onClick={() => setTab('settings')}><span className="link-icon"><Settings size={18} /></span><span className="link-label">Settings</span><ChevronRight size={16} className="muted" /></button>
-          <button className="link-row danger" onClick={onLogout}>
-            <span className="link-icon"><LogOut size={18} /></span>
-            <span className="link-label">Sign Out</span>
-            <ChevronRight size={16} className="muted" />
-          </button>
+          {tab === 'orders' && renderOrders()}
+          {tab === 'wishlist' && renderWishlist()}
+          {tab === 'settings' && renderSettings()}
         </section>
       </main>
 
-      {/* Tracking modal */}
       {trackingOrder && (
         <div className="sheet-overlay" onClick={() => setTrackingOrder(null)}>
           <motion.div
@@ -381,7 +378,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Review modal */}
       {reviewing && (
         <div className="sheet-overlay" onClick={() => setReviewing(null)}>
           <motion.div

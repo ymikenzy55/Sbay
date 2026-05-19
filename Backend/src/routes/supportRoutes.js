@@ -15,7 +15,7 @@ router.post(
   '/tickets',
   supportSubmitLimiter,
   optionalAuth,
-  body('name').isString().trim().isLength({ min: 1, max: 80 }),
+  body('name').optional().isString().trim().isLength({ max: 80 }),
   body('email').isEmail().normalizeEmail(),
   body('phone').isString().trim().isLength({ min: 7, max: 30 }).withMessage('Contact number is required'),
   body('subject').optional().isString().isLength({ max: 160 }),

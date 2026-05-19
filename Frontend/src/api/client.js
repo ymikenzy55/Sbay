@@ -15,10 +15,17 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 const ADMIN_URL = import.meta.env.VITE_ADMIN_API || `${API_URL}/_panel/control`;
 
 export const TOKEN_KEY = 'sbay.token';
-export const getToken = () => localStorage.getItem(TOKEN_KEY);
-export const setToken = (t) => {
-  if (t) localStorage.setItem(TOKEN_KEY, t);
-  else localStorage.removeItem(TOKEN_KEY);
+export const SESSION_TOKEN_KEY = 'sbay.token.session';
+export const REMEMBER_KEY = 'sbay.remember';
+
+export const getToken = () => localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(SESSION_TOKEN_KEY);
+export const setToken = (t, remember = true) => {
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  if (t) {
+    if (remember) localStorage.setItem(TOKEN_KEY, t);
+    else sessionStorage.setItem(SESSION_TOKEN_KEY, t);
+  }
 };
 
 function makeClient(baseURL) {
@@ -270,8 +277,8 @@ export const authApi = {
     const { data } = await api.post('/auth/reset-password', payload);
     return data;
   },
-  async googleAuth(accessToken) {
-    const { data } = await api.post('/auth/oauth/google', { accessToken });
+  async googleAuth(accessToken, role) {
+    const { data } = await api.post('/auth/oauth/google', { accessToken, role });
     return { token: data.token, user: adaptUser(data.user) };
   },
   async addPaymentMethod(payload) {

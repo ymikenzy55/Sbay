@@ -45,26 +45,26 @@ export function AuthProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async ({ email, password }) => {
+  const login = async ({ email, password, remember = true }) => {
     if (!email || !password) throw new Error('Provide email and password.');
     const { token, user: u } = await authApi.login({ email, password });
-    setToken(token);
+    setToken(token, remember);
     setUser(u);
     return u;
   };
 
-  const signup = async ({ name, email, password, phone, location }) => {
-    const { token, user: u } = await authApi.register({ name, email, password, phone, location });
-    setToken(token);
+  const signup = async ({ name, email, password, phone, location, role, remember = true }) => {
+    const { token, user: u } = await authApi.register({ name, email, password, phone, location, role });
+    setToken(token, remember);
     setUser(u);
     return u;
   };
 
   const logout = () => { setToken(null); setUser(null); };
 
-  const googleLogin = async (credential) => {
-    const { token, user: u } = await authApi.googleAuth(credential);
-    setToken(token);
+  const googleLogin = async (credential, remember = true, role) => {
+    const { token, user: u } = await authApi.googleAuth(credential, role);
+    setToken(token, remember);
     setUser(u);
     return u;
   };

@@ -28,7 +28,7 @@ async function sendPasswordResetEmail(user, resetUrl) {
  * via this endpoint — only via the seed script or by another admin.
  */
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, phone, location } = req.body;
+  const { name, email, password, phone, location, role } = req.body;
 
   const existing = await User.findOne({ email: email.toLowerCase() });
   if (existing) throw new HttpError(409, 'An account with this email already exists');
@@ -40,7 +40,7 @@ export const register = asyncHandler(async (req, res) => {
     passwordHash,
     phone: phone?.trim(),
     location: location?.trim(),
-    role: 'buyer',
+    role: role === 'seller' ? 'seller' : 'buyer',
   });
 
   const token = signAccessToken(user);
@@ -130,7 +130,7 @@ export const resetPasswordWithToken = asyncHandler(async (req, res) => {
 });
 
 export const googleAuth = asyncHandler(async (req, res) => {
-  const { accessToken } = req.body;
+  const { accessToken, role } = req.body;
   if (!accessToken) throw new HttpError(400, 'Google access token is required');
 
   let googleId, email, name, picture;
@@ -149,13 +149,16 @@ export const googleAuth = asyncHandler(async (req, res) => {
   }
   if (!email) throw new HttpError(400, 'Google account has no email');
 
+  const wantsSeller = role === 'seller';
   let user = await User.findOne({ $or: [{ googleId }, { email: email.toLowerCase() }] });
 
   if (user) {
     if (!user.googleId) {
       user.googleId = googleId;
       if (!user.avatar && picture) user.avatar = picture;
-      await user.save();
+    }
+    if (wantsSeller && user.role !== 'admin') {
+      user.role = 'seller';
     }
     if (user.restricted) throw new HttpError(403, 'Account is restricted', { reason: user.restrictReason });
     user.lastLoginAt = new Date();
@@ -166,7 +169,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
       email: email.toLowerCase(),
       googleId,
       avatar: picture || undefined,
-      role: 'buyer',
+      role: wantsSeller ? 'seller' : 'buyer',
     });
     emitToAdmins('user:new', {
       userId: user._id.toString(),

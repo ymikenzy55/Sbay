@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, TrendingUp } from 'lucide-react';
 import Logo from './Logo';
+import Avatar from './Avatar';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
 import { useUserNotifications } from '../hooks/useUserNotifications';
@@ -74,14 +75,22 @@ export default function DesktopNav() {
               className="avatar"
               onClick={() => navigate(user.role === 'seller' ? '/seller-dashboard' : '/profile')}
               aria-label={user.role === 'seller' ? 'Seller dashboard' : 'Profile'}
-              style={{ backgroundImage: `url(${user.avatar})` }}
-            />
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              <Avatar src={user.avatar} name={user.name || user.email} size={36} />
+            </button>
           ) : (
             <button className="dnav-signin" onClick={() => navigate('/login')}>
               Sign In
             </button>
           )}
         </div>
+      </div>
+      <div className="dnav-credit">
+        Built by{' '}
+        <a href="https://portfolio-sooty-eight-54.vercel.app/" target="_blank" rel="noopener noreferrer">
+          MiqroTek
+        </a>
       </div>
     </header>
   );

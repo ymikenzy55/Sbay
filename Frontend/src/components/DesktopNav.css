@@ -148,3 +148,25 @@
 @media (min-width: 1400px) {
   .dnav-inner { max-width: 1600px; padding: 14px 48px; }
 }
+
+.dnav-credit {
+  display: none;
+}
+@media (min-width: 961px) {
+  .dnav-credit {
+    display: block;
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    padding: 3px 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.03em;
+  }
+  .dnav-credit a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .dnav-credit a:hover { text-decoration: underline; }
+}

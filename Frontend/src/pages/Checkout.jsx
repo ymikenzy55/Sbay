@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -8,7 +8,7 @@ import {
 import TopBar from '../components/TopBar';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
-import { paymentApi } from '../api/client';
+import { paymentApi, sbay } from '../api/client';
 import './pages.css';
 import './Checkout.css';
 
@@ -23,7 +23,14 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const fee = Math.round(subtotal * 0.05);
+  const [feePct, setFeePct] = useState(5);
+  useEffect(() => {
+    sbay.getPublicSettings().then((s) => {
+      if (s?.defaultEscrowFeePct != null) setFeePct(Number(s.defaultEscrowFeePct));
+    }).catch(() => {});
+  }, []);
+
+  const fee = Math.round(subtotal * feePct / 100);
   const total = subtotal + fee;
 
   const saveLocation = () => {
@@ -131,7 +138,7 @@ export default function Checkout() {
           <h4>Escrow Payment <span className="rec">Buyer-protected</span></h4>
           <p>
             sBay holds your money safely. The seller is paid only after you confirm
-            receipt from your orders page. A <strong>5% service fee</strong> applies.
+            receipt from your orders page. A <strong>{feePct}% platform service fee</strong> applies.
           </p>
           <ul className="m-list">
             <li><Check size={14} color="#0A7E3E" /> Buyer protection on every order</li>

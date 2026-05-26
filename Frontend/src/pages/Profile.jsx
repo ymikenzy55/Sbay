@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Settings, LogOut, ChevronRight, Store, Package, Heart } from 'lucide-react';
 import TopBar from '../components/TopBar';
+import Avatar from '../components/Avatar';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
@@ -73,7 +74,7 @@ export default function Profile() {
       <TopBar showSearch={false} title="Dashboard" />
 
       <section className="profile-hero">
-        <div className="profile-avatar" style={{ backgroundImage: `url(${user.avatar})` }} />
+        <Avatar src={user.avatar} name={user.name} size={72} className="profile-avatar" />
         <div className="profile-info">
           <h2>{user.name}</h2>
           <p>{user.email}{user.role === 'seller' ? ' · Seller' : ' · Buyer'}</p>

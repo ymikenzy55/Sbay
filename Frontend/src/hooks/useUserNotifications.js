@@ -91,6 +91,14 @@ export function useUserNotifications() {
     setItems((cur) => cur.map((n) => ({ ...n, read: true })));
   }, [items, user]);
 
+  const dismiss = useCallback((notifId) => {
+    setItems((cur) => cur.filter((n) => n.id !== notifId));
+    if (user) {
+      seenRef.current.add(notifId);
+      writeSeen(user.id || user._id, seenRef.current);
+    }
+  }, [user]);
+
   const unread = items.reduce((sum, item) => sum + (item.read ? 0 : 1), 0);
-  return { items, unread, refresh, markAllRead };
+  return { items, unread, refresh, markAllRead, dismiss };
 }

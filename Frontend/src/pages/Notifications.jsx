@@ -23,7 +23,7 @@ const TINTS = {
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const { items, unread, markAllRead } = useUserNotifications();
+  const { items, unread, markAllRead, dismiss } = useUserNotifications();
   const isEmpty = items.length === 0;
 
   return (
@@ -52,7 +52,7 @@ export default function Notifications() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    onClick={() => n.href && navigate(n.href)}
+                    onClick={() => { dismiss(n.id); if (n.href) navigate(n.href); }}
                   >
                     <div className="notif-icon" style={{ background: `${TINTS[n.type] || TINTS.order}22`, color: TINTS[n.type] || TINTS.order }}>
                       <Icon size={18} />

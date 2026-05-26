@@ -104,3 +104,34 @@
 }
 .bs-submitted h2 { font-size: 1.3rem; font-weight: 800; }
 .bs-submitted .muted { line-height: 1.5; max-width: 380px; }
+
+.terms-intro-block {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--primary-50);
+  border: 1px solid var(--primary);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.terms-agree-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+}
+
+.terms-agree-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.terms-agree-header strong { font-size: 0.93rem; flex: 1; }
+
+.terms-read-link {
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.terms-read-link:hover { text-decoration: underline; }

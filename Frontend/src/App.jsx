@@ -31,7 +31,12 @@ import Login           from './pages/Login';
 import Signup          from './pages/Signup';
 import ForgotPassword  from './pages/ForgotPassword';
 import BecomeSeller    from './pages/BecomeSeller';
-import SellerDashboard from './pages/SellerDashboard';
+import SellerDashboard    from './pages/SellerDashboard';
+import SellerListings    from './pages/SellerListings';
+import SellerSales       from './pages/SellerSales';
+import SellerPurchases   from './pages/SellerPurchases';
+import SellerMessages    from './pages/SellerMessages';
+import Terms             from './pages/Terms';
 import SellerSubscription from './pages/SellerSubscription';
 import SellerSettings  from './pages/SellerSettings';
 import EditListing    from './pages/EditListing';
@@ -92,7 +97,7 @@ export default function App() {
               <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
               <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
 
-{/* Sensitive — sign-in required */}}
+{/* Sensitive — sign-in required */}
               <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
               <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
               <Route path="/payment-failed"  element={<PaymentFailed />} />
@@ -107,7 +112,12 @@ export default function App() {
               <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />
               <Route path="/sell"             element={<RequireAuth role="seller"><Sell /></RequireAuth>} />
               <Route path="/seller/listing/:id/edit" element={<RequireAuth role="seller"><EditListing /></RequireAuth>} />
-              <Route path="/seller-dashboard" element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
+              <Route path="/seller-dashboard"           element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
+              <Route path="/seller-dashboard/listings"  element={<RequireAuth role="seller"><SellerListings /></RequireAuth>} />
+              <Route path="/seller-dashboard/sales"     element={<RequireAuth role="seller"><SellerSales /></RequireAuth>} />
+              <Route path="/seller-dashboard/purchases" element={<RequireAuth role="seller"><SellerPurchases /></RequireAuth>} />
+              <Route path="/seller-dashboard/messages"  element={<RequireAuth role="seller"><SellerMessages /></RequireAuth>} />
+              <Route path="/terms"                       element={<Terms />} />
               <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
               <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
 

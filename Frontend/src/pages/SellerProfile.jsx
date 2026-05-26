@@ -5,6 +5,7 @@ import { ArrowLeft, Star, Shield, MapPin, Send, Zap, BadgeCheck, Trophy, Clock }
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
+import Avatar from '../components/Avatar';
 import './pages.css';
 import './SellerProfile.css';
 
@@ -58,7 +59,7 @@ export default function SellerProfile() {
     <div className="page sp">
       <div className="sp-hero">
         <button className="round-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
-        <div className="sp-avatar" style={{ backgroundImage: `url(${seller.avatar})` }} />
+        <Avatar src={seller.avatar} name={seller.name} size={80} className="sp-avatar" />
         <h1 className="sp-name">
           {seller.name}
           {seller.verified && <BadgeCheck size={18} color="#0A7E3E" aria-label="Verified" />}

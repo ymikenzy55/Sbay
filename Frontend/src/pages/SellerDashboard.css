@@ -292,3 +292,49 @@
   color: #fff;
   border-color: var(--primary);
 }
+
+/* Hub nav-cards grid */
+.sd-nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sd-nav-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: border-color .15s, transform .15s;
+}
+.sd-nav-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+.sd-nav-ic {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: var(--primary-50);
+  color: var(--primary);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.sd-nav-body { flex: 1; min-width: 0; }
+.sd-nav-body strong { font-size: .88rem; font-weight: 700; display: block; }
+.sd-nav-body p { margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-nav-badge {
+  background: var(--secondary);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+@media (min-width: 600px) {
+  .sd-nav-grid { grid-template-columns: repeat(4, 1fr); }
+}

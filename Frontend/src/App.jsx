@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { CartProvider } from './store/CartContext';
 import { AuthProvider } from './store/AuthContext';
 import { ConfirmProvider } from './store/ConfirmContext';
@@ -9,6 +10,8 @@ import FloatingCart from './components/FloatingCart';
 import DesktopNav from './components/DesktopNav';
 import SupportWidget from './components/SupportWidget';
 import NetworkBanner from './components/NetworkBanner';
+import InstallPrompt from './components/InstallPrompt';
+import { registerServiceWorker, setupInstallPrompt } from './utils/pwa';
 
 import Splash          from './pages/Splash';
 import Home            from './pages/Home';
@@ -63,6 +66,13 @@ import AdminSellerVerification  from './admin/AdminSellerVerification';
 import AdminSupport     from './admin/AdminSupport';
 
 export default function App() {
+  useEffect(() => {
+    // Register service worker for PWA
+    registerServiceWorker();
+    // Setup install prompt
+    setupInstallPrompt();
+  }, []);
+
   return (
     <AuthProvider>
       <ConfirmProvider>
@@ -74,6 +84,7 @@ export default function App() {
             <NetworkBanner />
             <FloatingCart />
             <SupportWidget />
+            <InstallPrompt />
             <Routes>
               {/* Public — anyone can browse */}
               <Route path="/"             element={<Splash />} />

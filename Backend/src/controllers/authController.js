@@ -4,6 +4,7 @@ import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitToAdmins } from '../socket.js';
 import { env } from '../config/env.js';
+import { sendPasswordResetEmail } from '../utils/email.js';
 import crypto from 'crypto';
 
 function hashResetToken(token) {
@@ -13,13 +14,6 @@ function hashResetToken(token) {
 function frontendUrl() {
   const firstAllowed = env.CORS_ORIGINS?.[0];
   return (process.env.FRONTEND_URL || firstAllowed || 'http://localhost:5173').replace(/\/$/, '');
-}
-
-async function sendPasswordResetEmail(user, resetUrl) {
-  // Mail transport is deployment-specific. Keep the endpoint functional
-  // and log the link until SMTP/provider credentials are added.
-  // eslint-disable-next-line no-console
-  console.log(`[auth] password reset link for ${user.email}: ${resetUrl}`);
 }
 
 /**

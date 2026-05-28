@@ -54,6 +54,10 @@ export const env = Object.freeze({
 
   PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || '',
   PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5173/payment-success',
+
+  // Email configuration
+  EMAIL_USER: process.env.EMAIL_USER || '',
+  EMAIL_PASS: process.env.EMAIL_PASS || '',
 });
 
 export const isProd = env.NODE_ENV === 'production';

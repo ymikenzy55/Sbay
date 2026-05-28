@@ -8,4 +8,4 @@ Disallow: /notifications
 Disallow: /sell
 Disallow: /seller-dashboard
 
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://sbaygh.com/sitemap.xml

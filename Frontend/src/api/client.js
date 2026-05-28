@@ -46,8 +46,23 @@ function makeClient(baseURL) {
         e.details = data.details;
         return Promise.reject(e);
       }
-      if (!err.response && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('sbay:network-error'));
+      // Better error messages for network issues
+      if (!err.response) {
+        if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+          const e = new Error('Unable to connect to server. Please check if the backend is running.');
+          e.isNetworkError = true;
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sbay:network-error'));
+          }
+          return Promise.reject(e);
+        }
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+          return Promise.reject(new Error('Request timeout. The server is taking too long to respond.'));
+        }
+      }
+      // CORS errors
+      if (err.message.includes('CORS') || err.message.includes('blocked')) {
+        return Promise.reject(new Error('Connection blocked. Please contact support.'));
       }
       return Promise.reject(err);
     }

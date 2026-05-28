@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /payment-success
+Disallow: /profile
+Disallow: /chats
+Disallow: /notifications
+Disallow: /sell
+Disallow: /seller-dashboard
+
+Sitemap: https://yourdomain.com/sitemap.xml

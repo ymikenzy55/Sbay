@@ -155,12 +155,17 @@
 @media (min-width: 961px) {
   .dnav-credit {
     display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
     text-align: center;
     font-size: 0.65rem;
     color: var(--text-muted);
     padding: 3px 0;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.94);
+    border-top: 1px solid var(--border);
     letter-spacing: 0.03em;
   }
   .dnav-credit a {

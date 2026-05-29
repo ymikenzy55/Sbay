@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MessageCircle, X, Send, Loader2, GripVertical } from 'lucide-react';
+import { Headphones, MessageCircle, X, Send, Loader2, GripVertical, Mail, Phone } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { api } from '../api/client';
 import './SupportWidget.css';
@@ -118,36 +118,45 @@ export default function SupportWidget() {
       {open && (
         <div className="support-panel" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
           <header className="support-header">
-            <MessageCircle size={18} />
-            <span>Customer Support</span>
+            <span className="support-header-icon"><Headphones size={18} /></span>
+            <div>
+              <strong>Customer Support</strong>
+              <small>We usually respond shortly</small>
+            </div>
             <button className="support-close" onClick={() => setOpen(false)} aria-label="Close">
               <X size={16} />
             </button>
           </header>
 
           <form className="support-form" onSubmit={submit}>
-            <p>Send us your contact details and problem. We’ll get back to you shortly.</p>
+            <p>Tell us what happened and how to reach you.</p>
 
             <label className="support-field">
               <span>Gmail address *</span>
-              <input
-                type="email"
-                placeholder="you@gmail.com"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                required
-              />
+              <div className="support-input-wrap">
+                <Mail size={15} />
+                <input
+                  type="email"
+                  placeholder="you@gmail.com"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
             </label>
 
             <label className="support-field">
               <span>Phone number *</span>
-              <input
-                type="tel"
-                placeholder="Your phone number"
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
-                required
-              />
+              <div className="support-input-wrap">
+                <Phone size={15} />
+                <input
+                  type="tel"
+                  placeholder="Your phone number"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
+                  required
+                />
+              </div>
             </label>
 
             <label className="support-field">

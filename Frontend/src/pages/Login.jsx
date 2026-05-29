@@ -78,7 +78,7 @@ export default function Login() {
           {busy ? 'Signing in...' : 'Sign In'}
         </button>
 
-        <OAuthButtons />
+        <OAuthButtons role={sellerMode ? 'seller' : 'buyer'} next={next} remember={remember} />
 
         <p className="auth-foot">
           New to sBay? <Link to={`/signup?${sellerMode ? 'mode=seller&' : ''}next=${encodeURIComponent(next)}`}>Create an account</Link>

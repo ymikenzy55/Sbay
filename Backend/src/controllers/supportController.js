@@ -1,3 +1,5 @@
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
 import { SupportTicket } from '../models/SupportTicket.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -63,11 +65,12 @@ export const listTickets = asyncHandler(async (req, res) => {
   const filter = {};
   if (status) filter.status = status;
   if (q) {
+    const escaped = escapeRegex(q);
     filter.$or = [
-      { name:    { $regex: q, $options: 'i' } },
-      { email:   { $regex: q, $options: 'i' } },
-      { subject: { $regex: q, $options: 'i' } },
-      { lastMessage: { $regex: q, $options: 'i' } },
+      { name:    { $regex: escaped, $options: 'i' } },
+      { email:   { $regex: escaped, $options: 'i' } },
+      { subject: { $regex: escaped, $options: 'i' } },
+      { lastMessage: { $regex: escaped, $options: 'i' } },
     ];
   }
   const items = await SupportTicket.find(filter)

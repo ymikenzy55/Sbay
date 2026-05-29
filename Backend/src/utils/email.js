@@ -1,4 +1,8 @@
 import nodemailer from 'nodemailer';
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 import { env } from '../config/env.js';
 
 let transporter = null;
@@ -62,7 +66,7 @@ export async function sendPasswordResetEmail(user, resetUrl) {
             <h1>Reset Your Password</h1>
           </div>
           <div class="content">
-            <p>Hi ${user.name},</p>
+            <p>Hi ${escapeHtml(user.name)},</p>
             <p>We received a request to reset your password for your sBay account.</p>
             <p>Click the button below to reset your password:</p>
             <p style="text-align: center;">
@@ -132,7 +136,7 @@ export async function sendWelcomeEmail(user) {
             <h1>Welcome to sBay! 🎉</h1>
           </div>
           <div class="content">
-            <p>Hi ${user.name},</p>
+            <p>Hi ${escapeHtml(user.name)},</p>
             <p>Welcome to sBay - Ghana's premier campus marketplace!</p>
             <p>You can now:</p>
             <ul>

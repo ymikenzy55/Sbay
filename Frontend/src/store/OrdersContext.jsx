@@ -36,8 +36,10 @@ export function OrdersProvider({ children }) {
     if (!user?.id) { setOrders([]); return; }
     setLoading(true);
     try {
-      const buys = await orderApi.mine(user.id);
-      const sales = user.role === 'seller' ? await orderApi.sales(user.id) : [];
+      const [buys, sales] = await Promise.all([
+        orderApi.mine(user.id),
+        user.role === 'seller' ? orderApi.sales(user.id) : Promise.resolve([]),
+      ]);
       // Dedupe in case an order has the user as both (shouldn't, but
       // belt-and-braces): take the first occurrence.
       const seen = new Set();

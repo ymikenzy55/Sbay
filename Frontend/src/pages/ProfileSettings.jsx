@@ -13,7 +13,7 @@ export default function ProfileSettings() {
   const [settings, setSettings] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    location: user?.location || 'UG, Legon',
+    location: user?.location || '',
     avatar: user?.avatar || '',
     password: '',
     newPassword: '',
@@ -102,12 +102,12 @@ export default function ProfileSettings() {
               />
             </label>
             <label className="field">
-              <span><MapPin size={14} /> Default pickup location</span>
+              <span><MapPin size={14} /> Pickup location</span>
               <input
                 type="text"
                 value={settings.location}
                 onChange={(e) => setSettings({ ...settings, location: e.target.value })}
-                placeholder="e.g. Night Market, UG Legon"
+                placeholder="Set only if you want a saved pickup location"
               />
             </label>
           </section>

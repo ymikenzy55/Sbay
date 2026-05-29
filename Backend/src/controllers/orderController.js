@@ -279,20 +279,39 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   const uid = req.user._id.toString();
   const isParty = o.buyer.toString() === uid || o.seller.toString() === uid;
   if (!isParty && req.user.role !== 'admin') throw new HttpError(403, 'Forbidden');
-  if (!['pending', 'processing'].includes(o.status)) {
-    throw new HttpError(409, `Cannot cancel an order in '${o.status}' state`);
+
+  const session = await mongoose.startSession();
+  try {
+    await session.withTransaction(async () => {
+      const updated = await Order.findOneAndUpdate(
+        { _id: req.params.id, status: { $in: ['pending', 'processing'] } },
+        {
+          $set: {
+            status: 'canceled',
+            'escrow.status': 'refunded',
+            'escrow.refundedAt': new Date(),
+            'escrow.refundedBy': req.user._id,
+            'escrow.reason': req.body?.reason || 'Order canceled',
+          },
+          $push: {
+            timeline: { at: new Date(), actor: req.user._id, kind: 'status', detail: 'Order canceled and stock restored.' },
+          },
+        },
+        { new: true, session }
+      );
+      if (!updated) {
+        throw new HttpError(409, 'Cannot cancel — the order is already finalised or was modified concurrently.');
+      }
+      for (const it of updated.items) {
+        await restoreStock(it.product, it.qty, session);
+      }
+    });
+  } finally {
+    session.endSession();
   }
-  for (const it of o.items) {
-    await restoreStock(it.product, it.qty);
-  }
-  o.status = 'canceled';
-  o.escrow.status = 'refunded';
-  o.escrow.refundedAt = new Date();
-  o.escrow.refundedBy = req.user._id;
-  o.escrow.reason = req.body?.reason || 'Order canceled';
-  pushTimeline(o, req.user._id, 'status', `Order canceled and stock restored.`);
-  await o.save();
-  res.json({ order: o });
+
+  const result = await Order.findById(req.params.id);
+  res.json({ order: result });
 });
 
 /**

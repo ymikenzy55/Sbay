@@ -196,7 +196,7 @@ export default function Signup() {
           {busy ? 'Creating...' : 'Create Account'}
         </button>
 
-        <OAuthButtons />
+        <OAuthButtons role={role} next={next} />
 
         <p className="auth-foot">
           Already have an account? <Link to={`/login?next=${encodeURIComponent(next)}`}>Sign in</Link>

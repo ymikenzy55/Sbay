@@ -37,9 +37,14 @@ router.patch(
   requireAuth, requireRole('seller'),
   param('id').isMongoId(),
   body('title').optional().isString().trim().isLength({ min: 3, max: 140 }),
+  body('description').optional().isString().isLength({ max: 5000 }),
   body('price').optional().isFloat({ min: 0 }),
   body('discountPrice').optional().isFloat({ min: 0 }),
   body('stock').optional().isInt({ min: 0, max: 100000 }),
+  body('condition').optional().isIn(['Brand New', 'Like New', 'Slightly Used', 'Used Â· Fair']),
+  body('category').optional().isString().trim().isLength({ min: 2, max: 60 }),
+  body('images').optional().isArray({ max: 6 }),
+  body('location').optional().isString().isLength({ max: 120 }),
   validate,
   updateProduct
 );

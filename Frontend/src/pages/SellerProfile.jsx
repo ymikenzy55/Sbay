@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Shield, MapPin, Send, Zap, BadgeCheck, Trophy, Clock } from 'lucide-react';
+import {
+  ArrowLeft, Star, Shield, MapPin, Send, Zap, BadgeCheck, Trophy, Clock, Loader2,
+} from 'lucide-react';
 import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
@@ -9,37 +11,119 @@ import Avatar from '../components/Avatar';
 import './pages.css';
 import './SellerProfile.css';
 
-const SEED_REVIEWS = [
-  { id: 1, name: 'Akua',  rating: 5, text: 'Quick delivery. Item exactly as described!', time: '3d' },
-  { id: 2, name: 'Kwame', rating: 5, text: 'Great seller, smooth transaction.',          time: '1w' },
-  { id: 3, name: 'Adwoa', rating: 4, text: 'Good price, fair condition.',                 time: '2w' },
-];
-
 export default function SellerProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [seller, setSeller] = useState(null);
   const [tab, setTab] = useState('listings');
-  const [reviews, setReviews] = useState(SEED_REVIEWS);
+  const [reviewsState, setReviewsState] = useState({ items: [], total: 0, rating: 0 });
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState('');
   const [draft, setDraft] = useState({ rating: 5, text: '' });
+  const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    sbay.getSeller(id)
+      .then((data) => {
+        if (!alive) return;
+        setSeller(data);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSeller(null);
+      });
+    return () => { alive = false; };
+  }, [id]);
 
-  const submitReview = (e) => {
+  useEffect(() => {
+    let alive = true;
+    if (tab !== 'reviews') return undefined;
+
+    setReviewsLoading(true);
+    setReviewsError('');
+    sbay.getSellerReviews(id)
+      .then((data) => {
+        if (!alive) return;
+        setReviewsState({
+          items: Array.isArray(data.items) ? data.items : [],
+          total: Number(data.total) || 0,
+          rating: Number(data.rating) || 0,
+        });
+        if (data.seller) {
+          setSeller((cur) => (cur ? {
+            ...cur,
+            sellerProfile: {
+              ...(cur.sellerProfile || {}),
+              ...(data.seller.sellerProfile || {}),
+              rating: Number(data.rating) || Number(data.seller.sellerProfile?.rating) || 0,
+              reviewCount: Number(data.total) || Number(data.seller.sellerProfile?.reviewCount) || 0,
+            },
+          } : cur));
+        }
+      })
+      .catch((err) => {
+        if (!alive) return;
+        setReviewsError(err.message || 'Unable to load reviews.');
+        setReviewsState({ items: [], total: 0, rating: 0 });
+      })
+      .finally(() => {
+        if (alive) setReviewsLoading(false);
+      });
+
+    return () => { alive = false; };
+  }, [id, tab]);
+
+  const ratingSummary = useMemo(() => {
+    const count = reviewsState.total || seller?.sellerProfile?.reviewCount || 0;
+    const rating = reviewsState.rating || seller?.sellerProfile?.rating || 0;
+    return { count, rating };
+  }, [reviewsState.total, reviewsState.rating, seller?.sellerProfile]);
+
+  const submitReview = async (e) => {
     e.preventDefault();
     if (!user) {
       navigate('/login?next=' + encodeURIComponent(`/seller/${id}`));
       return;
     }
     if (!draft.text.trim()) return;
-    setReviews((r) => [
-      { id: Date.now(), name: user.name, rating: draft.rating, text: draft.text.trim(), time: 'now' },
-      ...r,
-    ]);
-    setDraft({ rating: 5, text: '' });
-  };
 
-  useEffect(() => { sbay.getSeller(id).then(setSeller); }, [id]);
+    setSubmitting(true);
+    setReviewsError('');
+    try {
+      const result = await sbay.submitReview(id, {
+        rating: draft.rating,
+        text: draft.text.trim(),
+      });
+
+      setReviewsState((cur) => ({
+        ...cur,
+        items: result.review
+          ? [result.review, ...cur.items.filter((r) => r._id !== result.review._id)]
+          : cur.items,
+        total: Number(result.reviewCount) || cur.total,
+        rating: Number(result.rating) || cur.rating,
+      }));
+
+      setSeller((cur) => (cur ? {
+        ...cur,
+        sellerProfile: {
+          ...(cur.sellerProfile || {}),
+          rating: Number(result.rating) || cur.sellerProfile?.rating || 0,
+          reviewCount: Number(result.reviewCount) || cur.sellerProfile?.reviewCount || 0,
+        },
+      } : cur));
+
+      setDraft({ rating: 5, text: '' });
+      setTab('reviews');
+    } catch (err) {
+      setReviewsError(err.message || 'Could not post review.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!seller) {
     return (
@@ -55,6 +139,9 @@ export default function SellerProfile() {
     );
   }
 
+  const reviewCount = ratingSummary.count || 0;
+  const reviewRating = ratingSummary.rating || 0;
+
   return (
     <div className="page sp">
       <div className="sp-hero">
@@ -65,10 +152,10 @@ export default function SellerProfile() {
           {seller.verified && <BadgeCheck size={18} color="#0A7E3E" aria-label="Verified" />}
         </h1>
         <div className="sp-meta">
-          <span><Star size={13} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews})</span>
-          <span><MapPin size={13} /> {seller.university}</span>
+          <span><Star size={13} fill="#F5A623" color="#F5A623" /> {reviewRating.toFixed(1)} ({reviewCount})</span>
+          <span><MapPin size={13} /> {seller.sellerProfile?.location || seller.location || 'Location not set'}</span>
         </div>
-        <p className="sp-bio">{seller.bio}</p>
+        <p className="sp-bio">{seller.sellerProfile?.bio || seller.bio || 'No store bio yet.'}</p>
         <div className="sp-badges">
           {seller.verified ? (
             <span className="badge-soft is-verified"><BadgeCheck size={12} /> Verified seller</span>
@@ -85,7 +172,7 @@ export default function SellerProfile() {
           Listings ({seller.listings.length})
         </button>
         <button className={`sp-tab ${tab === 'reviews' ? 'active' : ''}`} onClick={() => setTab('reviews')}>
-          Reviews ({seller.reviews})
+          Reviews ({reviewCount})
         </button>
       </div>
 
@@ -131,29 +218,46 @@ export default function SellerProfile() {
                 value={draft.text}
                 onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
               />
-              <button className="btn btn-primary" type="submit" style={{ alignSelf: 'flex-start' }}>
-                <Send size={14} /> {user ? 'Post Review' : 'Sign in to post'}
+              {reviewsError && <p className="auth-error" style={{ marginTop: 0 }}>{reviewsError}</p>}
+              <button className="btn btn-primary" type="submit" style={{ alignSelf: 'flex-start' }} disabled={submitting}>
+                {submitting ? <Loader2 size={14} className="spin" /> : <Send size={14} />}
+                {user ? 'Post Review' : 'Sign in to post'}
               </button>
             </form>
 
-            {reviews.map((r) => (
-              <article key={r.id} className="card review-card">
-                <div className="review-head">
-                  <strong>{r.name}</strong>
-                  <span className="muted">{r.time}</span>
-                </div>
-                <div className="review-stars">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} size={14} fill={i < r.rating ? '#F5A623' : '#E5E4E7'} color={i < r.rating ? '#F5A623' : '#E5E4E7'} />
-                  ))}
-                </div>
-                <p style={{ marginTop: 6 }}>{r.text}</p>
-              </article>
-            ))}
+            {reviewsLoading ? (
+              <div className="card" style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
+                <Loader2 size={18} className="spin" />
+              </div>
+            ) : reviewsState.items.length > 0 ? (
+              reviewsState.items.map((r) => {
+                const reviewerName = r.reviewer?.name || 'Verified buyer';
+                const time = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Recently';
+                return (
+                  <article key={r._id} className="card review-card">
+                    <div className="review-head">
+                      <strong>{reviewerName}</strong>
+                      <span className="muted">{time}</span>
+                    </div>
+                    <div className="review-stars">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} size={14} fill={i < r.rating ? '#F5A623' : '#E5E4E7'} color={i < r.rating ? '#F5A623' : '#E5E4E7'} />
+                      ))}
+                    </div>
+                    <p style={{ marginTop: 6 }}>{r.text}</p>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="card" style={{ padding: 18 }}>
+                <p className="muted" style={{ margin: 0 }}>
+                  No reviews yet. Be the first to rate this seller after a completed order.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>
-
     </div>
   );
 }

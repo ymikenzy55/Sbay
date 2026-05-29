@@ -55,6 +55,20 @@
   line-height: 1.5;
   opacity: 0.95;
 }
+.install-ios-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 7px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.install-ios-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .install-actions {
   display: flex;

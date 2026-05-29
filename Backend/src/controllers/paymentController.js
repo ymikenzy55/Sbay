@@ -14,24 +14,43 @@ import { emitToAdmins, emitToUser } from '../socket.js';
 import { env } from '../config/env.js';
 
 const PAYSTACK_API = 'https://api.paystack.co';
+const PAYSTACK_TIMEOUT_MS = 15000;
 
 async function paystackPost(path, body) {
-  const resp = await fetch(`${PAYSTACK_API}${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  return resp.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${PAYSTACK_API}${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    return resp.json();
+  } catch {
+    throw new HttpError(504, 'Payment provider is taking too long to respond. Please try again.');
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function paystackGet(path) {
-  const resp = await fetch(`${PAYSTACK_API}${path}`, {
-    headers: { Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}` },
-  });
-  return resp.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS);
+  try {
+    const resp = await fetch(`${PAYSTACK_API}${path}`, {
+      headers: { Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}` },
+      signal: controller.signal,
+    });
+    return resp.json();
+  } catch {
+    throw new HttpError(504, 'Payment provider is taking too long to respond. Please try again.');
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function reserveStock(productId, qty, session) {
@@ -308,7 +327,9 @@ export const paystackWebhook = asyncHandler(async (req, res) => {
     .update(req.rawBody)
     .digest('hex');
 
-  if (hash !== signature) return res.status(400).end();
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(signature, 'hex'))) return res.status(400).end();
+  } catch { return res.status(400).end(); }
 
   res.sendStatus(200);
 

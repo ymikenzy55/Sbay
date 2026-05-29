@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, ChevronRight, Store, Package, Heart } from 'lucide-react';
+import { useState } from 'react';
+import { Settings, LogOut, ChevronRight, Store, Package, Heart, LayoutDashboard } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import Avatar from '../components/Avatar';
 import BottomNav from '../components/BottomNav';
@@ -10,6 +11,7 @@ import './pages.css';
 import './Profile.css';
 
 const PROFILE_NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, panel: true },
   { id: 'orders', label: 'My Orders', to: '/profile/orders', icon: Package },
   { id: 'wishlist', label: 'Wishlist', to: '/profile/wishlist', icon: Heart },
   { id: 'become-seller', label: 'Become a Seller', to: '/become-seller', icon: Store, action: true },
@@ -22,6 +24,7 @@ export default function Profile() {
   const confirm = useConfirm();
   const { user, logout } = useAuth();
   const { orders } = useOrders();
+  const [activePanel, setActivePanel] = useState(null);
 
   const isGuest = !user;
 
@@ -45,6 +48,10 @@ export default function Profile() {
   const onNavClick = async (item) => {
     if (item.id === 'signout') {
       await onLogout();
+      return;
+    }
+    if (item.panel) {
+      setActivePanel(item.id);
       return;
     }
     navigate(item.to);
@@ -88,7 +95,7 @@ export default function Profile() {
             {PROFILE_NAV.map((item) => (
               <button
                 key={item.id}
-                className={`profile-nav-row ${item.danger ? 'danger' : ''}`}
+                className={`profile-nav-row ${item.danger ? 'danger' : ''} ${activePanel === item.id ? 'active' : ''}`}
                 onClick={() => onNavClick(item)}
                 type="button"
               >
@@ -100,7 +107,7 @@ export default function Profile() {
           </div>
         </section>
 
-        <section className="profile-content">
+        {activePanel === 'dashboard' && <section className="profile-content">
           <div className="stats-row">
             <div className="stat-card"><strong>{orders.length}</strong><span>Orders</span></div>
             <div className="stat-card"><strong>{0}</strong><span>Wishlist</span></div>
@@ -112,7 +119,7 @@ export default function Profile() {
               Use the quick access menu to open your orders, wishlist, settings, or seller registration in a new page.
             </p>
           </section>
-        </section>
+        </section>}
       </main>
 
       <BottomNav />

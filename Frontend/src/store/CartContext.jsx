@@ -4,7 +4,7 @@ const CartContext = createContext(null);
 const CART_KEY = 'sbay.cart';
 
 function loadCart() {
-  try { return JSON.parse(sessionStorage.getItem(CART_KEY)) || []; }
+  try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
   catch { return []; }
 }
 
@@ -12,7 +12,7 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
 
   useEffect(() => {
-    try { sessionStorage.setItem(CART_KEY, JSON.stringify(items)); }
+    try { localStorage.setItem(CART_KEY, JSON.stringify(items)); }
     catch { /* quota exceeded — ignore */ }
   }, [items]);
 
@@ -47,7 +47,7 @@ export function CartProvider({ children }) {
 
   const clear = () => {
     setItems([]);
-    try { sessionStorage.removeItem(CART_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(CART_KEY); } catch { /* ignore */ }
   };
 
   const count    = useMemo(() => items.reduce((s, i) => s + i.qty, 0), [items]);

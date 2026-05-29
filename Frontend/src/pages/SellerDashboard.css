@@ -1,5 +1,6 @@
 .sd-hero {
   display: flex; align-items: center; justify-content: space-between;
+  gap: 14px;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
   padding: 18px 22px;
@@ -85,9 +86,51 @@
 }
 
 @media (max-width: 720px) {
-  .sd-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .sd-hero {
+    align-items: flex-start;
+    padding: 16px;
+    border-radius: var(--r-md);
+  }
+  .sd-hero .btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 0;
+  }
+  .sd-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .stat {
+    min-width: 0;
+    padding: 10px 6px;
+  }
+  .stat .ic {
+    width: 30px;
+    height: 30px;
+  }
+  .stat strong {
+    max-width: 100%;
+    font-size: 0.88rem;
+    overflow-wrap: anywhere;
+  }
   .sd-listing { grid-template-columns: 70px 1fr; }
   .sd-actions { grid-column: span 2; justify-content: flex-end; }
+  .sd-nav-grid {
+    grid-template-columns: 1fr;
+  }
+  .sd-nav-card,
+  .sd-link {
+    border-radius: var(--r-md);
+    padding: 12px;
+  }
+  .sd-nav-card > .muted,
+  .sd-link > .muted {
+    display: none;
+  }
 }
 
 /* Quick-link rows (Verification, Subscription, Settings, Logout) */
@@ -337,4 +380,8 @@
 }
 @media (min-width: 600px) {
   .sd-nav-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 600px) and (max-width: 960px) {
+  .sd-nav-grid { grid-template-columns: repeat(2, 1fr); }
 }

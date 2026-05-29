@@ -24,6 +24,11 @@ export function isPWA() {
          window.navigator.standalone === true;
 }
 
+export function isIOSDevice() {
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '') ||
+    (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+}
+
 /**
  * Show install prompt when available
  */

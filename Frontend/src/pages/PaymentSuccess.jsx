@@ -32,24 +32,30 @@ export default function PaymentSuccess() {
     if (!reference || verified.current) return;
     verified.current = true;
 
-    paymentApi.verify(reference)
-      .then((data) => {
-        if (data.pending) {
-          setTimeout(() => {
-            verified.current = false;
-            paymentApi.verify(reference).then(handleVerifySuccess).catch(handleVerifyError);
-          }, 3000);
-          return;
-        }
-        handleVerifySuccess(data);
-      })
+    verifyWithPolling(reference)
       .catch(handleVerifyError);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reference]);
 
+  async function verifyWithPolling(ref, attempt = 1) {
+    const data = await paymentApi.verify(ref);
+    if (data.pending && attempt < 5) {
+      setTimeout(() => {
+        verifyWithPolling(ref, attempt + 1).catch(handleVerifyError);
+      }, 2500);
+      return;
+    }
+    handleVerifySuccess(data);
+  }
+
   function handleVerifySuccess(data) {
     const rawOrders = data.orders || [];
     const adapted = rawOrders.map((o) => adaptOrder(o));
+    if (adapted.length === 0) {
+      setVerifying(false);
+      setVerifyError('Payment is still being confirmed. Your cart has been kept so you can retry safely.');
+      return;
+    }
     adapted.forEach((o) => addOrder(o));
     reload?.();
     clear();

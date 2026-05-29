@@ -42,6 +42,7 @@ router.get('/users', listUsers);
 router.get('/users/:id', param('id').isMongoId(), validate, getUserDetail);
 router.post(
   '/users/:id/verify',
+  adminMutationLimiter,
   param('id').isMongoId(),
   body('decision').isIn(['approved', 'rejected']),
   body('reason').optional().isString().isLength({ max: 500 }),
@@ -80,6 +81,7 @@ router.delete('/admins/:id', adminMutationLimiter, param('id').isMongoId(), vali
 router.get('/products', listAllProducts);
 router.post(
   '/products/:id/moderate',
+  adminMutationLimiter,
   param('id').isMongoId(),
   body('action').isIn(['hide', 'unhide', 'remove']),
   body('reason').optional().isString().isLength({ max: 500 }),
@@ -90,6 +92,7 @@ router.post(
 router.get('/orders', listAllOrders);
 router.post(
   '/orders/:id/release-escrow',
+  adminMutationLimiter,
   param('id').isMongoId(), validate, releaseEscrow
 );
 router.post(
@@ -103,6 +106,7 @@ router.post(
 router.get('/plans', listAllPlans);
 router.post(
   '/plans',
+  adminMutationLimiter,
   body('code').isString().trim().isLength({ min: 2, max: 30 }),
   body('name').isString().trim().isLength({ min: 2, max: 60 }),
   body('price').isFloat({ min: 0 }),
@@ -116,6 +120,7 @@ router.delete('/plans/:id', param('id').isMongoId(), validate, deletePlan);
 router.get('/settings', getSettings);
 router.patch(
   '/settings',
+  adminMutationLimiter,
   body('platformName').optional().isString().isLength({ max: 60 }),
   body('defaultEscrowFeePct').optional().isFloat({ min: 0, max: 100 }),
   body('supportEmail').optional().isString(),
@@ -168,6 +173,7 @@ router.get('/chats', listAllChats);
 router.get('/chats/:id', param('id').isMongoId(), validate, getAdminChat);
 router.post(
   '/chats/:id/close',
+  adminMutationLimiter,
   param('id').isMongoId(),
   body('reason').optional().isString().isLength({ max: 200 }),
   validate, closeChat

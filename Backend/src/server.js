@@ -24,8 +24,7 @@ async function main() {
   server.listen(env.PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`[server] listening on http://localhost:${env.PORT} (env=${env.NODE_ENV})`);
-    // eslint-disable-next-line no-console
-    console.log(`[server] admin API mounted at ${env.ADMIN_API_PREFIX}`);
+
     // eslint-disable-next-line no-console
     console.log('[socket] Socket.IO attached');
   });

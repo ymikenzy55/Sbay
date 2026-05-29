@@ -1,0 +1,73 @@
+.region-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.region-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.region-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.region-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.region-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.region-field-label .req { color: var(--error); }
+.region-select-wrap {
+  position: relative;
+}
+.region-select {
+  width: 100%;
+  padding: 12px 36px 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface-2);
+  appearance: none;
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+.region-select:focus { border-color: var(--primary); background: #fff; }
+.region-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.region-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface-2);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.region-input:focus { border-color: var(--primary); background: #fff; }
+@media (min-width: 600px) {
+  .region-fields { flex-direction: row; gap: 12px; }
+  .region-field { flex: 1; }
+}

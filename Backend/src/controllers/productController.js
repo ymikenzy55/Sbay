@@ -15,6 +15,46 @@ function toTitleCase(value) {
     .join(' ');
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function normalizeNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function isDuplicateListing(existing, incoming) {
+  return (
+    normalizeText(existing.title) === normalizeText(incoming.title) &&
+    normalizeText(existing.description) === normalizeText(incoming.description) &&
+    normalizeNumber(existing.price) === normalizeNumber(incoming.price) &&
+    normalizeNumber(existing.discountPrice) === normalizeNumber(incoming.discountPrice) &&
+    normalizeText(existing.category) === normalizeText(incoming.category) &&
+    normalizeText(existing.condition) === normalizeText(incoming.condition) &&
+    normalizeText(existing.location) === normalizeText(incoming.location) &&
+    normalizeText(existing.school) === normalizeText(incoming.school) &&
+    normalizeText(existing.city) === normalizeText(incoming.city)
+  );
+}
+
+async function findDuplicateListing(sellerId, candidate, excludeId) {
+  const filter = {
+    seller: sellerId,
+    status: { $ne: 'removed' },
+  };
+  if (excludeId) filter._id = { $ne: excludeId };
+
+  const existingListings = await Product.find(filter)
+    .select('title description price discountPrice category condition location school city');
+
+  return existingListings.find((item) => isDuplicateListing(item, candidate));
+}
+
 /** GET /api/products/catalog — DB-driven categories and school groups. */
 export const listCatalogMeta = asyncHandler(async (_req, res) => {
   const items = await Product.find({ status: 'active' })
@@ -142,6 +182,23 @@ export const createProduct = asyncHandler(async (req, res) => {
     stock, condition, category, images, location, school, city,
   } = req.body;
 
+  const candidate = {
+    title,
+    description,
+    price,
+    discountPrice,
+    category,
+    condition,
+    location,
+    school,
+    city,
+  };
+
+  const duplicate = await findDuplicateListing(req.user._id, candidate);
+  if (duplicate) {
+    return res.status(409).json({ error: 'You already have this exact product listed. Please edit the existing listing instead.' });
+  }
+
   const product = await Product.create({
     seller: seller._id,
     title, description,
@@ -170,6 +227,20 @@ export const updateProduct = asyncHandler(async (req, res) => {
   ];
   for (const k of allowed) {
     if (req.body[k] !== undefined) product[k] = req.body[k];
+  }
+  const duplicate = await findDuplicateListing(req.user._id, {
+    title: product.title,
+    description: product.description,
+    price: product.price,
+    discountPrice: product.discountPrice,
+    category: product.category,
+    condition: product.condition,
+    location: product.location,
+    school: product.school,
+    city: product.city,
+  }, product._id);
+  if (duplicate) {
+    throw new HttpError(409, 'You already have this exact product listed. Please edit the existing listing instead.');
   }
   if (product.stock > 0 && product.status === 'sold_out') product.status = 'active';
   await product.save();

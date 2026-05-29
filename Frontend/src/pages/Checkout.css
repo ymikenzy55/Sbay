@@ -1,4 +1,10 @@
 .co-items { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.checkout-page .page-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.co-details-col { display: flex; flex-direction: column; gap: 14px; }
 .co-item {
   display: flex; gap: 12px; align-items: center;
   padding: 8px 0;
@@ -72,9 +78,76 @@
 .co-totals .row { display: flex; justify-content: space-between; }
 .co-totals .row.total { font-size: 1.05rem; }
 .co-totals .row.total strong { color: var(--primary); }
+.co-note-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  cursor: default;
+  box-shadow: var(--shadow-sm);
+}
+.co-paystack-card {
+  border-color: rgba(10, 126, 62, 0.28);
+  background: var(--primary-50);
+}
+.co-escrow-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.co-escrow-head .m-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.co-escrow-head h4 {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.co-escrow-copy {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
 
 @media (max-width: 720px) {
   .method-grid { grid-template-columns: 1fr; }
+  .checkout-page .page-main {
+    padding-inline: 12px;
+    padding-bottom: 24px;
+  }
+  .checkout-page .card,
+  .co-note-card {
+    border-radius: var(--r-md);
+    padding: 14px;
+  }
+  .co-item {
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .co-item .thumb {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+  }
+  .co-item .price {
+    align-self: flex-start;
+    white-space: nowrap;
+    font-size: 0.86rem;
+  }
+  .co-summary-col {
+    order: -1;
+  }
+  .co-review-toggle {
+    text-align: center;
+    line-height: 1.35;
+  }
 }
 
 /* Location collector */

@@ -1,6 +1,7 @@
 import { User } from '../models/User.js';
 import { Product } from '../models/Product.js';
 import { Order } from '../models/Order.js';
+import { Review } from '../models/Review.js';
 import { Chat } from '../models/Chat.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -118,11 +119,150 @@ export const getSellerById = asyncHandler(async (req, res) => {
   const seller = await User.findOne({ _id: req.params.id, role: 'seller', restricted: false });
   if (!seller) throw new HttpError(404, 'Seller not found');
 
-  const listings = await Product.find({ seller: seller._id, status: 'active' })
-    .sort({ createdAt: -1 })
-    .limit(24);
+  const [listings, reviewSummary] = await Promise.all([
+    Product.find({ seller: seller._id, status: 'active' })
+      .sort({ createdAt: -1 })
+      .limit(24),
+    Review.aggregate([
+      { $match: { seller: seller._id } },
+      {
+        $group: {
+          _id: '$seller',
+          rating: { $avg: '$rating' },
+          reviewCount: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  const summary = reviewSummary[0] || { rating: seller.sellerProfile?.rating || 0, reviewCount: seller.sellerProfile?.reviewCount || 0 };
+  seller.sellerProfile = {
+    ...(seller.sellerProfile?.toObject?.() || seller.sellerProfile || {}),
+    rating: Number(summary.rating || 0),
+    reviewCount: Number(summary.reviewCount || 0),
+  };
 
   res.json({ seller, listings });
+});
+
+export const getSellerReviews = asyncHandler(async (req, res) => {
+  const seller = await User.findOne({ _id: req.params.id, role: 'seller', restricted: false }).select('_id name avatar sellerProfile');
+  if (!seller) throw new HttpError(404, 'Seller not found');
+
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+  const skip = (page - 1) * limit;
+
+  const [items, total, summary] = await Promise.all([
+    Review.find({ seller: seller._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('reviewer', 'name avatar'),
+    Review.countDocuments({ seller: seller._id }),
+    Review.aggregate([
+      { $match: { seller: seller._id } },
+      {
+        $group: {
+          _id: '$seller',
+          rating: { $avg: '$rating' },
+          reviewCount: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  const stats = summary[0] || { rating: 0, reviewCount: 0 };
+  res.json({
+    seller: {
+      _id: seller._id,
+      name: seller.name,
+      avatar: seller.avatar,
+      sellerProfile: {
+        ...(seller.sellerProfile?.toObject?.() || seller.sellerProfile || {}),
+        rating: Number(stats.rating || 0),
+        reviewCount: Number(stats.reviewCount || 0),
+      },
+    },
+    items,
+    page,
+    limit,
+    total,
+    rating: Number(stats.rating || 0),
+  });
+});
+
+export const createReview = asyncHandler(async (req, res) => {
+  const seller = await User.findOne({ _id: req.params.id, role: 'seller', restricted: false });
+  if (!seller) throw new HttpError(404, 'Seller not found');
+
+  const rating = Number(req.body.rating);
+  const text = String(req.body.text || '').trim();
+
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    throw new HttpError(400, 'Rating must be between 1 and 5');
+  }
+  if (!text) {
+    throw new HttpError(400, 'Review text is required');
+  }
+
+  const eligibleOrder = await Order.findOne({
+    buyer: req.user._id,
+    seller: seller._id,
+    status: { $in: ['delivered', 'completed'] },
+  }).sort({ updatedAt: -1 });
+
+  if (!eligibleOrder) {
+    throw new HttpError(403, 'You can only review a seller after a completed order');
+  }
+
+  let review = await Review.findOne({
+    seller: seller._id,
+    reviewer: req.user._id,
+  });
+
+  const wasExisting = !!review;
+  if (review) {
+    review.rating = rating;
+    review.text = text;
+    review.order = eligibleOrder._id;
+    await review.save();
+  } else {
+    review = await Review.create({
+      seller: seller._id,
+      reviewer: req.user._id,
+      order: eligibleOrder._id,
+      rating,
+      text,
+    });
+  }
+
+  const aggregate = await Review.aggregate([
+    { $match: { seller: seller._id } },
+    {
+      $group: {
+        _id: '$seller',
+        rating: { $avg: '$rating' },
+        reviewCount: { $sum: 1 },
+      },
+    },
+  ]);
+  const stats = aggregate[0] || { rating: 0, reviewCount: 0 };
+
+  seller.sellerProfile = {
+    ...(seller.sellerProfile?.toObject?.() || seller.sellerProfile || {}),
+    rating: Number(stats.rating || 0),
+    reviewCount: Number(stats.reviewCount || 0),
+  };
+  await seller.save();
+
+  await review.populate('reviewer', 'name avatar');
+
+  res.status(wasExisting ? 200 : 201).json({
+    review,
+    rating: Number(stats.rating || 0),
+    reviewCount: Number(stats.reviewCount || 0),
+  });
 });
 
 export const myNotifications = asyncHandler(async (req, res) => {
@@ -152,7 +292,7 @@ export const myNotifications = asyncHandler(async (req, res) => {
       body: isSeller
         ? `${o.buyer?.name || 'A buyer'} placed or updated ${o.invoiceNumber}.`
         : `${o.invoiceNumber} is now ${o.status}.`,
-      href: isSeller ? '/seller-dashboard?tab=sales' : '/profile?tab=orders',
+      href: isSeller ? '/seller-dashboard/sales' : '/profile/orders',
       at: o.updatedAt || o.createdAt,
     });
   }
@@ -188,7 +328,7 @@ export const myNotifications = asyncHandler(async (req, res) => {
   res.json({ items: items.slice(0, 30) });
 });
 
-/** Add a saved payment method (mock — no PCI). */
+/** Add a saved payment method (mock, no PCI data). */
 export const addPaymentMethod = asyncHandler(async (req, res) => {
   const { brand, last4, holder, expiry, method } = req.body;
   const user = await User.findById(req.user._id);

@@ -20,17 +20,17 @@ export default function Home() {
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([
-      sbay.getTrending(),
-      sbay.getSellers(),
-      sbay.getRecent(),
-    ]).then(([trendingRes, sellersRes, recentRes]) => {
-      if (!active) return;
-      setTrending(trendingRes.status === 'fulfilled' ? trendingRes.value : []);
-      setSellers(sellersRes.status === 'fulfilled' ? sellersRes.value : []);
-      setRecent(recentRes.status === 'fulfilled' ? recentRes.value : []);
-      setLoading(false);
-    });
+    Promise.allSettled([sbay.getTrending(), sbay.getRecent()])
+      .then(([trendingRes, recentRes]) => {
+        if (!active) return;
+        setTrending(trendingRes.status === 'fulfilled' ? trendingRes.value : []);
+        setRecent(recentRes.status === 'fulfilled' ? recentRes.value : []);
+      })
+      .finally(() => { if (active) setLoading(false); });
+
+    sbay.getSellers()
+      .then((value) => { if (active) setSellers(value); })
+      .catch(() => { if (active) setSellers([]); });
 
     return () => {
       active = false;

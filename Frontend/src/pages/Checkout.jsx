@@ -9,6 +9,7 @@ import TopBar from '../components/TopBar';
 import { useCart } from '../store/CartContext';
 import { useAuth } from '../store/AuthContext';
 import { paymentApi, sbay } from '../api/client';
+import RegionSelector from '../components/RegionSelector';
 import './pages.css';
 import './Checkout.css';
 
@@ -17,8 +18,8 @@ export default function Checkout() {
   const { items, subtotal } = useCart();
   const { user, updateUser } = useAuth();
 
-  const [location, setLocation] = useState(user?.location || '');
-  const [editingLoc, setEditingLoc] = useState(!user?.location);
+  const [location, setLocation] = useState('');
+  const [editingLoc, setEditingLoc] = useState(true);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +36,7 @@ export default function Checkout() {
 
   const saveLocation = () => {
     const v = location.trim();
-    if (!v) { setError('Please enter a delivery / pickup location.'); return false; }
+    if (!v || !v.includes(',')) { setError('Please choose a region and enter your city.'); return false; }
     setError('');
     updateUser?.({ location: v });
     setEditingLoc(false);
@@ -86,80 +87,75 @@ export default function Checkout() {
 
       <main className="page-main">
         <div className="co-details-col">
-        <section className="card">
-          <h3 className="page-h2">Order Summary</h3>
-          <div className="co-items">
-            {items.map((it) => (
-              <div key={it.id} className="co-item">
-                <div className="thumb" style={{ backgroundImage: `url(${it.image})` }} />
-                <div style={{ flex: 1 }}>
-                  <h4>{it.title}</h4>
-                  <p className="muted small">Qty {it.qty}</p>
+          <section className="card">
+            <h3 className="page-h2">Order Summary</h3>
+            <div className="co-items">
+              {items.map((it) => (
+                <div key={it.id} className="co-item">
+                  <div className="thumb" style={{ backgroundImage: `url(${it.image})` }} />
+                  <div style={{ flex: 1 }}>
+                    <h4>{it.title}</h4>
+                    <p className="muted small">Qty {it.qty}</p>
+                  </div>
+                  <span className="price">GH₵ {(it.qty * it.price).toLocaleString()}</span>
                 </div>
-                <span className="price">GH₵ {(it.qty * it.price).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card co-location">
-          <div className="co-loc-head">
-            <h3 className="page-h2"><MapPin size={16} /> Delivery / Pickup Location</h3>
-            {!editingLoc && location && (
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditingLoc(true)}>
-                <Edit3 size={14} /> Change
-              </button>
-            )}
-          </div>
-          {editingLoc ? (
-            <div className="co-loc-edit">
-              <p className="muted small">
-                Where should the seller meet you or drop off? We'll save this for future orders.
-              </p>
-              <input
-                type="text"
-                className="co-loc-input"
-                placeholder="e.g. UG, Night Market, Legon"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                autoFocus
-              />
-              <button className="btn btn-primary btn-sm" onClick={saveLocation}>
-                <Check size={14} /> Save location
-              </button>
+              ))}
             </div>
-          ) : (
-            <p className="co-loc-value"><MapPin size={14} /> {location}</p>
-          )}
-        </section>
+          </section>
 
-        <section className="card method-card active" style={{ cursor: 'default' }}>
-          <div className="m-icon"><Lock size={22} /></div>
-          <h4>Escrow Payment <span className="rec">Buyer-protected</span></h4>
-          <p>
-            sBay holds your money safely. The seller is paid only after you confirm
-            receipt from your orders page. A <strong>{feePct}% platform service fee</strong> applies.
-          </p>
-          <ul className="m-list">
-            <li><Check size={14} color="#0A7E3E" /> Buyer protection on every order</li>
-            <li><Check size={14} color="#0A7E3E" /> Refund if item not as described</li>
-            <li><Check size={14} color="#0A7E3E" /> Seller paid only after confirmation</li>
-          </ul>
-        </section>
+          <section className="card co-location">
+            <div className="co-loc-head">
+              <h3 className="page-h2"><MapPin size={16} /> Pickup Location</h3>
+              {!editingLoc && location && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditingLoc(true)}>
+                  <Edit3 size={14} /> Change
+                </button>
+              )}
+            </div>
+            {editingLoc ? (
+              <div className="co-loc-edit">
+                <p className="muted small">
+                  Select your region first, then enter your city or town.
+                </p>
+                <RegionSelector
+                  value={location}
+                  onChange={setLocation}
+                  label="Pickup location"
+                  required
+                />
+                <button className="btn btn-primary btn-sm" onClick={saveLocation}>
+                  <Check size={14} /> Save location
+                </button>
+              </div>
+            ) : (
+              <p className="co-loc-value"><MapPin size={14} /> {location}</p>
+            )}
+          </section>
 
-        <section className="card method-card" style={{ cursor: 'default', borderColor: '#0a7e3e', background: 'var(--primary-50)' }}>
-          <div className="m-icon" style={{ background: '#0a7e3e' }}><CreditCard size={22} /></div>
-          <h4>Pay via Paystack</h4>
-          <p className="muted small">
-            Card, Mobile Money, Bank Transfer and more — all secured by Paystack.
-            You'll be redirected to complete payment safely.
-          </p>
-        </section>
+          <section className="co-note-card co-escrow-card">
+            <div className="co-escrow-head">
+              <span className="m-icon"><Lock size={22} /></span>
+              <div>
+                <h4>Escrow protection</h4>
+                <p className="muted small">Funds stay held until you confirm delivery.</p>
+              </div>
+            </div>
+            <p className="co-escrow-copy">You pay now. sBay holds the money until you confirm you received the item.</p>
+          </section>
 
+          <section className="co-note-card co-paystack-card">
+            <div className="co-escrow-head">
+              <span className="m-icon" style={{ background: '#0a7e3e' }}><CreditCard size={22} /></span>
+              <div>
+                <h4>Pay with Paystack</h4>
+                <p className="muted small">Card, Mobile Money and bank transfer supported.</p>
+              </div>
+            </div>
+          </section>
         </div>
         <section className="card co-totals co-summary-col">
           <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
-          <div className="row"><span>Service fee (5%)</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
+          <div className="row"><span>Service fee ({feePct}%)</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
           <div className="divider" />
           <div className="row total"><span>Total</span><strong>GH₵ {total.toLocaleString()}</strong></div>
 

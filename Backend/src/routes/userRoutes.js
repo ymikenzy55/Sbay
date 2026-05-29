@@ -3,6 +3,7 @@ import { body, param } from 'express-validator';
 import {
   updateMe, becomeSeller, getSellerById,
   addPaymentMethod, removePaymentMethod, myNotifications,
+  getSellerReviews, createReview,
 } from '../controllers/userController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -71,6 +72,23 @@ router.get(
   param('id').isMongoId(),
   validate,
   getSellerById
+);
+
+router.get(
+  '/sellers/:id/reviews',
+  param('id').isMongoId(),
+  validate,
+  getSellerReviews
+);
+
+router.post(
+  '/sellers/:id/reviews',
+  requireAuth,
+  param('id').isMongoId(),
+  body('rating').isInt({ min: 1, max: 5 }),
+  body('text').isString().trim().isLength({ min: 1, max: 2000 }),
+  validate,
+  createReview
 );
 
 export default router;

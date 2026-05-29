@@ -34,7 +34,7 @@ export const register = asyncHandler(async (req, res) => {
     passwordHash,
     phone: phone?.trim(),
     location: location?.trim(),
-    role: role === 'seller' ? 'seller' : 'buyer',
+    role: 'buyer',
   });
 
   const token = signAccessToken(user);
@@ -134,6 +134,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
     });
     if (!resp.ok) throw new Error('userinfo fetch failed');
     const info = await resp.json();
+    if (!info.email_verified) throw new HttpError(400, 'Your Google email is not verified. Please verify it first.');
     googleId = info.sub;
     email = info.email;
     name = info.name;

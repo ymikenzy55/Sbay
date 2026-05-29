@@ -22,7 +22,7 @@ export default function SellerSettings() {
     bio:       user?.sellerProfile?.bio || '',
     phone:     user?.phone || '',
     email:     user?.email || '',
-    location:  user?.location || 'UG, Legon',
+    location:  user?.location || '',
     avatar:    user?.avatar || '',
 
     payoutMethod: user?.payout?.method || 'mtn-momo',

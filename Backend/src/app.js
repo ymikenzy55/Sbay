@@ -30,7 +30,7 @@ export function buildApp() {
   app.use(helmet());
   app.use(compression());
   app.use(express.json({
-    limit: '20mb',
+    limit: '2mb',
     verify: (req, _res, buf) => {
       if (req.originalUrl?.includes('/payments/webhook')) req.rawBody = buf;
     },

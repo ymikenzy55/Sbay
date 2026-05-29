@@ -1,3 +1,5 @@
+function escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
 import { User } from '../models/User.js';
 import { Product } from '../models/Product.js';
 import { Order } from '../models/Order.js';
@@ -98,9 +100,10 @@ export const listUsers = asyncHandler(async (req, res) => {
   if (verified === 'true') filter.verified = true;
   if (verified === 'false') filter.verified = false;
   if (q) {
+    const escaped = escapeRegex(q);
     filter.$or = [
-      { name:  { $regex: q, $options: 'i' } },
-      { email: { $regex: q, $options: 'i' } },
+      { name:  { $regex: escaped, $options: 'i' } },
+      { email: { $regex: escaped, $options: 'i' } },
     ];
   }
   const lim = Math.min(Number(limit) || 30, 100);
@@ -394,7 +397,7 @@ export const listAllProducts = asyncHandler(async (req, res) => {
   const filter = {};
   if (status) filter.status = status;
   if (sellerId) filter.seller = sellerId;
-  if (q) filter.title = { $regex: q, $options: 'i' };
+  if (q) filter.title = { $regex: escapeRegex(q), $options: 'i' };
   const lim = Math.min(Number(limit) || 30, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * lim;
   const [items, total] = await Promise.all([
@@ -426,7 +429,7 @@ export const listAllOrders = asyncHandler(async (req, res) => {
   if (escrowStatus) filter['escrow.status'] = escrowStatus;
   if (sellerId) filter.seller = sellerId;
   if (buyerId)  filter.buyer  = buyerId;
-  if (q) filter.invoiceNumber = { $regex: q, $options: 'i' };
+  if (q) filter.invoiceNumber = { $regex: escapeRegex(q), $options: 'i' };
   const lim = Math.min(Number(limit) || 30, 100);
   const skip = (Math.max(Number(page) || 1, 1) - 1) * lim;
   const [items, total] = await Promise.all([

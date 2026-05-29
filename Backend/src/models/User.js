@@ -136,6 +136,8 @@ const userSchema = new mongoose.Schema(
 userSchema.methods.toJSON = function toJSON() {
   const obj = this.toObject({ virtuals: true });
   delete obj.passwordHash;
+  delete obj.resetPasswordTokenHash;
+  delete obj.resetPasswordExpiresAt;
   delete obj.__v;
   return obj;
 };

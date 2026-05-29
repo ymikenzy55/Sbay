@@ -29,12 +29,28 @@ export const setToken = (t, remember = true) => {
 };
 
 function makeClient(baseURL) {
-  const c = axios.create({ baseURL, timeout: 15000 });
+  const c = axios.create({ baseURL, timeout: 45000 });
   c.interceptors.request.use((cfg) => {
     const t = getToken();
     if (t) cfg.headers.Authorization = `Bearer ${t}`;
     return cfg;
   });
+  // Auto-retry GET requests on timeout (once)
+  c.interceptors.response.use(undefined, async (err) => {
+    const config = err.config;
+    if (
+      config &&
+      (config.method === 'get' || config.url === '/payments/verify') &&
+      !config._retried &&
+      (err.code === 'ECONNABORTED' || err.message?.includes('timeout'))
+    ) {
+      config._retried = true;
+      await new Promise(r => setTimeout(r, 1200));
+      return c(config);
+    }
+    return Promise.reject(err);
+  });
+
   c.interceptors.response.use(
     (r) => r,
     (err) => {
@@ -48,16 +64,25 @@ function makeClient(baseURL) {
       }
       // Better error messages for network issues
       if (!err.response) {
-        if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
-          const e = new Error('Unable to connect to server. Please check if the backend is running.');
-          e.isNetworkError = true;
+        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+          const e = new Error('The server is taking longer than expected. Please try again in a moment.');
+          e.isTimeout = true;
           if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('sbay:network-error'));
+            window.dispatchEvent(new CustomEvent('sbay:timeout-error'));
           }
           return Promise.reject(e);
         }
-        if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
-          return Promise.reject(new Error('Request timeout. The server is taking too long to respond.'));
+        if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+          const e = new Error(navigator.onLine
+            ? 'Unable to reach the server. Please try again.'
+            : 'You are offline. Check your internet connection.');
+          e.isNetworkError = true;
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent(
+              navigator.onLine ? 'sbay:server-error' : 'sbay:network-error'
+            ));
+          }
+          return Promise.reject(e);
         }
       }
       // CORS errors
@@ -97,7 +122,7 @@ export const sbay = {
   },
 
   async getCatalogMeta() {
-    return cached('catalog-meta', 60_000, async () => {
+    return cached('catalog-meta', 300_000, async () => {
       const { data } = await api.get('/products/catalog');
       return data;
     });
@@ -117,14 +142,14 @@ export const sbay = {
   },
 
   async getTrending() {
-    return cached('products-trending', 30_000, async () => {
+    return cached('products-trending', 120_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
       return data.items.map(adaptProduct);
     });
   },
 
   async getRecent() {
-    return cached('products-recent', 30_000, async () => {
+    return cached('products-recent', 120_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
       return data.items.map(adaptProduct);
     });
@@ -240,6 +265,16 @@ export const sbay = {
   async startChat(sellerId) {
     const { data } = await api.post('/chats/start', { sellerId });
     return data.chat;
+  },
+
+  /* ----- Seller Reviews ----- */
+  async getSellerReviews(sellerId, page = 1) {
+    const { data } = await api.get(`/users/sellers/${sellerId}/reviews`, { params: { page } });
+    return data;
+  },
+  async submitReview(sellerId, { rating, text }) {
+    const { data } = await api.post(`/users/sellers/${sellerId}/reviews`, { rating, text });
+    return data;
   },
 
   /* ----- Plans / settings (public) ----- */

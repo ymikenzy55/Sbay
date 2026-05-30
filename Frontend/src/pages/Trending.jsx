@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp, MapPin, Flame } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { SkeletonGrid } from '../components/Skeleton';
 import { sbay } from '../api/client';
 import './pages.css';
@@ -79,6 +80,7 @@ export default function Trending() {
         )}
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

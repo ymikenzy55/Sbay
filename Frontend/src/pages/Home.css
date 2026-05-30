@@ -24,6 +24,7 @@
   margin: 0 auto;
 }
 
+
 .section { display: flex; flex-direction: column; gap: 14px; }
 .section-head {
   display: flex;
@@ -403,7 +404,9 @@
 /* Desktop layout: wider content, centered columns */
 @media (min-width: 961px) {
   .home { padding-bottom: 40px; }
-  .home-main { max-width: 1400px; margin: 0 auto; padding: 24px 48px 60px; gap: 40px; }
+  /* On desktop the TopBar is hidden, so the DesktopNav (68px) provides the top offset.
+     We add comfortable top padding here. */
+  .home-main { max-width: 1400px; margin: 0 auto; padding: 32px 48px 60px; gap: 40px; }
   .uni-chips { max-width: 1400px; margin: 10px auto 0; padding: 0 48px; }
   .section-title { font-size: 1.3rem; }
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
@@ -315,6 +316,7 @@ export default function SellerSettings() {
         </section>
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

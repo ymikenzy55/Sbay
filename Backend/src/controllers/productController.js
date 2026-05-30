@@ -22,6 +22,16 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function exactTextFilter(value) {
+  const text = String(value || '').trim().replace(/\s+/g, ' ');
+  if (!text) return undefined;
+  return new RegExp(`^${escapeRegex(text)}$`, 'i');
+}
+
 function normalizeNumber(value) {
   if (value === undefined || value === null || value === '') return null;
   const n = Number(value);
@@ -127,11 +137,11 @@ export const listProducts = asyncHandler(async (req, res) => {
   } = req.query;
 
   const filter = { status: 'active' };
-  if (category) filter.category = category;
+  if (category) filter.category = exactTextFilter(category);
   if (seller) filter.seller = seller;
-  if (school) filter.school = school;
-  if (city) filter.city = city;
-  if (condition) filter.condition = condition;
+  if (school) filter.school = exactTextFilter(school);
+  if (city) filter.city = exactTextFilter(city);
+  if (condition) filter.condition = exactTextFilter(condition);
   if (minPrice || maxPrice) {
     filter.price = {};
     if (minPrice) filter.price.$gte = Number(minPrice);
@@ -265,4 +275,31 @@ export const myListings = asyncHandler(async (req, res) => {
   const items = await Product.find({ seller: req.user._id, status: { $ne: 'removed' } })
     .sort({ createdAt: -1 });
   res.json({ items });
+});
+
+/** GET /api/products/mine/stats - seller aggregate listing metrics. */
+export const myListingStats = asyncHandler(async (req, res) => {
+  const [stats] = await Product.aggregate([
+    { $match: { seller: req.user._id, status: { $ne: 'removed' } } },
+    {
+      $group: {
+        _id: '$seller',
+        listings: { $sum: 1 },
+        activeListings: {
+          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] },
+        },
+        views: { $sum: { $ifNull: ['$views', 0] } },
+        sold: { $sum: { $ifNull: ['$sold', 0] } },
+      },
+    },
+  ]);
+
+  res.json({
+    stats: {
+      listings: stats?.listings || 0,
+      activeListings: stats?.activeListings || 0,
+      views: stats?.views || 0,
+      sold: stats?.sold || 0,
+    },
+  });
 });

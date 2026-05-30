@@ -40,7 +40,6 @@ export default function BottomNav() {
   };
 
   return (
-    <>
     <nav className="bottom-nav">
       {items.map((item) => {
         const { id, label, path, icon: Icon, center } = item;
@@ -62,12 +61,5 @@ export default function BottomNav() {
         );
       })}
     </nav>
-    <div className="miqrotek-credit">
-      Built by{' '}
-      <a href="https://portfolio-sooty-eight-54.vercel.app/" target="_blank" rel="noopener noreferrer">
-        MiqroTek
-      </a>
-    </div>
-    </>
   );
 }

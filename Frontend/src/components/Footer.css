@@ -1,0 +1,33 @@
+/* Site footer — renders below all page content (not fixed) */
+.site-footer {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  padding: 18px 16px 8px;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+}
+
+.site-footer a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.site-footer a:hover { text-decoration: underline; }
+
+/* On mobile, add extra bottom padding so it clears the fixed BottomNav */
+@media (max-width: 960px) {
+  .site-footer {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* On desktop, just a subtle bottom margin */
+@media (min-width: 961px) {
+  .site-footer {
+    padding: 24px 16px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}

@@ -29,7 +29,7 @@ export const setToken = (t, remember = true) => {
 };
 
 function makeClient(baseURL) {
-  const c = axios.create({ baseURL, timeout: 45000 });
+  const c = axios.create({ baseURL, timeout: 30000 });
   c.interceptors.request.use((cfg) => {
     const t = getToken();
     if (t) cfg.headers.Authorization = `Bearer ${t}`;
@@ -100,9 +100,9 @@ export const adminApi = makeClient(ADMIN_URL);
 
 const NOTIFICATIONS = { Today: [], Yesterday: [] };
 const cache = new Map();
-const cached = async (key, ttlMs, fetcher) => {
+const cached = async (key, ttlMs, fetcher, { force = false } = {}) => {
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < ttlMs) return hit.value;
+  if (!force && hit && Date.now() - hit.at < ttlMs) return hit.value;
   const value = await fetcher();
   cache.set(key, { at: Date.now(), value });
   return value;
@@ -121,11 +121,11 @@ export const sbay = {
     }));
   },
 
-  async getCatalogMeta() {
-    return cached('catalog-meta', 300_000, async () => {
+  async getCatalogMeta({ force = false } = {}) {
+    return cached('catalog-meta', 600_000, async () => {
       const { data } = await api.get('/products/catalog');
       return data;
-    });
+    }, { force });
   },
 
   async getCategories() {
@@ -142,14 +142,14 @@ export const sbay = {
   },
 
   async getTrending() {
-    return cached('products-trending', 120_000, async () => {
+    return cached('products-trending', 180_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
       return data.items.map(adaptProduct);
     });
   },
 
   async getRecent() {
-    return cached('products-recent', 120_000, async () => {
+    return cached('products-recent', 180_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
       return data.items.map(adaptProduct);
     });
@@ -194,8 +194,8 @@ export const sbay = {
     return seller;
   },
 
-  async getSchoolTree() {
-    const meta = await this.getCatalogMeta();
+  async getSchoolTree({ force = false } = {}) {
+    const meta = await this.getCatalogMeta({ force });
     const schools = meta.schools.map((school) => ({
       id: school.id,
       label: school.label,
@@ -356,6 +356,7 @@ export const productApi = {
   async update(id, payload)    { const { data } = await api.patch(`/products/${id}`, payload); return adaptProduct(data.product); },
   async remove(id)             { await api.delete(`/products/${id}`); return true; },
   async mine()                 { const { data } = await api.get('/products/mine'); return data.items.map(adaptProduct); },
+  async myStats()              { const { data } = await api.get('/products/mine/stats'); return data.stats || {}; },
 };
 
 export const paymentApi = {

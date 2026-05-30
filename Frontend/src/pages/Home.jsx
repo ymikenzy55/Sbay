@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Star, ArrowRight, Heart, Shield, MapPin, Search as SearchIcon, Flame, Package } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { sbay } from '../api/client';
 import { SkeletonGrid, Skeleton } from '../components/Skeleton';
 import './Home.css';
@@ -232,6 +233,7 @@ export default function Home() {
         )}
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

@@ -8,6 +8,8 @@ import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { Skeleton, SkeletonGrid } from '../components/Skeleton';
 import Avatar from '../components/Avatar';
+import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import './pages.css';
 import './SellerProfile.css';
 
@@ -258,6 +260,7 @@ export default function SellerProfile() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

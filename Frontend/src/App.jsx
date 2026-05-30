@@ -42,6 +42,7 @@ import SellerMessages    from './pages/SellerMessages';
 import Terms             from './pages/Terms';
 import SellerSubscription from './pages/SellerSubscription';
 import SellerSettings  from './pages/SellerSettings';
+import SellerVerification from './pages/SellerVerification';
 import EditListing    from './pages/EditListing';
 import Categories      from './pages/Categories';
 import Trending        from './pages/Trending';
@@ -78,86 +79,86 @@ export default function App() {
       <ConfirmProvider>
         <CartProvider>
           <OrdersProvider>
-          <BrowserRouter>
-            <ScrollToTop />
-            <DesktopNav />
-            <NetworkBanner />
-            <FloatingCart />
-            <SupportWidget />
-            <InstallPrompt />
-            <Routes>
-              {/* Public — anyone can browse */}
-              <Route path="/"             element={<Splash />} />
-              <Route path="/home"         element={<Home />} />
-              <Route path="/search"       element={<SearchPage />} />
-              <Route path="/product/:id"  element={<ProductDetail />} />
-              <Route path="/seller/:id"   element={<SellerProfile />} />
-              <Route path="/cart"         element={<Cart />} />
+            <BrowserRouter>
+              <ScrollToTop />
+              <DesktopNav />
+              <NetworkBanner />
+              <FloatingCart />
+              <SupportWidget />
+              <InstallPrompt />
+              <Routes>
+                {/* Public — anyone can browse */}
+                <Route path="/"             element={<Splash />} />
+                <Route path="/home"         element={<Home />} />
+                <Route path="/search"       element={<SearchPage />} />
+                <Route path="/product/:id"  element={<ProductDetail />} />
+                <Route path="/seller/:id"   element={<SellerProfile />} />
+                <Route path="/cart"         element={<Cart />} />
 
-              {/* Browse by category & trending */}
-              <Route path="/categories"        element={<Categories />} />
-              <Route path="/category/:catId"   element={<Categories />} />
-              <Route path="/trending"          element={<Trending />} />
+                {/* Browse by category & trending */}
+                <Route path="/categories"        element={<Categories />} />
+                <Route path="/category/:catId"   element={<Categories />} />
+                <Route path="/trending"          element={<Trending />} />
 
-              {/* Auth */}
-              <Route path="/login"           element={<Login />} />
-              <Route path="/signup"          element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+                {/* Auth */}
+                <Route path="/login"           element={<Login />} />
+                <Route path="/signup"          element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* Chat — sign-in required */}
-              <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
-              <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
+                {/* Chat — sign-in required */}
+                <Route path="/chats"           element={<RequireAuth><ChatList /></RequireAuth>} />
+                <Route path="/chat/:id"        element={<RequireAuth><IndividualChat /></RequireAuth>} />
 
-{/* Sensitive — sign-in required */}
-              <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
-              <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
-              <Route path="/payment-failed"  element={<PaymentFailed />} />
-              <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
-              <Route path="/profile"         element={<Profile />} />
-              <Route path="/profile/orders"   element={<RequireAuth><ProfileOrders /></RequireAuth>} />
-              <Route path="/profile/wishlist" element={<RequireAuth><ProfileWishlist /></RequireAuth>} />
-              <Route path="/profile/settings" element={<RequireAuth><ProfileSettings /></RequireAuth>} />
-              <Route path="/orders"           element={<Navigate to="/profile/orders" replace />} />
+                {/* Sensitive — sign-in required */}
+                <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
+                <Route path="/payment-success" element={<RequireAuth><PaymentSuccess /></RequireAuth>} />
+                <Route path="/payment-failed"  element={<PaymentFailed />} />
+                <Route path="/notifications"   element={<RequireAuth><Notifications /></RequireAuth>} />
+                <Route path="/profile"         element={<Profile />} />
+                <Route path="/profile/orders"   element={<RequireAuth><ProfileOrders /></RequireAuth>} />
+                <Route path="/profile/wishlist" element={<RequireAuth><ProfileWishlist /></RequireAuth>} />
+                <Route path="/profile/settings" element={<RequireAuth><ProfileSettings /></RequireAuth>} />
+                <Route path="/orders"           element={<Navigate to="/profile/orders" replace />} />
 
-              {/* Seller flow — auth + seller role */}
-              <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />
-              <Route path="/sell"             element={<RequireAuth role="seller"><Sell /></RequireAuth>} />
-              <Route path="/seller/listing/:id/edit" element={<RequireAuth role="seller"><EditListing /></RequireAuth>} />
-              <Route path="/seller-dashboard"           element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
-              <Route path="/seller-dashboard/listings"  element={<RequireAuth role="seller"><SellerListings /></RequireAuth>} />
-              <Route path="/seller-dashboard/sales"     element={<RequireAuth role="seller"><SellerSales /></RequireAuth>} />
-              <Route path="/seller-dashboard/purchases" element={<RequireAuth role="seller"><SellerPurchases /></RequireAuth>} />
-              <Route path="/seller-dashboard/messages"  element={<RequireAuth role="seller"><SellerMessages /></RequireAuth>} />
-              <Route path="/terms"                       element={<Terms />} />
-              <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
-              <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
+                {/* Seller flow — auth + seller role */}
+                <Route path="/become-seller"    element={<RequireAuth><BecomeSeller /></RequireAuth>} />
+                <Route path="/sell"             element={<RequireAuth role="seller"><Sell /></RequireAuth>} />
+                <Route path="/seller/listing/:id/edit" element={<RequireAuth role="seller"><EditListing /></RequireAuth>} />
+                <Route path="/seller-dashboard"           element={<RequireAuth role="seller"><SellerDashboard /></RequireAuth>} />
+                <Route path="/seller-dashboard/listings"  element={<RequireAuth role="seller"><SellerListings /></RequireAuth>} />
+                <Route path="/seller-dashboard/sales"     element={<RequireAuth role="seller"><SellerSales /></RequireAuth>} />
+                <Route path="/seller-dashboard/purchases" element={<RequireAuth role="seller"><SellerPurchases /></RequireAuth>} />
+                <Route path="/seller-dashboard/messages"  element={<RequireAuth role="seller"><SellerMessages /></RequireAuth>} />
+                <Route path="/terms"                       element={<Terms />} />
+                <Route path="/seller/subscription" element={<RequireAuth role="seller"><SellerSubscription /></RequireAuth>} />
+                <Route path="/seller/settings"     element={<RequireAuth role="seller"><SellerSettings /></RequireAuth>} />
+                <Route path="/seller/verification" element={<RequireAuth role="seller"><SellerVerification /></RequireAuth>} />
 
-              {/* ---------------- Admin SPA ---------------- */}
-              {/* Admins sign in via the unified /login page; role-based redirect sends them here */}
-              <Route path="/admin" element={
-                <AdminProvider><AdminLayout /></AdminProvider>
-              }>
-                <Route index           element={<AdminDashboard />} />
-                <Route path="users"                     element={<AdminUsers />} />
-                <Route path="users/buyers"              element={<AdminBuyers />} />
-                <Route path="users/sellers"             element={<AdminSellers />} />
-                <Route path="users/sellers/:id"         element={<AdminSellerDetail />} />
-                <Route path="users/admins"              element={<AdminAdmins />} />
-                <Route path="users/:id"                 element={<AdminUserDetail />} />
-                <Route path="products"                  element={<AdminProducts />} />
-                <Route path="orders"                    element={<AdminOrders />} />
-                <Route path="plans"                     element={<AdminPlans />} />
-                <Route path="chats"                     element={<AdminChats />} />
-                <Route path="verification/students"     element={<AdminStudentVerification />} />
-                <Route path="verification/sellers"      element={<AdminSellerVerification />} />
-                <Route path="support"                   element={<AdminSupport />} />
-                <Route path="audit"                     element={<AdminAudit />} />
-                <Route path="settings"                  element={<AdminSettings />} />
-              </Route>
+                {/* Admin SPA */}
+                <Route path="/admin" element={
+                  <AdminProvider><AdminLayout /></AdminProvider>
+                }>
+                  <Route index           element={<AdminDashboard />} />
+                  <Route path="users"                     element={<AdminUsers />} />
+                  <Route path="users/buyers"              element={<AdminBuyers />} />
+                  <Route path="users/sellers"             element={<AdminSellers />} />
+                  <Route path="users/sellers/:id"         element={<AdminSellerDetail />} />
+                  <Route path="users/admins"              element={<AdminAdmins />} />
+                  <Route path="users/:id"                 element={<AdminUserDetail />} />
+                  <Route path="products"                  element={<AdminProducts />} />
+                  <Route path="orders"                    element={<AdminOrders />} />
+                  <Route path="plans"                     element={<AdminPlans />} />
+                  <Route path="chats"                     element={<AdminChats />} />
+                  <Route path="verification/students"     element={<AdminStudentVerification />} />
+                  <Route path="verification/sellers"      element={<AdminSellerVerification />} />
+                  <Route path="support"                   element={<AdminSupport />} />
+                  <Route path="audit"                     element={<AdminAudit />} />
+                  <Route path="settings"                  element={<AdminSettings />} />
+                </Route>
 
-              <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
-          </BrowserRouter>
+                <Route path="*" element={<Navigate to="/home" replace />} />
+              </Routes>
+            </BrowserRouter>
           </OrdersProvider>
         </CartProvider>
       </ConfirmProvider>

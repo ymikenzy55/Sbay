@@ -1,114 +1,113 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, Search as SearchIcon, X, ChevronRight, ArrowLeft, Package } from 'lucide-react';
-import * as Lucide from 'lucide-react';
+import { Search, X, SlidersHorizontal, MapPin, Tag, LayoutGrid } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
-import Logo from '../components/Logo';
-import { Skeleton } from '../components/Skeleton';
+import Footer from '../components/Footer';
 import { sbay } from '../api/client';
+import { SkeletonGrid } from '../components/Skeleton';
 import './pages.css';
 import './Categories.css';
 
-function CatIcon({ name, size = 18 }) {
-  const Icon = Lucide[name] || Lucide.Tag;
-  return <Icon size={size} />;
-}
-
+/**
+ * Categories page.
+ *
+ * Sidebar: flat list of real seller-set categories fetched from the API.
+ * Main:    product grid filtered by the selected category.
+ */
 export default function Categories() {
-  const { catId } = useParams();
   const navigate = useNavigate();
-  const [tree, setTree] = useState([]);
-  const [treeLoading, setTreeLoading] = useState(true);
-  /* Sidebar view mode:
-     - 'schools'    → show list of schools
-     - 'categories' → show categories for the currently-selected school */
-  const [sideView, setSideView] = useState('schools');
-  const [scope, setScope] = useState({ schoolId: null, categoryId: null });
-  const [products, setProducts] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-  const [query, setQuery] = useState('');
+  const { catId } = useParams();
 
+  const [categories, setCategories] = useState([]);
+  const [catLoading, setCatLoading] = useState(true);
+
+  const [selectedCat, setSelectedCat] = useState(catId || 'all');
+  const [products, setProducts] = useState([]);
+  const [prodLoading, setProdLoading] = useState(false);
+
+  const [query, setQuery] = useState('');
+  const [catQuery, setCatQuery] = useState('');
+
+  // Fetch categories from real seller data
   useEffect(() => {
-    let active = true;
-    setTreeLoading(true);
-    sbay.getSchoolTree()
-      .then((data) => {
-        if (active) setTree(data || []);
+    let alive = true;
+    sbay.getCategories()
+      .then((cats) => {
+        if (!alive) return;
+        setCategories(cats);
+        setCatLoading(false);
       })
-      .finally(() => {
-        if (active) setTreeLoading(false);
+      .catch(() => {
+        if (!alive) return;
+        setCategories([{ id: 'all', label: 'All Items', icon: 'ShoppingBag' }]);
+        setCatLoading(false);
       });
-    return () => {
-      active = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  // If the route carries a legacy /category/:catId, pre-select that category
-  // across all schools so the user still lands on relevant products.
+  // Sync URL param → state
   useEffect(() => {
-    if (catId && catId !== 'all') {
-      setScope({ schoolId: null, categoryId: catId });
-      setSideView('schools');
-    }
+    if (catId && catId !== selectedCat) setSelectedCat(catId);
   }, [catId]);
 
-  // Fetch products for the current scope (school + category).
-  useEffect(() => {
-    let active = true;
-    setProductsLoading(true);
-    sbay.getProductsByScope(scope)
-      .then((data) => {
-        if (active) setProducts(data || []);
+  // Fetch products when category changes
+  const fetchProducts = useCallback((catSlug) => {
+    setProdLoading(true);
+    sbay.getProductsByCategory(catSlug === 'all' ? '' : catSlug)
+      .then((items) => {
+        setProducts(items);
+        setProdLoading(false);
       })
-      .finally(() => {
-        if (active) setProductsLoading(false);
+      .catch(() => {
+        setProducts([]);
+        setProdLoading(false);
       });
-    return () => {
-      active = false;
-    };
-  }, [scope.schoolId, scope.categoryId]);
+  }, []);
 
-  const activeSchool = tree.find((s) => s.id === scope.schoolId);
-  const activeCat = activeSchool?.categories.find((c) => c.id === scope.categoryId);
+  useEffect(() => {
+    fetchProducts(selectedCat);
+  }, [selectedCat, fetchProducts]);
 
-  const heading = activeSchool
-    ? (activeCat ? `${activeCat.label} · ${activeSchool.label}` : activeSchool.label)
-    : (scope.categoryId ? scope.categoryId.replace(/^./, (c) => c.toUpperCase()) : 'All Products');
+  const selectCat = (id) => {
+    setSelectedCat(id);
+    setQuery('');
+    if (id === 'all') {
+      navigate('/categories', { replace: true });
+    } else {
+      navigate(`/category/${id}`, { replace: true });
+    }
+  };
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.title.toLowerCase().includes(q));
+  const filteredCats = useMemo(() => {
+    if (!catQuery.trim()) return categories;
+    const q = catQuery.toLowerCase();
+    return categories.filter((c) => c.label.toLowerCase().includes(q));
+  }, [categories, catQuery]);
+
+  const filteredProducts = useMemo(() => {
+    if (!query.trim()) return products;
+    const q = query.toLowerCase();
+    return products.filter((p) =>
+      p.title.toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q)
+    );
   }, [products, query]);
 
-  const selectSchool = (sid) => {
-    setScope({ schoolId: sid, categoryId: null });
-    setSideView('categories');
-  };
-  const selectCategory = (cid) => {
-    setScope((s) => ({ ...s, categoryId: cid }));
-  };
-  const backToSchools = () => {
-    setSideView('schools');
-    setScope({ schoolId: null, categoryId: null });
-  };
+  const activeCat = categories.find((c) => c.id === selectedCat);
+  const title = activeCat?.label || 'All Items';
 
   return (
-    <div className="page cat-page">
-      {/* Custom top bar: logo + live-search input shifted left */}
-      <header className="cat-top">
-        <button className="cat-brand" onClick={() => navigate('/home')} aria-label="Home">
-          <Logo size="md" />
-        </button>
+    <div className="cat-page">
+      {/* Mobile-only top bar */}
+      <div className="cat-top">
         <div className="cat-search">
-          <SearchIcon size={16} className="cat-search-ic" />
+          <Search size={16} className="cat-search-ic" />
           <input
             type="text"
+            placeholder={`Search in ${title}…`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search within this page..."
-            aria-label="Search within categories"
+            aria-label="Search products"
           />
           {query && (
             <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
@@ -116,140 +115,151 @@ export default function Categories() {
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       <div className="cat-layout">
-        {/* Two-level sidebar: schools → categories of the selected school */}
-        <aside className="cat-sidebar" aria-label="Schools and categories">
-          {/* Desktop-only search bar at top of sidebar */}
+        {/* Sidebar */}
+        <aside className="cat-sidebar">
+          {/* Desktop sidebar search */}
           <div className="cat-sidebar-search">
-            <SearchIcon size={14} className="cat-search-ic" />
+            <Search size={14} className="cat-search-ic" />
             <input
               type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Filter listings..."
-              aria-label="Search within categories"
+              placeholder="Filter categories…"
+              value={catQuery}
+              onChange={(e) => setCatQuery(e.target.value)}
+              aria-label="Filter categories"
             />
-            {query && (
-              <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
-                <X size={13} />
+            {catQuery && (
+              <button className="cat-search-clear" onClick={() => setCatQuery('')} aria-label="Clear">
+                <X size={12} />
               </button>
             )}
           </div>
-          {treeLoading ? (
-            <div className="cat-side-skel">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} h={36} r={6} style={{ display: 'block', margin: '6px 4px' }} />
+
+          {catLoading ? (
+            <div style={{ padding: '12px 0' }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="cat-item" style={{ opacity: 0.4 }}>
+                  <div style={{ width: '70%', height: 12, background: 'var(--border)', borderRadius: 6 }} />
+                </div>
               ))}
             </div>
-          ) : tree.length === 0 ? (
-            <div className="empty cat-empty-state">
-              <div className="emo"><Package size={36} /></div>
-              <h3>No categories yet</h3>
-              <p className="muted">There are no active listings in the database yet.</p>
-            </div>
-          ) : sideView === 'schools' ? (
-            <ul className="school-list">
-              <li className="side-section-label">Schools</li>
-              {tree.map((s) => {
-                const isActive = scope.schoolId === s.id;
-                return (
-                  <li key={s.id} className={`school-item ${isActive ? 'active' : ''}`}>
-                    <button className="school-head" onClick={() => selectSchool(s.id)}>
-                      <span className="school-label">{s.label}</span>
-                      {s.city && <span className="school-city">{s.city}</span>}
-                      <ChevronRight size={14} className="school-chev" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
           ) : (
-            <ul className="school-list">
-              <li>
-                <button className="side-back" onClick={backToSchools}>
-                  <ArrowLeft size={14} /> Schools
-                </button>
-              </li>
-              <li className="side-section-label">
-                {activeSchool?.label}
-              </li>
-              {activeSchool && activeSchool.categories.length === 0 ? (
-                <li className="cat-empty">No categories yet</li>
-              ) : (
-                activeSchool?.categories.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      className={`cat-sub ${scope.categoryId === c.id ? 'active' : ''}`}
-                      onClick={() => selectCategory(c.id)}
-                    >
-                      <CatIcon name={c.icon} size={14} />
-                      <span>{c.label}</span>
-                    </button>
-                  </li>
-                ))
+            <ul className="cat-list" role="listbox" aria-label="Product categories">
+              {filteredCats.map((cat) => (
+                <li key={cat.id}>
+                  <button
+                    className={`cat-item ${selectedCat === cat.id ? 'active' : ''}`}
+                    onClick={() => selectCat(cat.id)}
+                    role="option"
+                    aria-selected={selectedCat === cat.id}
+                  >
+                    <Tag size={13} style={{ flexShrink: 0 }} />
+                    <span className="cat-label">{cat.label}</span>
+                    {cat.count > 0 && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: '0.68rem',
+                        color: 'var(--text-soft)',
+                        flexShrink: 0,
+                      }}>
+                        {cat.count}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+              {filteredCats.length === 0 && (
+                <li className="cat-empty">No categories match "{catQuery}"</li>
               )}
             </ul>
           )}
         </aside>
 
-        {/* Main */}
+        {/* Main content */}
         <main className="cat-main">
           <div className="cat-toolbar">
-            <h2 className="cat-title">{heading}</h2>
-            {(scope.schoolId || scope.categoryId) && (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => { setScope({ schoolId: null, categoryId: null }); setSideView('schools'); }}
-              >
-                <X size={14} /> Clear
-              </button>
+            <h1 className="cat-title">{title}</h1>
+            {!prodLoading && (
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {filteredProducts.length} item{filteredProducts.length !== 1 ? 's' : ''}
+              </span>
             )}
+            {/* Desktop search inside main */}
+            <div className="cat-search cat-main-search">
+              <Search size={15} className="cat-search-ic" />
+              <input
+                type="text"
+                placeholder={`Search in ${title}…`}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search products"
+              />
+              {query && (
+                <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
+                  <X size={13} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {productsLoading ? (
-            <div className="panel-skel">
-              <Skeleton w={160} h={20} />
+          {prodLoading ? (
+            <div className="cat-panel panel-skel">
               <div className="panel-grid">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} h={120} r={10} />
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="panel-cell">
+                    <div className="cell-thumb" style={{ background: 'var(--border)', opacity: 0.5 }} />
+                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.4, margin: '4px 0 2px' }} />
+                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.3, width: '60%' }} />
+                  </div>
                 ))}
               </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="empty">
-              <div className="emo"><Package size={44} /></div>
-              <h3>No products yet</h3>
-              <p className="muted">
-                {query.trim()
-                  ? 'Try a different school, category, or search term.'
-                  : 'There are no listings for this category yet.'}
+          ) : filteredProducts.length === 0 ? (
+            <div className="cat-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '60px 24px', textAlign: 'center' }}>
+              <LayoutGrid size={44} color="var(--border-strong)" />
+              <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text)' }}>
+                {query ? `No results for "${query}"` : 'No products in this category yet'}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0 }}>
+                {query ? 'Try a different search term.' : 'Sellers will add items here soon.'}
               </p>
             </div>
           ) : (
             <section className="cat-panel">
+              <div className="panel-head">
+                <h2 className="panel-head-title">{title}</h2>
+              </div>
               <div className="panel-grid">
-                {filtered.map((p, i) => (
-                  <motion.button
+                {filteredProducts.map((p) => (
+                  <button
                     key={p.id}
                     className="panel-cell"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03 }}
                     onClick={() => navigate(`/product/${p.id}`)}
+                    aria-label={p.title}
                   >
-                    <div className="cell-thumb" style={{ backgroundImage: `url(${p.image})` }} />
+                    <div
+                      className="cell-thumb"
+                      style={{ backgroundImage: `url(${p.image})` }}
+                      role="img"
+                      aria-label={p.title}
+                    />
                     <span className="cell-label">{p.title}</span>
-                    <span className="cell-price">GH₵ {p.price.toLocaleString()}</span>
-                    <span className="cell-loc">
-                      <MapPin size={10} /> {p.school}{p.city ? `, ${p.city}` : ''}
-                    </span>
-                  </motion.button>
+                    <span className="cell-price">GH₵ {p.price?.toLocaleString()}</span>
+                    {(p.school || p.city) && (
+                      <span className="cell-loc">
+                        <MapPin size={10} />
+                        {p.school}{p.city ? `, ${p.city}` : ''}
+                      </span>
+                    )}
+                  </button>
                 ))}
               </div>
             </section>
           )}
+
+          <Footer />
         </main>
       </div>
 

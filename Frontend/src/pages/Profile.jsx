@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Settings, LogOut, ChevronRight, Store, Package, Heart, LayoutDashboard } from 'lucide-react';
+import { Settings, LogOut, ChevronRight, Store, Package, Heart, User, ShoppingBag } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import Avatar from '../components/Avatar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import { useOrders } from '../store/OrdersContext';
@@ -11,12 +11,10 @@ import './pages.css';
 import './Profile.css';
 
 const PROFILE_NAV = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, panel: true },
-  { id: 'orders', label: 'My Orders', to: '/profile/orders', icon: Package },
-  { id: 'wishlist', label: 'Wishlist', to: '/profile/wishlist', icon: Heart },
-  { id: 'become-seller', label: 'Become a Seller', to: '/become-seller', icon: Store, action: true },
-  { id: 'settings', label: 'Settings', to: '/profile/settings', icon: Settings },
-  { id: 'signout', label: 'Sign Out', icon: LogOut, danger: true },
+  { id: 'orders',        label: 'My Orders',      to: '/profile/orders',   icon: Package,  desc: 'Track and manage your orders' },
+  { id: 'wishlist',      label: 'Wishlist',        to: '/profile/wishlist', icon: Heart,    desc: 'Items you saved for later' },
+  { id: 'become-seller', label: 'Become a Seller', to: '/become-seller',    icon: Store,    desc: 'Start selling on sBay', action: true },
+  { id: 'settings',      label: 'Settings',        to: '/profile/settings', icon: Settings, desc: 'Account, password & preferences' },
 ];
 
 export default function Profile() {
@@ -24,12 +22,13 @@ export default function Profile() {
   const confirm = useConfirm();
   const { user, logout } = useAuth();
   const { orders } = useOrders();
-  const [activePanel, setActivePanel] = useState(null);
 
   const isGuest = !user;
 
+  // Sellers go straight to their dashboard
   if (user?.role === 'seller') {
     navigate('/seller-dashboard', { replace: true });
+    return null;
   }
 
   const onLogout = async () => {
@@ -45,27 +44,18 @@ export default function Profile() {
     }
   };
 
-  const onNavClick = async (item) => {
-    if (item.id === 'signout') {
-      await onLogout();
-      return;
-    }
-    if (item.panel) {
-      setActivePanel(item.id);
-      return;
-    }
-    navigate(item.to);
-  };
-
   if (isGuest) {
     return (
       <div className="page">
         <TopBar showSearch={false} title="Profile" />
         <main className="page-main">
-          <div className="empty">
-            <h3>You're browsing as a guest</h3>
+          <div className="profile-guest-card">
+            <div className="profile-guest-icon">
+              <User size={40} />
+            </div>
+            <h2>You're browsing as a guest</h2>
             <p>Sign in to track orders, save items, chat, and check out.</p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="profile-guest-actions">
               <button className="btn btn-primary" onClick={() => navigate('/login')}>Sign In</button>
               <button className="btn btn-ghost" onClick={() => navigate('/signup')}>Create Account</button>
             </div>
@@ -76,50 +66,86 @@ export default function Profile() {
     );
   }
 
+  const pendingOrders = orders.filter((o) => !['completed', 'canceled'].includes(o.status)).length;
+
   return (
     <div className="page">
-      <TopBar showSearch={false} title="Dashboard" />
+      <TopBar showSearch={false} title="My Profile" />
 
+      {/* Hero section */}
       <section className="profile-hero">
-        <Avatar src={user.avatar} name={user.name} size={72} className="profile-avatar" />
-        <div className="profile-info">
-          <h2>{user.name}</h2>
-          <p>{user.email}{user.role === 'seller' ? ' · Seller' : ' · Buyer'}</p>
+        <div className="profile-hero-bg" />
+        <div className="profile-hero-content">
+          <Avatar src={user.avatar} name={user.name} size={80} className="profile-avatar-lg" />
+          <div className="profile-hero-info">
+            <h1 className="profile-name">{user.name}</h1>
+            <p className="profile-email">{user.email}</p>
+            <span className="profile-role-badge">Buyer</span>
+          </div>
+        </div>
+        {/* Stats row */}
+        <div className="profile-stats">
+          <div className="profile-stat">
+            <strong>{orders.length}</strong>
+            <span>Orders</span>
+          </div>
+          <div className="profile-stat">
+            <strong>{pendingOrders}</strong>
+            <span>Pending</span>
+          </div>
+          <div className="profile-stat">
+            <strong>0</strong>
+            <span>Wishlist</span>
+          </div>
         </div>
       </section>
 
-      <main className="page-main profile-layout">
-        <section className="card profile-nav-card">
-          <h3 className="page-h2">Quick access</h3>
+      <main className="page-main profile-main">
+        <section className="profile-section">
+          <h2 className="profile-section-title">Quick Access</h2>
           <div className="profile-nav-list">
             {PROFILE_NAV.map((item) => (
               <button
                 key={item.id}
-                className={`profile-nav-row ${item.danger ? 'danger' : ''} ${activePanel === item.id ? 'active' : ''}`}
-                onClick={() => onNavClick(item)}
+                className={`profile-nav-row ${item.action ? 'action' : ''}`}
+                onClick={() => navigate(item.to)}
                 type="button"
               >
-                <span className="profile-nav-icon"><item.icon size={18} /></span>
-                <span className="profile-nav-label">{item.label}</span>
-                <ChevronRight size={16} className="muted" />
+                <span className="profile-nav-icon">
+                  <item.icon size={20} />
+                </span>
+                <div className="profile-nav-body">
+                  <span className="profile-nav-label">{item.label}</span>
+                  <span className="profile-nav-desc">{item.desc}</span>
+                </div>
+                {item.id === 'orders' && pendingOrders > 0 && (
+                  <span className="profile-nav-badge">{pendingOrders}</span>
+                )}
+                <ChevronRight size={18} className="profile-nav-chev" />
               </button>
             ))}
           </div>
         </section>
 
-        {activePanel === 'dashboard' && <section className="profile-content">
-          <div className="stats-row">
-            <div className="stat-card"><strong>{orders.length}</strong><span>Orders</span></div>
-            <div className="stat-card"><strong>{0}</strong><span>Wishlist</span></div>
-          </div>
+        {/* Sign out */}
+        <section className="profile-section">
+          <button
+            className="profile-nav-row danger"
+            onClick={onLogout}
+            type="button"
+          >
+            <span className="profile-nav-icon danger">
+              <LogOut size={20} />
+            </span>
+            <div className="profile-nav-body">
+              <span className="profile-nav-label">Sign Out</span>
+              <span className="profile-nav-desc">End this session on this device</span>
+            </div>
+            <ChevronRight size={18} className="profile-nav-chev" />
+          </button>
+        </section>
 
-          <section className="card">
-            <h3 className="page-h2">Dashboard overview</h3>
-            <p className="muted" style={{ marginTop: 8 }}>
-              Use the quick access menu to open your orders, wishlist, settings, or seller registration in a new page.
-            </p>
-          </section>
-        </section>}
+        <Footer />
       </main>
 
       <BottomNav />

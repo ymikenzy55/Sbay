@@ -391,3 +391,39 @@
   font-size: 0.8rem;
   min-height: 0;
 }
+
+/* Desktop search bar in the main area toolbar */
+.cat-main-search {
+  display: none;
+}
+@media (min-width: 961px) {
+  .cat-main-search {
+    display: flex;
+    flex: 0 1 320px;
+    max-width: 320px;
+    margin-left: auto;
+  }
+}
+
+/* Panel heading inside cat-panel */
+.panel-head-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Fix cat-page on desktop — ensure proper top offset since DesktopNav is sticky */
+@media (min-width: 961px) {
+  .cat-page {
+    height: calc(100svh - 68px); /* 68px = DesktopNav height */
+  }
+  /* Cat layout takes full width on desktop — no extra max-width clip */
+  .cat-layout {
+    max-width: 100%;
+  }
+  /* Show the desktop inline search; hide the top mobile search bar */
+  .cat-top {
+    display: none !important;
+  }
+}
+

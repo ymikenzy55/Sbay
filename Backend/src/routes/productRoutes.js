@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import {
   listCatalogMeta, listProducts, getProduct, createProduct,
-  updateProduct, deleteProduct, myListings,
+  updateProduct, deleteProduct, myListings, myListingStats,
 } from '../controllers/productController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -13,6 +13,7 @@ router.get('/catalog', listCatalogMeta);
 router.get('/', listProducts);
 
 router.get('/mine', requireAuth, requireRole('seller'), myListings);
+router.get('/mine/stats', requireAuth, requireRole('seller'), myListingStats);
 
 router.get('/:id', param('id').isMongoId(), validate, getProduct);
 

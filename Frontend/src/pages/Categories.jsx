@@ -1,6 +1,9 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Search, X, SlidersHorizontal, MapPin, Tag, LayoutGrid } from 'lucide-react';
+import {
+  Search, X, MapPin, Building2, LayoutGrid, ChevronRight,
+  ShoppingBag, GraduationCap, Store,
+} from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { sbay } from '../api/client';
@@ -9,51 +12,60 @@ import './pages.css';
 import './Categories.css';
 
 /**
- * Categories page.
+ * Categories / Schools browse page.
  *
- * Sidebar: flat list of real seller-set categories fetched from the API.
- * Main:    product grid filtered by the selected category.
+ * Sidebar: real list of schools/campuses derived from seller listings.
+ *          Sellers who registered as "Others" appear under an "Others" entry.
+ *          Clicking a school instantly filters products from that school.
+ * Main:    responsive product grid for the selected school.
  */
 export default function Categories() {
-  const navigate = useNavigate();
-  const { catId } = useParams();
+  const navigate  = useNavigate();
+  const { catId } = useParams();          // reuse same param for school id
 
-  const [categories, setCategories] = useState([]);
-  const [catLoading, setCatLoading] = useState(true);
-
-  const [selectedCat, setSelectedCat] = useState(catId || 'all');
-  const [products, setProducts] = useState([]);
+  /* ── data ── */
+  const [schools,     setSchools]     = useState([]);
+  const [schoolLoading, setSchoolLoading] = useState(true);
+  const [selectedId,  setSelectedId]  = useState(catId || 'all');
+  const [products,    setProducts]    = useState([]);
   const [prodLoading, setProdLoading] = useState(false);
 
-  const [query, setQuery] = useState('');
-  const [catQuery, setCatQuery] = useState('');
+  /* ── search / filter ── */
+  const [query,       setQuery]       = useState('');
+  const [schoolQ,     setSchoolQ]     = useState('');
 
-  // Fetch categories from real seller data
+  const prodInputRef = useRef(null);
+
+  /* ── load schools from API ── */
   useEffect(() => {
     let alive = true;
-    sbay.getCategories()
-      .then((cats) => {
+    sbay.getSchoolTree()
+      .then((tree) => {
         if (!alive) return;
-        setCategories(cats);
-        setCatLoading(false);
+        // Prepend "All Schools" entry
+        const all = { id: 'all', label: 'All Schools', city: '', categories: [], count: null };
+        setSchools([all, ...tree]);
+        setSchoolLoading(false);
       })
       .catch(() => {
         if (!alive) return;
-        setCategories([{ id: 'all', label: 'All Items', icon: 'ShoppingBag' }]);
-        setCatLoading(false);
+        setSchools([{ id: 'all', label: 'All Schools', city: '', categories: [] }]);
+        setSchoolLoading(false);
       });
     return () => { alive = false; };
   }, []);
 
-  // Sync URL param → state
+  /* ── sync URL param → state ── */
   useEffect(() => {
-    if (catId && catId !== selectedCat) setSelectedCat(catId);
+    if (catId && catId !== selectedId) setSelectedId(catId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catId]);
 
-  // Fetch products when category changes
-  const fetchProducts = useCallback((catSlug) => {
+  /* ── fetch products when school changes ── */
+  const fetchProducts = useCallback((schoolId) => {
     setProdLoading(true);
-    sbay.getProductsByCategory(catSlug === 'all' ? '' : catSlug)
+    setQuery('');
+    sbay.getProductsByScope({ schoolId: schoolId === 'all' ? '' : schoolId })
       .then((items) => {
         setProducts(items);
         setProdLoading(false);
@@ -64,25 +76,25 @@ export default function Categories() {
       });
   }, []);
 
-  useEffect(() => {
-    fetchProducts(selectedCat);
-  }, [selectedCat, fetchProducts]);
+  useEffect(() => { fetchProducts(selectedId); }, [selectedId, fetchProducts]);
 
-  const selectCat = (id) => {
-    setSelectedCat(id);
-    setQuery('');
-    if (id === 'all') {
-      navigate('/categories', { replace: true });
-    } else {
-      navigate(`/category/${id}`, { replace: true });
-    }
+  /* ── navigation ── */
+  const selectSchool = (id) => {
+    setSelectedId(id);
+    setSchoolQ('');
+    if (id === 'all') navigate('/categories', { replace: true });
+    else navigate(`/category/${id}`, { replace: true });
   };
 
-  const filteredCats = useMemo(() => {
-    if (!catQuery.trim()) return categories;
-    const q = catQuery.toLowerCase();
-    return categories.filter((c) => c.label.toLowerCase().includes(q));
-  }, [categories, catQuery]);
+  /* ── derived ── */
+  const filteredSchools = useMemo(() => {
+    if (!schoolQ.trim()) return schools;
+    const q = schoolQ.toLowerCase();
+    return schools.filter((s) =>
+      s.label.toLowerCase().includes(q) ||
+      (s.city || '').toLowerCase().includes(q)
+    );
+  }, [schools, schoolQ]);
 
   const filteredProducts = useMemo(() => {
     if (!query.trim()) return products;
@@ -93,12 +105,18 @@ export default function Categories() {
     );
   }, [products, query]);
 
-  const activeCat = categories.find((c) => c.id === selectedCat);
-  const title = activeCat?.label || 'All Items';
+  const activeSchool = schools.find((s) => s.id === selectedId);
+  const title = activeSchool?.id === 'all'
+    ? 'All Schools'
+    : activeSchool?.label || 'Campus';
+
+  const subtitle = activeSchool?.id !== 'all' && activeSchool?.city
+    ? `📍 ${activeSchool.city}`
+    : null;
 
   return (
     <div className="cat-page">
-      {/* Mobile-only top bar */}
+      {/* Mobile top bar */}
       <div className="cat-top">
         <div className="cat-search">
           <Search size={16} className="cat-search-ic" />
@@ -108,6 +126,7 @@ export default function Categories() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search products"
+            ref={prodInputRef}
           />
           {query && (
             <button className="cat-search-clear" onClick={() => setQuery('')} aria-label="Clear">
@@ -118,75 +137,102 @@ export default function Categories() {
       </div>
 
       <div className="cat-layout">
-        {/* Sidebar */}
+        {/* ── Sidebar ── */}
         <aside className="cat-sidebar">
-          {/* Desktop sidebar search */}
+          <div className="cat-sidebar-hd">
+            <GraduationCap size={15} />
+            <span>Schools &amp; Campuses</span>
+          </div>
+
+          {/* Sidebar school search */}
           <div className="cat-sidebar-search">
-            <Search size={14} className="cat-search-ic" />
+            <Search size={13} className="cat-search-ic" />
             <input
               type="text"
-              placeholder="Filter categories…"
-              value={catQuery}
-              onChange={(e) => setCatQuery(e.target.value)}
-              aria-label="Filter categories"
+              placeholder="Find a school…"
+              value={schoolQ}
+              onChange={(e) => setSchoolQ(e.target.value)}
+              aria-label="Filter schools"
             />
-            {catQuery && (
-              <button className="cat-search-clear" onClick={() => setCatQuery('')} aria-label="Clear">
-                <X size={12} />
+            {schoolQ && (
+              <button className="cat-search-clear" onClick={() => setSchoolQ('')} aria-label="Clear">
+                <X size={11} />
               </button>
             )}
           </div>
 
-          {catLoading ? (
-            <div style={{ padding: '12px 0' }}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="cat-item" style={{ opacity: 0.4 }}>
-                  <div style={{ width: '70%', height: 12, background: 'var(--border)', borderRadius: 6 }} />
+          {schoolLoading ? (
+            <div className="cat-list-skel">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="cat-item" style={{ opacity: 0.35 }}>
+                  <div style={{ width: '65%', height: 11, background: 'var(--border)', borderRadius: 6 }} />
                 </div>
               ))}
             </div>
           ) : (
-            <ul className="cat-list" role="listbox" aria-label="Product categories">
-              {filteredCats.map((cat) => (
-                <li key={cat.id}>
-                  <button
-                    className={`cat-item ${selectedCat === cat.id ? 'active' : ''}`}
-                    onClick={() => selectCat(cat.id)}
-                    role="option"
-                    aria-selected={selectedCat === cat.id}
-                  >
-                    <Tag size={13} style={{ flexShrink: 0 }} />
-                    <span className="cat-label">{cat.label}</span>
-                    {cat.count > 0 && (
-                      <span style={{
-                        marginLeft: 'auto',
-                        fontSize: '0.68rem',
-                        color: 'var(--text-soft)',
-                        flexShrink: 0,
-                      }}>
-                        {cat.count}
+            <ul className="cat-list" role="listbox" aria-label="Schools">
+              {filteredSchools.map((school) => {
+                const isOthers  = school.id === 'others';
+                const isAll     = school.id === 'all';
+                const active    = selectedId === school.id;
+                return (
+                  <li key={school.id}>
+                    <button
+                      className={`cat-item ${active ? 'active' : ''}`}
+                      onClick={() => selectSchool(school.id)}
+                      role="option"
+                      aria-selected={active}
+                    >
+                      <span className="cat-item-ic">
+                        {isAll     ? <ShoppingBag size={14} /> :
+                         isOthers  ? <Store size={14} />       :
+                                     <GraduationCap size={14} />}
                       </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-              {filteredCats.length === 0 && (
-                <li className="cat-empty">No categories match "{catQuery}"</li>
+                      <span className="cat-label-wrap">
+                        <span className="cat-label">{school.label}</span>
+                        {school.city && !isAll && !isOthers && (
+                          <span className="cat-city">
+                            <MapPin size={10} />{school.city}
+                          </span>
+                        )}
+                      </span>
+                      <ChevronRight size={13} className={`cat-chev ${active ? 'active' : ''}`} />
+                    </button>
+                  </li>
+                );
+              })}
+              {filteredSchools.length === 0 && (
+                <li className="cat-empty">No schools match "{schoolQ}"</li>
               )}
             </ul>
           )}
         </aside>
 
-        {/* Main content */}
+        {/* ── Main content ── */}
         <main className="cat-main">
+          {/* Toolbar */}
           <div className="cat-toolbar">
-            <h1 className="cat-title">{title}</h1>
+            <div className="cat-toolbar-left">
+              <h1 className="cat-title">{title}</h1>
+              {subtitle && <p className="cat-subtitle">{subtitle}</p>}
+              {/* Category chips for this school */}
+              {activeSchool?.categories?.length > 0 && (
+                <div className="cat-chip-row">
+                  {activeSchool.categories.map((cat) => (
+                    <span key={cat.id} className="cat-chip-badge">
+                      {cat.label}
+                      <span className="cat-chip-count">{cat.count}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             {!prodLoading && (
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+              <span className="cat-count">
                 {filteredProducts.length} item{filteredProducts.length !== 1 ? 's' : ''}
               </span>
             )}
-            {/* Desktop search inside main */}
+            {/* Desktop inline search */}
             <div className="cat-search cat-main-search">
               <Search size={15} className="cat-search-ic" />
               <input
@@ -209,28 +255,36 @@ export default function Categories() {
               <div className="panel-grid">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="panel-cell">
-                    <div className="cell-thumb" style={{ background: 'var(--border)', opacity: 0.5 }} />
-                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.4, margin: '4px 0 2px' }} />
-                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.3, width: '60%' }} />
+                    <div className="cell-thumb" style={{ background: 'var(--border)', opacity: 0.45 }} />
+                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.35, margin: '6px 0 4px' }} />
+                    <div style={{ height: 10, background: 'var(--border)', borderRadius: 4, opacity: 0.25, width: '60%' }} />
                   </div>
                 ))}
               </div>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="cat-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '60px 24px', textAlign: 'center' }}>
-              <LayoutGrid size={44} color="var(--border-strong)" />
-              <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text)' }}>
-                {query ? `No results for "${query}"` : 'No products in this category yet'}
+            <div className="cat-panel" style={{
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 12,
+              padding: '64px 24px', textAlign: 'center',
+            }}>
+              <Building2 size={48} color="var(--border-strong)" />
+              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
+                {query ? `No results for "${query}"` : `No products listed at ${title} yet`}
               </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0 }}>
-                {query ? 'Try a different search term.' : 'Sellers will add items here soon.'}
+              <p style={{ color: 'var(--text-muted)', fontSize: '.88rem', margin: 0, maxWidth: 320 }}>
+                {query
+                  ? 'Try a different search term or browse another campus.'
+                  : 'Sellers from this campus will list their items here soon.'}
               </p>
+              {query && (
+                <button className="btn btn-ghost" onClick={() => setQuery('')}>
+                  Clear search
+                </button>
+              )}
             </div>
           ) : (
             <section className="cat-panel">
-              <div className="panel-head">
-                <h2 className="panel-head-title">{title}</h2>
-              </div>
               <div className="panel-grid">
                 {filteredProducts.map((p) => (
                   <button
@@ -247,9 +301,12 @@ export default function Categories() {
                     />
                     <span className="cell-label">{p.title}</span>
                     <span className="cell-price">GH₵ {p.price?.toLocaleString()}</span>
+                    {p.category && (
+                      <span className="cell-cat">{p.category}</span>
+                    )}
                     {(p.school || p.city) && (
                       <span className="cell-loc">
-                        <MapPin size={10} />
+                        <MapPin size={9} />
                         {p.school}{p.city ? `, ${p.city}` : ''}
                       </span>
                     )}

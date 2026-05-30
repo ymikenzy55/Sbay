@@ -229,7 +229,23 @@ export const sbay = {
 
   async getProductsByScope({ schoolId, categoryId } = {}) {
     const params = {};
-    if (schoolId && schoolId !== 'others') {
+
+    if (schoolId === 'others') {
+      // "Others" = sellers who left school blank or set city/school as empty
+      // We pass a special flag; the backend returns products with no school set.
+      // If the backend doesn't support 'school=__none__', we do client-side filtering.
+      const { data } = await api.get('/products');
+      let items = data.items.map(adaptProduct);
+      // Filter: products where school is blank/Others
+      items = items.filter((p) => !p.school || p.school.trim() === '' || p.school.toLowerCase() === 'others');
+      if (categoryId && categoryId !== 'all') {
+        const catLower = categoryId.toLowerCase();
+        items = items.filter((p) => (p.category || '').toLowerCase() === catLower);
+      }
+      return items;
+    }
+
+    if (schoolId && schoolId !== 'all') {
       const meta = await this.getCatalogMeta();
       const school = meta.schools.find((s) => s.id === schoolId);
       params.school = school?.label || schoolId;
@@ -238,6 +254,7 @@ export const sbay = {
     const { data } = await api.get('/products', { params });
     return data.items.map(adaptProduct);
   },
+
 
   async searchProducts(q, category = '') {
     const params = {};

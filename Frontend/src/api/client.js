@@ -239,11 +239,15 @@ export const sbay = {
     return data.items.map(adaptProduct);
   },
 
-  async searchProducts(q) {
-    if (!q) return this.getAllProducts();
-    const { data } = await api.get('/products', { params: { q } });
+  async searchProducts(q, category = '') {
+    const params = {};
+    if (q) params.q = q;
+    if (category) params.category = category;
+    if (!q && !category) return this.getAllProducts();
+    const { data } = await api.get('/products', { params });
     return data.items.map(adaptProduct);
   },
+
 
   /* ----- Chats ----- */
   async getChats() {

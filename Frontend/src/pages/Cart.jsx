@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, ShoppingBag, XCircle } from 'lucide-react';
 import TopBar from '../components/TopBar';
+import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useCart } from '../store/CartContext';
 import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
@@ -110,6 +112,8 @@ export default function Cart() {
           </>
         )}
       </main>
+      <Footer />
+      <BottomNav />
     </div>
   );
 }

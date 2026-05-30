@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Check, Store, Star, Truck, MessageCircle, Package } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
@@ -192,6 +193,7 @@ export default function ProfileOrders() {
         </div>
       )}
 
+      <Footer />
       <BottomNav />
     </div>
   );

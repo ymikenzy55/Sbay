@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Package, MessageSquare, Star, BellOff, ShieldCheck, LifeBuoy } from 'lucide-react';
 import TopBar from '../components/TopBar';
+import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useUserNotifications } from '../hooks/useUserNotifications';
 import './pages.css';
 import './Notifications.css';
@@ -71,6 +73,8 @@ export default function Notifications() {
           </>
         )}
       </main>
+      <Footer />
+      <BottomNav />
     </div>
   );
 }

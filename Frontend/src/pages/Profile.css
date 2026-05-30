@@ -296,6 +296,24 @@
 .order-card h4 { font-size: 0.95rem; font-weight: 700; }
 .order-card .price { color: var(--primary); font-weight: 800; display: block; margin-top: 4px; }
 
+/* .order-meta is the middle flex column inside .order-card */
+.order-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.order-meta h4 { font-size: 0.95rem; font-weight: 700; }
+.order-meta .price { color: var(--primary); font-weight: 800; display: block; margin-top: 2px; }
+
+/* btn-sm variant */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  min-height: 0;
+}
+
+
 .order-side {
   display: flex;
   flex-direction: column;

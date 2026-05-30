@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, Eye, Package } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { productApi } from '../api/client';
 import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
@@ -120,6 +121,7 @@ export default function SellerListings() {
           )}
         </div>
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

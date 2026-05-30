@@ -1,30 +1,43 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search as SearchIcon, ArrowLeft, Mic, X, PackageSearch } from 'lucide-react';
+import { Search as SearchIcon, ArrowLeft, X, PackageSearch } from 'lucide-react';
 import { sbay } from '../api/client';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { SkeletonGrid } from '../components/Skeleton';
 import './pages.css';
 import './Search.css';
 
-const FILTERS = ['All', 'Electronics', 'Fashion', 'Books', 'Sports', 'Beauty'];
-
 export default function SearchPage() {
   const navigate = useNavigate();
-  const [q, setQ] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialQ = searchParams.get('q') || '';
+
+  const [q, setQ] = useState(initialQ);
+  const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState('All');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Load real categories from API
+  useEffect(() => {
+    sbay.getCategories().then((cats) => {
+      setCategories(['All', ...cats.filter((c) => c.id !== 'all').map((c) => c.label)]);
+    }).catch(() => {
+      setCategories(['All']);
+    });
+  }, []);
+
   useEffect(() => {
     let active = true;
     setLoading(true);
-    sbay.searchProducts(q).then((r) => {
+    const catParam = filter !== 'All' ? filter.toLowerCase() : '';
+    sbay.searchProducts(q, catParam).then((r) => {
       if (active) { setResults(r); setLoading(false); }
     });
     return () => { active = false; };
-  }, [q]);
+  }, [q, filter]);
 
   return (
     <div className="page">
@@ -45,21 +58,22 @@ export default function SearchPage() {
               <X size={16} />
             </button>
           )}
-          <button className="mic" aria-label="Voice"><Mic size={18} /></button>
         </div>
       </header>
 
-      <div className="filter-row">
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            className={`chip ${filter === f ? 'active' : ''}`}
-            onClick={() => setFilter(f)}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      {categories.length > 1 && (
+        <div className="filter-row">
+          {categories.map((f) => (
+            <button
+              key={f}
+              className={`chip ${filter === f ? 'active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      )}
 
       <main className="page-main">
         {loading ? (
@@ -67,8 +81,13 @@ export default function SearchPage() {
         ) : results.length === 0 ? (
           <div className="empty">
             <div className="emo"><PackageSearch size={44} /></div>
-            <h3>No results found</h3>
-            <p>Try a different keyword or campus.</p>
+            <h3>{q ? `No results for "${q}"` : 'Start typing to search'}</h3>
+            <p>{q ? 'Try a different keyword or browse categories.' : 'Find anything from textbooks to electronics.'}</p>
+            {q && (
+              <button className="btn btn-ghost" onClick={() => navigate('/categories')}>
+                Browse Categories
+              </button>
+            )}
           </div>
         ) : (
           <div className="results-grid">
@@ -91,6 +110,7 @@ export default function SearchPage() {
             ))}
           </div>
         )}
+        <Footer />
       </main>
       <BottomNav />
     </div>

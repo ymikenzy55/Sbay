@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { sbay } from '../api/client';
 import './pages.css';
 import './SellerDashboard.css';
@@ -78,6 +79,7 @@ export default function SellerMessages() {
           ))}
         </div>
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

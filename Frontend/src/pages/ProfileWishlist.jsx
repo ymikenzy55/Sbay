@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './Profile.css';
@@ -59,6 +60,7 @@ export default function ProfileWishlist() {
           )}
         </div>
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Package, Truck } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
+import Footer from '../components/Footer';
 import { useOrders, ORDER_STATUSES } from '../store/OrdersContext';
 import { useConfirm } from '../store/ConfirmContext';
 import { sbay } from '../api/client';
@@ -102,6 +103,7 @@ export default function SellerSales() {
           </motion.article>
         ))}
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

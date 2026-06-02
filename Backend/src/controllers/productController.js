@@ -68,7 +68,8 @@ async function findDuplicateListing(sellerId, candidate, excludeId) {
 /** GET /api/products/catalog — DB-driven categories and school groups. */
 export const listCatalogMeta = asyncHandler(async (_req, res) => {
   const items = await Product.find({ status: 'active' })
-    .select('school city category')
+    .select('school city category seller')
+    .populate('seller', 'verification.university')
     .lean();
 
   const categories = new Map();
@@ -77,7 +78,8 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
   for (const item of items) {
     const categoryRaw = String(item.category || '').trim();
     const categoryKey = categoryRaw.toLowerCase();
-    const schoolRaw = String(item.school || '').trim();
+    const sellerUni = item.seller?.verification?.university || '';
+    const schoolRaw = String(item.school || sellerUni || '').trim();
     const schoolKey = schoolRaw ? schoolRaw.toLowerCase() : 'others';
     const cityRaw = String(item.city || '').trim();
 
@@ -139,7 +141,16 @@ export const listProducts = asyncHandler(async (req, res) => {
   const filter = { status: 'active' };
   if (category) filter.category = exactTextFilter(category);
   if (seller) filter.seller = seller;
-  if (school) filter.school = exactTextFilter(school);
+  if (school) {
+    // Match products where school field matches OR seller's university matches
+    const schoolRegex = new RegExp(`^${school.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const sellersWithUni = await User.find({ 'verification.university': schoolRegex }).select('_id').lean();
+    const sellerIds = sellersWithUni.map((s) => s._id);
+    filter.$or = [
+      { school: exactTextFilter(school) },
+      { school: { $in: ['', null] }, seller: { $in: sellerIds } },
+    ];
+  }
   if (city) filter.city = exactTextFilter(city);
   if (condition) filter.condition = exactTextFilter(condition);
   if (minPrice || maxPrice) {
@@ -217,7 +228,8 @@ export const createProduct = asyncHandler(async (req, res) => {
     condition, category,
     images: Array.isArray(images) ? images : [],
     location: location || seller.sellerProfile?.location || seller.location,
-    school, city,
+    school: school || seller.verification?.university || '',
+    city,
   });
 
   res.status(201).json({ product });

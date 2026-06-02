@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, X, ChevronDown, Navigation, Loader2 } from 'lucide-react';
 import { useLocation } from '../store/LocationContext';
 import './CampusBanner.css';
+
+const DISMISS_KEY = 'sbay.campus_banner_dismissed';
 
 /**
  * Thin campus bar:
@@ -14,6 +16,24 @@ export default function CampusBanner() {
   const { campus, setCampus, clearCampus, schools, loading, locStatus, autoDetect } = useLocation();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
+  });
+
+  // Reset dismiss when campus is cleared
+  useEffect(() => {
+    if (campus) {
+      try { localStorage.setItem(DISMISS_KEY, '1'); } catch {}
+    }
+  }, [campus]);
+
+  const dismiss = () => {
+    setDismissed(true);
+    try { localStorage.setItem(DISMISS_KEY, '1'); } catch {}
+  };
+
+  // Don't render the unset banner if dismissed
+  if (!campus && dismissed) return null;
 
   const filtered = q.trim()
     ? schools.filter((s) =>
@@ -56,6 +76,9 @@ export default function CampusBanner() {
             </button>
             <button className="campus-bar-set campus-bar-manual" onClick={() => setOpen(true)}>
               or pick manually
+            </button>
+            <button className="campus-bar-dismiss" onClick={dismiss} aria-label="Dismiss">
+              <X size={14} />
             </button>
           </div>
         )}

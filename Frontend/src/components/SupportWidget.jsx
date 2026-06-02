@@ -16,6 +16,17 @@ export default function SupportWidget() {
   const isHomepage = pathname === '/home';
 
   const [open, setOpen] = useState(false);
+
+  // Lock body scroll when panel is open
+  useEffect(() => {
+    if (open) {
+      document.body.classList.add('support-open');
+    } else {
+      document.body.classList.remove('support-open');
+    }
+    return () => document.body.classList.remove('support-open');
+  }, [open]);
+
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');

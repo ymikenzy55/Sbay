@@ -62,7 +62,7 @@ export default function InstallPrompt() {
               <li><PlusSquare size={14} /> Choose Add to Home Screen.</li>
             </ol>
           ) : (
-            <p>Install sBay on your device for faster access and offline support.</p>
+            <p>Add sBay to your home screen for instant access — no browser needed.</p>
           )}
         </div>
       </div>

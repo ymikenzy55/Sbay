@@ -5,18 +5,22 @@ import { Star, ArrowRight, Heart, Shield, MapPin, Search as SearchIcon, Flame, P
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
+import CampusBanner from '../components/CampusBanner';
 import { sbay } from '../api/client';
+import { useLocation as useCampus } from '../store/LocationContext';
 import { SkeletonGrid, Skeleton } from '../components/Skeleton';
 import './Home.css';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { campus } = useCampus();
   const [trending, setTrending] = useState([]);
   const [sellers, setSellers] = useState([]);
   const [recent, setRecent] = useState([]);
   const [saved, setSaved] = useState({});
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showAllLocal, setShowAllLocal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -55,6 +59,21 @@ export default function Home() {
   const featuredSellers = sellers.slice(0, 2);
   const noListingsYet = !loading && trending.length === 0 && recent.length === 0 && sellers.length === 0;
 
+  // Local products — filter by campus when one is selected
+  const localProducts = useMemo(() => {
+    if (!campus) return [];
+    const school = campus.label.toLowerCase();
+    const city   = (campus.city || '').toLowerCase();
+    return [...trending, ...recent].filter((p) => {
+      const ps = (p.school || '').toLowerCase();
+      const pc = (p.city   || '').toLowerCase();
+      return ps.includes(school) || school.includes(ps) ||
+             (city && (pc.includes(city) || city.includes(pc)));
+    });
+  }, [campus, trending, recent]);
+
+  const localVisible = showAllLocal ? localProducts : localProducts.slice(0, 6);
+
   return (
     <div className="home">
       <TopBar
@@ -63,6 +82,8 @@ export default function Home() {
         onSearchChange={setQuery}
         searchPlaceholder="Search phones, books, sneakers, snacks..."
       />
+
+      <CampusBanner />
 
       <main className="home-main">
         {matches !== null ? (
@@ -103,6 +124,35 @@ export default function Home() {
           </section>
         ) : (
           <>
+            {/* ── Local products (only when campus set) ── */}
+            {campus && !loading && localProducts.length > 0 && (
+              <section className="section">
+                <div className="section-head">
+                  <h2 className="section-title">
+                    <MapPin size={16} style={{ color: 'var(--primary)', verticalAlign: 'middle' }} />
+                    {' '}Near you at {campus.label}
+                  </h2>
+                  {localProducts.length > 6 && (
+                    <button className="view-all" onClick={() => setShowAllLocal((v) => !v)}>
+                      {showAllLocal ? 'Show less' : `See all ${localProducts.length}`} <ArrowRight size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="recent-grid">
+                  {localVisible.map((p, i) => (
+                    <ProductCard
+                      key={p.id}
+                      p={p}
+                      i={i}
+                      saved={saved[p.id]}
+                      toggleSave={toggleSave}
+                      onClick={() => navigate(`/product/${p.id}`)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section className="section">
               <div className="section-head">
                 <h2 className="section-title">Trending on Campus</h2>

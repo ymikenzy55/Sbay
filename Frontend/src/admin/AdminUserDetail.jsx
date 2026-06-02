@@ -5,6 +5,7 @@ import {
   ArrowLeft, BadgeCheck, ShieldOff, ShieldCheck, Trash2, Mail, MapPin, Phone,
   Package, ShoppingBag, MessageSquare, BarChart3, IdCard, User as UserIcon,
 } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Generic user deep-dive — works for any role (buyer / seller / admin).
@@ -18,6 +19,7 @@ import {
 export default function AdminUserDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm, prompt, alert } = useAdminConfirm();
 
   const [user, setUser]         = useState(null);
   const [listings, setListings] = useState([]);
@@ -85,38 +87,39 @@ export default function AdminUserDetail() {
   const isSelf = user.email === meEmail;
 
   /* ---------- Actions ---------- */
+
   const verify = async (decision) => {
     let reason;
     if (decision === 'rejected') {
-      reason = window.prompt('Why are you rejecting verification?');
+      reason = await prompt('Why are you rejecting verification?', { title: 'Reject Verification', placeholder: 'Enter reason…' });
       if (reason === null) return;
     }
     try {
       await adminApi.post(`/users/${user._id}/verify`, { decision, reason });
       load();
-    } catch (e) { alert(e.message || 'Could not update verification.'); }
+    } catch (e) { await alert(e.message || 'Could not update verification.'); }
   };
 
   const restrict = async () => {
     try {
       if (user.restricted) {
-        if (!confirm(`Lift restriction on ${user.email}?`)) return;
+        if (!(await confirm(`Lift restriction on ${user.email}?`))) return;
         await adminApi.post(`/users/${user._id}/restrict`, { restricted: false });
       } else {
-        const reason = window.prompt(`Why are you restricting ${user.email}?`);
+        const reason = await prompt(`Why are you restricting ${user.email}?`, { title: 'Restrict Account', placeholder: 'Enter reason…' });
         if (!reason) return;
         await adminApi.post(`/users/${user._id}/restrict`, { restricted: true, reason });
       }
       load();
-    } catch (e) { alert(e.message || 'Could not change restriction.'); }
+    } catch (e) { await alert(e.message || 'Could not change restriction.'); }
   };
 
   const remove = async () => {
-    if (!confirm(`Permanently delete ${user.email}? Listings will be archived; history retained.`)) return;
+    if (!(await confirm(`Permanently delete ${user.email}? Listings will be archived; history retained.`))) return;
     try {
       await adminApi.delete(`/users/${user._id}`);
       navigate('/admin/users', { replace: true });
-    } catch (e) { alert(e.message || 'Could not delete user.'); }
+    } catch (e) { await alert(e.message || 'Could not delete user.'); }
   };
 
   const fmtMoney = (n) => `GH₵ ${Math.round(Number(n || 0)).toLocaleString()}`;

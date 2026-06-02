@@ -29,24 +29,24 @@ export const setToken = (t, remember = true) => {
 };
 
 function makeClient(baseURL) {
-  const c = axios.create({ baseURL, timeout: 30000 });
+  const c = axios.create({ baseURL, timeout: 60000 });
   c.interceptors.request.use((cfg) => {
     const t = getToken();
     if (t) cfg.headers.Authorization = `Bearer ${t}`;
     return cfg;
   });
-  // Auto-retry GET requests on timeout (once)
+  // Auto-retry GET requests on timeout — up to 3 attempts with backoff
   c.interceptors.response.use(undefined, async (err) => {
     const config = err.config;
-    if (
-      config &&
-      (config.method === 'get' || config.url === '/payments/verify') &&
-      !config._retried &&
-      (err.code === 'ECONNABORTED' || err.message?.includes('timeout'))
-    ) {
-      config._retried = true;
-      await new Promise(r => setTimeout(r, 1200));
-      return c(config);
+    const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+    const isRetryable = config && (config.method === 'get' || config.url === '/payments/verify') && isTimeout;
+    if (isRetryable) {
+      config._retryCount = (config._retryCount || 0) + 1;
+      if (config._retryCount <= 3) {
+        const delay = config._retryCount * 1500; // 1.5s, 3s, 4.5s
+        await new Promise(r => setTimeout(r, delay));
+        return c(config);
+      }
     }
     return Promise.reject(err);
   });
@@ -122,7 +122,7 @@ export const sbay = {
   },
 
   async getCatalogMeta({ force = false } = {}) {
-    return cached('catalog-meta', 600_000, async () => {
+    return cached('catalog-meta', 1_800_000, async () => {
       const { data } = await api.get('/products/catalog');
       return data;
     }, { force });
@@ -142,14 +142,14 @@ export const sbay = {
   },
 
   async getTrending() {
-    return cached('products-trending', 180_000, async () => {
+    return cached('products-trending', 600_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
       return data.items.map(adaptProduct);
     });
   },
 
   async getRecent() {
-    return cached('products-recent', 180_000, async () => {
+    return cached('products-recent', 600_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
       return data.items.map(adaptProduct);
     });
@@ -387,6 +387,14 @@ export const paymentApi = {
   },
   async verify(reference) {
     const { data } = await api.post('/payments/verify', { reference });
+    return data;
+  },
+  async initializeOnboarding() {
+    const { data } = await api.post('/payments/onboarding/initialize');
+    return data;
+  },
+  async verifyOnboarding(reference) {
+    const { data } = await api.post('/payments/onboarding/verify', { reference });
     return data;
   },
 };

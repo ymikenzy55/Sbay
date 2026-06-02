@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { ShieldCheck, ShieldOff, UserPlus, Trash2, Mail } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Admin team management. The currently signed-in admin is always
@@ -12,6 +13,7 @@ import { ShieldCheck, ShieldOff, UserPlus, Trash2, Mail } from 'lucide-react';
  * Remove: revoke admin access (revert to their previous role).
  */
 export default function AdminAdmins() {
+  const { confirm, alert } = useAdminConfirm();
   const [admins, setAdmins] = useState([]);
   const [busy, setBusy]     = useState(false);
   const [err, setErr]       = useState('');
@@ -49,14 +51,14 @@ export default function AdminAdmins() {
 
   const remove = async (a) => {
     if (a.email === meEmail) {
-      alert('You cannot remove your own admin access from this surface.');
+      await alert('You cannot remove your own admin access from this surface.');
       return;
     }
-    if (!confirm(`Revoke admin access for ${a.email}?`)) return;
+    if (!(await confirm(`Revoke admin access for ${a.email}?`))) return;
     try {
       await adminApi.delete(`/admins/${a._id}`);
       load();
-    } catch (e) { alert(e.message || 'Could not remove admin.'); }
+    } catch (e) { await alert(e.message || 'Could not remove admin.'); }
   };
 
   return (

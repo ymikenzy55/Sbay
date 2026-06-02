@@ -51,23 +51,39 @@
     color: var(--primary);
   }
 
-  .dnav-search {
+  .dnav-search-form {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 16px;
+    padding: 0 16px;
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--r-pill);
-    color: var(--text-muted);
-    font-family: inherit;
-    font-size: 0.9rem;
     max-width: 440px;
     width: 100%;
-    justify-self: end;
+    justify-self: stretch;
     transition: border-color .15s ease, box-shadow .15s ease;
+    height: 44px;
   }
-  .dnav-search:hover { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(10,126,62,.07); }
+  .dnav-search-form:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10,126,62,.09);
+    background: #fff;
+  }
+  .dnav-search-ic { color: var(--text-muted); flex-shrink: 0; }
+  .dnav-search-form:focus-within .dnav-search-ic { color: var(--primary); }
+  .dnav-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+    min-width: 0;
+  }
+  .dnav-search-input::placeholder { color: var(--text-muted); }
+  .dnav-search-input::-webkit-search-cancel-button { cursor: pointer; }
 
   .dnav-actions {
     display: inline-flex;

@@ -1,19 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, MapPin, Flame } from 'lucide-react';
+import { TrendingUp, MapPin, Flame, Globe } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
+import CampusBanner from '../components/CampusBanner';
 import { SkeletonGrid } from '../components/Skeleton';
 import { sbay } from '../api/client';
+import { useLocation as useCampus } from '../store/LocationContext';
 import './pages.css';
 import './Trending.css';
 
 export default function Trending() {
   const navigate = useNavigate();
+  const { campus } = useCampus();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -24,35 +28,69 @@ export default function Trending() {
       setItems([...trending, ...recent]);
       setLoading(false);
     });
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
+
+  const localItems = useMemo(() => {
+    if (!campus) return [];
+    const school = campus.label.toLowerCase();
+    const city   = (campus.city || '').toLowerCase();
+    return items.filter((p) => {
+      const ps = (p.school || '').toLowerCase();
+      const pc = (p.city   || '').toLowerCase();
+      return ps.includes(school) || school.includes(ps) ||
+             (city && (pc.includes(city) || city.includes(pc)));
+    });
+  }, [campus, items]);
+
+  const displayed = campus && !showAll ? localItems : items;
 
   return (
     <div className="page">
       <TopBar showBack title="Trending" />
+      <CampusBanner />
 
       <main className="page-main">
         <div className="trend-banner">
           <TrendingUp size={28} />
           <div>
-            <h2>What's hot on campus</h2>
-            <p className="muted small">Most viewed and purchased items this week</p>
+            <h2>What’s hot on campus</h2>
+            <p className="muted small">
+              {campus ? `Showing items near ${campus.label}` : 'Most viewed and purchased items this week'}
+            </p>
           </div>
+          {campus && (
+            <button
+              className="btn btn-ghost"
+              style={{ marginLeft: 'auto', fontSize: '.8rem', padding: '6px 12px' }}
+              onClick={() => setShowAll((v) => !v)}
+            >
+              <Globe size={14} />
+              {showAll ? `Near ${campus.label}` : 'All campuses'}
+            </button>
+          )}
         </div>
 
         {loading ? (
           <SkeletonGrid count={8} />
-        ) : items.length === 0 ? (
+        ) : displayed.length === 0 ? (
           <div className="empty">
             <div className="emo"><Flame size={44} /></div>
-            <h3>No trending products yet</h3>
-            <p className="muted">There are no listings in the database yet, so nothing can trend right now.</p>
+            <h3>{campus && !showAll ? `No trending items at ${campus.label} yet` : 'No trending products yet'}</h3>
+            <p className="muted">
+              {campus && !showAll
+                ? 'Try switching to all campuses to browse other listings.'
+                : 'There are no listings in the database yet, so nothing can trend right now.'}
+            </p>
+            {campus && !showAll && (
+              <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setShowAll(true)}>
+                <Globe size={14} /> View all campuses
+              </button>
+            )}
           </div>
         ) : (
           <div className="trending-full-grid">
-            {items.map((p, i) => (
+            {displayed.map((p, i) => (
               <motion.article
                 key={p.id}
                 className="result-card"

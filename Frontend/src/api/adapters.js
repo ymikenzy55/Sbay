@@ -94,6 +94,8 @@ export function adaptUser(u) {
     payout: u.payout,
     subscription: u.subscription,
     paymentMethods: u.paymentMethods || [],
+    onboardingFeePaid: !!u.onboardingFeePaid,
+    onboardingPaidAt: u.onboardingPaidAt,
     createdAt: u.createdAt,
   };
 }

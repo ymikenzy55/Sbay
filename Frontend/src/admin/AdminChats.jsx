@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { Lock, Eye } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Read-only chat moderation. Admins can list every conversation and
@@ -8,6 +9,7 @@ import { Lock, Eye } from 'lucide-react';
  * Closing a chat prevents further messages without deleting history.
  */
 export default function AdminChats() {
+  const { prompt } = useAdminConfirm();
   const [items, setItems] = useState([]);
   const [closed, setClosed] = useState('');
   const [open, setOpen] = useState(null);
@@ -28,7 +30,7 @@ export default function AdminChats() {
     setThread(data);
   };
   const close = async (id) => {
-    const reason = window.prompt('Reason for closing this chat?');
+    const reason = await prompt('Reason for closing this chat?', { title: 'Close Chat', placeholder: 'Enter reason…' });
     if (!reason) return;
     await adminApi.post(`/chats/${id}/close`, { reason });
     load();

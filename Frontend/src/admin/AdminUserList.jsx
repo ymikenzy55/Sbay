@@ -4,6 +4,7 @@ import { adminApi } from '../api/client';
 import {
   Search, ShieldOff, ShieldCheck, BadgeCheck, BadgeX, Trash2, ExternalLink,
 } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Shared user-list table. Used by:
@@ -26,6 +27,7 @@ export default function AdminUserList({
   initialQuery = '',
 }) {
   const navigate = useNavigate();
+  const { confirm, prompt, alert } = useAdminConfirm();
   const [items, setItems]           = useState([]);
   const [me, setMe]                 = useState(null);
   const [q, setQ]                   = useState(initialQuery);
@@ -77,7 +79,7 @@ export default function AdminUserList({
   const verify = async (id, decision) => {
     let reason;
     if (decision === 'rejected') {
-      reason = window.prompt('Why are you rejecting this verification?');
+      reason = await prompt('Why are you rejecting this verification?', { title: 'Reject Verification', placeholder: 'Enter reason…' });
       if (reason === null) return;
     }
     await adminApi.post(`/users/${id}/verify`, { decision, reason });
@@ -86,10 +88,10 @@ export default function AdminUserList({
 
   const restrict = async (u) => {
     if (u.restricted) {
-      if (!confirm(`Lift restriction on ${u.email}?`)) return;
+      if (!(await confirm(`Lift restriction on ${u.email}?`))) return;
       await adminApi.post(`/users/${u._id}/restrict`, { restricted: false });
     } else {
-      const reason = window.prompt(`Why are you restricting ${u.email}?`);
+      const reason = await prompt(`Why are you restricting ${u.email}?`, { title: 'Restrict Account', placeholder: 'Enter reason…' });
       if (!reason) return;
       await adminApi.post(`/users/${u._id}/restrict`, { restricted: true, reason });
     }
@@ -97,12 +99,12 @@ export default function AdminUserList({
   };
 
   const remove = async (u) => {
-    if (!confirm(`Permanently delete ${u.email}? This cannot be undone.`)) return;
+    if (!(await confirm(`Permanently delete ${u.email}? This cannot be undone.`))) return;
     try {
       await adminApi.delete(`/users/${u._id}`);
       load();
     } catch (e) {
-      alert(e.message || 'Could not delete user.');
+      await alert(e.message || 'Could not delete user.');
     }
   };
 

@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Camera, Plus, Check, ArrowRight, ArrowLeft as Back, X, Info,
   Tag, FileText, Image as ImageIcon, DollarSign, Eye,
+  Loader2, CreditCard, CheckCircle2, Lock,
 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
-import { sbay, productApi } from '../api/client';
+import { sbay, productApi, paymentApi } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import './pages.css';
 import './Sell.css';
@@ -87,6 +88,48 @@ export default function Sell() {
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Onboarding fee gate
+  const [onboardingFee, setOnboardingFee] = useState(0);
+  const [gateChecking, setGateChecking] = useState(false);
+  const [gateErr, setGateErr] = useState('');
+  const [gateVerifying, setGateVerifying] = useState(false);
+
+  // 1. Load fee amount from public settings
+  useEffect(() => {
+    sbay.getPublicSettings().then((s) => {
+      setOnboardingFee(Number(s?.sellerOnboardingFee ?? 0));
+    }).catch(() => {});
+  }, []);
+
+  // 2. Handle Paystack redirect back with onboarding_ref
+  useEffect(() => {
+    const ref = params.get('onboarding_ref');
+    if (!ref || user?.onboardingFeePaid) return;
+    setGateVerifying(true);
+    paymentApi.verifyOnboarding(ref)
+      .then(({ user: updated }) => {
+        if (updated?.onboardingFeePaid) {
+          window.history.replaceState({}, '', '/sell');
+        }
+      })
+      .catch((e) => setGateErr(e.message || 'Verification failed. Please try again.'))
+      .finally(() => setGateVerifying(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const needsOnboarding = onboardingFee > 0 && user && !user.onboardingFeePaid;
+
+  const payOnboarding = async () => {
+    setGateChecking(true); setGateErr('');
+    try {
+      const { authorization_url } = await paymentApi.initializeOnboarding();
+      window.location.href = authorization_url;
+    } catch (e) {
+      setGateErr(e.message || 'Could not start payment. Please try again.');
+      setGateChecking(false);
+    }
+  };
 
   // Pre-fill the form when editing.
   useEffect(() => {
@@ -199,6 +242,69 @@ export default function Sell() {
 
   const StepIcon = STEPS[step].icon;
   const finalCategory = isCustomCat ? form.customCategory : form.category;
+
+  // Onboarding gate — shown instead of the wizard when fee is due
+  if (gateVerifying) {
+    return (
+      <div className="page">
+        <TopBar showBack title="Verifying Payment" showSearch={false} />
+        <main className="page-main" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 64, gap: 16 }}>
+          <Loader2 size={36} className="spin" style={{ color: 'var(--primary)' }} />
+          <p className="muted">Confirming your payment…</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <div className="page">
+        <TopBar showBack title="Seller Onboarding Fee" showSearch={false} />
+        <main className="page-main" style={{ maxWidth: 460, margin: '0 auto', padding: '32px 20px' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '32px 24px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: 18, textAlign: 'center' }}>
+            <span style={{ background: 'var(--primary-50)', width: 64, height: 64, borderRadius: '50%', display: 'grid', placeItems: 'center', margin: '0 auto', color: 'var(--primary)' }}>
+              <Lock size={28} />
+            </span>
+            <div>
+              <h2 style={{ margin: '0 0 8px', fontSize: '1.25rem' }}>One-time seller fee</h2>
+              <p className="muted" style={{ fontSize: '.9rem', lineHeight: 1.5 }}>
+                To list items on sBay, a one-time onboarding fee of&nbsp;
+                <strong style={{ color: 'var(--text)' }}>GH₵ {onboardingFee.toLocaleString()}</strong>&nbsp;
+                is required. This helps us maintain a trusted marketplace.
+              </p>
+            </div>
+            <div style={{ background: 'var(--surface-2)', borderRadius: 12, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span className="muted">Onboarding fee</span>
+                <strong>GH₵ {onboardingFee.toLocaleString()}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                <span>Total</span>
+                <strong style={{ color: 'var(--primary)' }}>GH₵ {onboardingFee.toLocaleString()}</strong>
+              </div>
+            </div>
+            {gateErr && (
+              <p style={{ color: 'var(--error)', fontSize: '.85rem', margin: 0 }}>{gateErr}</p>
+            )}
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', gap: 8 }}
+              onClick={payOnboarding}
+              disabled={gateChecking}
+            >
+              {gateChecking
+                ? <><Loader2 size={16} className="spin" /> Redirecting…</>
+                : <><CreditCard size={16} /> Pay GH₵ {onboardingFee.toLocaleString()} with Paystack</>}
+            </button>
+            <p className="muted" style={{ fontSize: '.78rem', margin: 0 }}>
+              Secured by Paystack · One-time payment · No subscription
+            </p>
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="page">

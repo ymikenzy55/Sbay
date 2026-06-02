@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Bell, ShoppingCart, Plus, LayoutGrid, Home as HomeIc, TrendingUp } from 'lucide-react';
 import Logo from './Logo';
@@ -20,6 +21,8 @@ export default function DesktopNav() {
   const { user } = useAuth();
   const { unread } = useUserNotifications();
 
+  const [searchQ, setSearchQ] = useState('');
+
   // Admin SPA has its own shell — never render the public marketplace nav there
   if (pathname.startsWith('/admin')) return null;
 
@@ -27,6 +30,13 @@ export default function DesktopNav() {
     if (!user) navigate('/login?mode=seller&next=' + encodeURIComponent('/become-seller'));
     else if (user.role !== 'seller') navigate('/become-seller');
     else navigate('/sell');
+  };
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = searchQ.trim();
+    navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+    setSearchQ('');
   };
 
   return (
@@ -49,14 +59,17 @@ export default function DesktopNav() {
           ))}
         </nav>
 
-        <button
-          type="button"
-          className="dnav-search"
-          onClick={() => navigate('/search')}
-        >
-          <Search size={16} />
-          <span>Search campus deals...</span>
-        </button>
+        <form className="dnav-search-form" onSubmit={submitSearch} role="search">
+          <Search size={16} className="dnav-search-ic" />
+          <input
+            type="search"
+            className="dnav-search-input"
+            placeholder="Search campus deals..."
+            value={searchQ}
+            onChange={(e) => setSearchQ(e.target.value)}
+            aria-label="Search"
+          />
+        </form>
 
         <div className="dnav-actions">
           <button className="dnav-sell" onClick={goSell}>

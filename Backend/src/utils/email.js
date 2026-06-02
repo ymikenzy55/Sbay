@@ -107,6 +107,64 @@ export async function sendPasswordResetEmail(user, resetUrl) {
 }
 
 /**
+ * Send admin reply to a support ticket — delivered to the user's email.
+ */
+export async function sendSupportReplyEmail({ toEmail, toName, adminReply, ticketSubject }) {
+  const transport = getTransporter();
+  const displayName = toName || toEmail.split('@')[0];
+
+  if (!transport) {
+    // eslint-disable-next-line no-console
+    console.log(`[email] Support reply to ${toEmail}: ${adminReply}`);
+    return;
+  }
+
+  const mailOptions = {
+    from: `"sBay Support" <${env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: `Re: ${ticketSubject || 'Your support request'}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #333; line-height: 1.6; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg,#0A7E3E,#0d9647); color:#fff; padding:24px; border-radius:10px 10px 0 0; }
+          .content { background:#f9f9f9; padding:28px; border-radius:0 0 10px 10px; }
+          .bubble { background:#fff; border-left:4px solid #0A7E3E; padding:16px 18px; border-radius:8px; font-size:15px; white-space:pre-wrap; }
+          .footer { text-align:center; margin-top:24px; color:#888; font-size:12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header"><h2 style="margin:0">sBay Support</h2></div>
+          <div class="content">
+            <p>Hi ${escapeHtml(displayName)},</p>
+            <p>Our support team has replied to your message:</p>
+            <div class="bubble">${escapeHtml(adminReply)}</div>
+            <p style="margin-top:20px;color:#555;font-size:14px;">
+              If you have further questions, simply reply to this email or visit our support widget on <a href="https://sbaygh.com/home">sBay</a>.
+            </p>
+          </div>
+          <div class="footer">© ${new Date().getFullYear()} sBay — Campus Marketplace</div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+
+  try {
+    await transport.sendMail(mailOptions);
+    // eslint-disable-next-line no-console
+    console.log(`[email] Support reply sent to ${toEmail}`);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[email] Failed to send support reply:', error.message);
+  }
+}
+
+/**
  * Send welcome email (optional - for future use)
  */
 export async function sendWelcomeEmail(user) {

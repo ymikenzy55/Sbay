@@ -1,0 +1,193 @@
+/* ============================================================
+   CampusBanner — thin bar + school picker sheet
+   ============================================================ */
+
+.campus-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--surface-2, #f4f6f4);
+  border-bottom: 1px solid var(--border, #e2e8e2);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 38px;
+}
+.campus-bar.unset { color: var(--text-muted); }
+.campus-bar.set   { color: var(--text); }
+.campus-bar-ic    { color: var(--primary); flex-shrink: 0; }
+
+.campus-bar-name {
+  font-weight: 700;
+  color: var(--primary);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.campus-bar-city {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+.campus-bar-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: auto;
+  transition: border-color 0.12s, color 0.12s;
+}
+.campus-bar-change:hover { border-color: var(--primary); color: var(--primary); }
+
+.campus-bar-clear {
+  background: var(--surface-2);
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.campus-bar-clear:hover { background: var(--border); color: var(--text); }
+
+.campus-bar-set {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Overlay + sheet ── */
+.campus-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(8,14,11,.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+@media (min-width: 560px) {
+  .campus-overlay {
+    align-items: center;
+  }
+}
+
+.campus-sheet {
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: campusSlide 0.22s ease;
+}
+@media (min-width: 560px) {
+  .campus-sheet {
+    border-radius: 16px;
+    max-height: 70vh;
+  }
+}
+@keyframes campusSlide {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+.campus-sheet-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--border, #e2e8e2);
+}
+.campus-sheet-close {
+  background: var(--surface-2, #f4f6f4);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.campus-search {
+  margin: 10px 16px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border, #e2e8e2);
+  border-radius: 24px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.campus-search:focus { border-color: var(--primary, #0a7e3e); }
+
+.campus-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+.campus-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.1s;
+}
+.campus-opt:hover { background: var(--surface-2, #f4f6f4); }
+.campus-opt.active { background: var(--primary-50, #e6f4ec); }
+.campus-opt-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  flex: 1;
+}
+.campus-opt.active .campus-opt-name { color: var(--primary, #0a7e3e); }
+.campus-opt-city {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+.campus-opt-tick {
+  font-size: 0.9rem;
+  color: var(--primary, #0a7e3e);
+  font-weight: 700;
+}
+.campus-loading {
+  padding: 14px 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

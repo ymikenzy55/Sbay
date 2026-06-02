@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Search, X, MapPin, Building2, LayoutGrid, ChevronRight,
-  ShoppingBag, GraduationCap, Store,
+  Search, X, MapPin, Building2, ChevronRight, ChevronDown,
+  ShoppingBag, GraduationCap, Store, Tag,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
@@ -31,8 +31,9 @@ export default function Categories() {
   const [prodLoading, setProdLoading] = useState(false);
 
   /* ── search / filter ── */
-  const [query,       setQuery]       = useState('');
-  const [schoolQ,     setSchoolQ]     = useState('');
+  const [query,         setQuery]       = useState('');
+  const [schoolQ,       setSchoolQ]     = useState('');
+  const [selectedCat,   setSelectedCat] = useState(null); // category id within current school
 
   const prodInputRef = useRef(null);
 
@@ -81,9 +82,14 @@ export default function Categories() {
   /* ── navigation ── */
   const selectSchool = (id) => {
     setSelectedId(id);
+    setSelectedCat(null);
     setSchoolQ('');
     if (id === 'all') navigate('/categories', { replace: true });
     else navigate(`/category/${id}`, { replace: true });
+  };
+
+  const selectCategory = (catId) => {
+    setSelectedCat((prev) => prev === catId ? null : catId);
   };
 
   /* ── derived ── */
@@ -97,13 +103,19 @@ export default function Categories() {
   }, [schools, schoolQ]);
 
   const filteredProducts = useMemo(() => {
-    if (!query.trim()) return products;
+    let list = products;
+    if (selectedCat) {
+      const cat = selectedCat.toLowerCase();
+      list = list.filter((p) => (p.category || '').toLowerCase() === cat ||
+        (p.categoryId || '').toLowerCase() === cat);
+    }
+    if (!query.trim()) return list;
     const q = query.toLowerCase();
-    return products.filter((p) =>
+    return list.filter((p) =>
       p.title.toLowerCase().includes(q) ||
       (p.category || '').toLowerCase().includes(q)
     );
-  }, [products, query]);
+  }, [products, query, selectedCat]);
 
   const activeSchool = schools.find((s) => s.id === selectedId);
   const title = activeSchool?.id === 'all'
@@ -175,6 +187,7 @@ export default function Categories() {
                 const isOthers  = school.id === 'others';
                 const isAll     = school.id === 'all';
                 const active    = selectedId === school.id;
+                const hasCats   = !isAll && school.categories?.length > 0;
                 return (
                   <li key={school.id}>
                     <button
@@ -196,13 +209,48 @@ export default function Categories() {
                           </span>
                         )}
                       </span>
-                      <ChevronRight size={13} className={`cat-chev ${active ? 'active' : ''}`} />
+                      {hasCats
+                        ? <ChevronDown size={13} className={`cat-chev ${active ? 'active' : ''}`} />
+                        : <ChevronRight size={13} className={`cat-chev ${active ? 'active' : ''}`} />}
                     </button>
+
+                    {/* Category sub-items — visible only when this school is active */}
+                    {active && hasCats && (
+                      <ul className="cat-sub-list" role="listbox" aria-label={`${school.label} categories`}>
+                        <li>
+                          <button
+                            className={`cat-sub-item ${!selectedCat ? 'active' : ''}`}
+                            onClick={() => setSelectedCat(null)}
+                          >
+                            <ShoppingBag size={12} />
+                            <span>All categories</span>
+                            <span className="cat-sub-count">{products.length}</span>
+                          </button>
+                        </li>
+                        {school.categories.map((cat) => {
+                          const catActive = selectedCat === cat.id;
+                          return (
+                            <li key={cat.id}>
+                              <button
+                                className={`cat-sub-item ${catActive ? 'active' : ''}`}
+                                onClick={() => selectCategory(cat.id)}
+                              >
+                                <Tag size={12} />
+                                <span>{cat.label}</span>
+                                {cat.count != null && (
+                                  <span className="cat-sub-count">{cat.count}</span>
+                                )}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
                   </li>
                 );
               })}
               {filteredSchools.length === 0 && (
-                <li className="cat-empty">No schools match "{schoolQ}"</li>
+                <li className="cat-empty">No schools match &quot;{schoolQ}&quot;</li>
               )}
             </ul>
           )}
@@ -213,19 +261,18 @@ export default function Categories() {
           {/* Toolbar */}
           <div className="cat-toolbar">
             <div className="cat-toolbar-left">
-              <h1 className="cat-title">{title}</h1>
+              <h1 className="cat-title">
+                {title}
+                {selectedCat && activeSchool?.categories?.find((c) => c.id === selectedCat) && (
+                  <span className="cat-active-cat">
+                    &nbsp;›&nbsp;{activeSchool.categories.find((c) => c.id === selectedCat)?.label}
+                    <button className="cat-clear-cat" onClick={() => setSelectedCat(null)} aria-label="Clear category">
+                      <X size={11} />
+                    </button>
+                  </span>
+                )}
+              </h1>
               {subtitle && <p className="cat-subtitle">{subtitle}</p>}
-              {/* Category chips for this school */}
-              {activeSchool?.categories?.length > 0 && (
-                <div className="cat-chip-row">
-                  {activeSchool.categories.map((cat) => (
-                    <span key={cat.id} className="cat-chip-badge">
-                      {cat.label}
-                      <span className="cat-chip-count">{cat.count}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
             {!prodLoading && (
               <span className="cat-count">

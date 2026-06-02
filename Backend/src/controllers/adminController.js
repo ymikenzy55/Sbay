@@ -435,8 +435,9 @@ export const listAllOrders = asyncHandler(async (req, res) => {
   const [items, total] = await Promise.all([
     Order.find(filter)
       .sort({ createdAt: -1 }).skip(skip).limit(lim)
-      .populate('buyer', 'name email')
-      .populate('seller', 'name email'),
+      .populate('buyer', 'name email location')
+      .populate('seller', 'name email')
+      .populate('items.product', 'title images price category'),
     Order.countDocuments(filter),
   ]);
   res.json({ items, total });
@@ -510,7 +511,7 @@ export const getSettings = asyncHandler(async (_req, res) => {
 });
 
 export const updateSettings = asyncHandler(async (req, res) => {
-  const allowed = ['platformName', 'defaultEscrowFeePct', 'supportEmail', 'announcement', 'maintenanceMode'];
+  const allowed = ['platformName', 'defaultEscrowFeePct', 'sellerOnboardingFee', 'supportEmail', 'announcement', 'maintenanceMode'];
   const settings = await Settings.getSingleton();
   for (const k of allowed) {
     if (req.body[k] !== undefined) settings[k] = req.body[k];

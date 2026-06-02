@@ -9,6 +9,7 @@ const settingsSchema = new mongoose.Schema(
     key: { type: String, default: 'global', unique: true },
     platformName: { type: String, default: 'sBay' },
     defaultEscrowFeePct: { type: Number, default: 5, min: 0, max: 100 },
+    sellerOnboardingFee: { type: Number, default: 0, min: 0 },
     supportEmail: { type: String, default: '' },
     announcement: { type: String, default: '' },
     maintenanceMode: { type: Boolean, default: false },

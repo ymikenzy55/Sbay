@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { initializePayment, verifyPayment, paystackWebhook } from '../controllers/paymentController.js';
+import { initializePayment, verifyPayment, paystackWebhook, initializeOnboardingFee, verifyOnboardingFee } from '../controllers/paymentController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { authLimiter } from '../middleware/rateLimit.js';
@@ -28,5 +28,14 @@ router.post(
 );
 
 router.post('/webhook', paystackWebhook);
+
+router.post('/onboarding/initialize', requireAuth, initializeOnboardingFee);
+router.post(
+  '/onboarding/verify',
+  requireAuth,
+  body('reference').isString().notEmpty().withMessage('Reference is required'),
+  validate,
+  verifyOnboardingFee
+);
 
 export default router;

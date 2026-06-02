@@ -7,6 +7,7 @@ import {
   UserCog, Store, ShoppingCart, IdCard, Shield,
 } from 'lucide-react';
 import { useAdmin } from './AdminContext';
+import { AdminConfirmProvider } from './AdminConfirmContext';
 import { useAuth } from '../store/AuthContext';
 import { useNotifications } from './useNotifications';
 import './admin.css';
@@ -204,6 +205,7 @@ export default function AdminLayout() {
   );
 
   return (
+    <AdminConfirmProvider>
     <div className="admin-shell">
       {/* ---------- Sidebar (desktop sticky / mobile drawer) ---------- */}
       <aside
@@ -340,5 +342,6 @@ export default function AdminLayout() {
         </main>
       </div>
     </div>
+    </AdminConfirmProvider>
   );
 }

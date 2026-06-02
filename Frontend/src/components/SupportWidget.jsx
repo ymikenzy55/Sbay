@@ -19,11 +19,14 @@ export default function SupportWidget() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [form, setForm] = useState({
-    email: user?.email || '',
-    phone: user?.phone || '',
+    name:    user?.name || '',
+    email:   user?.email || '',
+    phone:   user?.phone || '',
     message: '',
   });
+  const isGuest = !user;
 
   // ---- Drag state ----
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -40,6 +43,7 @@ export default function SupportWidget() {
     if (user) {
       setForm((f) => ({
         ...f,
+        name:  user.name  || f.name,
         email: user.email || f.email,
         phone: user.phone || f.phone,
       }));
@@ -76,19 +80,30 @@ export default function SupportWidget() {
     if (!dragState.moved) setOpen((o) => !o);
   };
 
+  const validate = () => {
+    const errs = {};
+    if (!form.email.trim()) errs.email = 'Email is required.';
+    if (!form.phone.trim() || form.phone.trim().length < 7) errs.phone = 'Valid phone number required.';
+    if (!form.message.trim()) errs.message = 'Please describe your problem.';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.email.trim() || !form.phone.trim() || !form.message.trim()) return;
+    if (!validate()) return;
 
     setSending(true);
     setError('');
     try {
       await api.post('/support/tickets', {
-        email: form.email.trim(),
-        phone: form.phone.trim(),
+        name:    form.name.trim() || undefined,
+        email:   form.email.trim(),
+        phone:   form.phone.trim(),
         message: form.message.trim(),
       });
       setSent(true);
+      setFieldErrors({});
       setForm((f) => ({ ...f, message: '' }));
     } catch (err) {
       setError(err?.message || 'Failed to send your message. Please try again.');
@@ -129,34 +144,53 @@ export default function SupportWidget() {
           </header>
 
           <form className="support-form" onSubmit={submit}>
-            <p>Tell us what happened and how to reach you.</p>
+            {isGuest && (
+              <p className="support-guest-note">
+                No account needed — just fill in your details below.
+              </p>
+            )}
+
+            {isGuest && (
+              <label className="support-field">
+                <span>Your name</span>
+                <div className="support-input-wrap">
+                  <input
+                    type="text"
+                    placeholder="Full name (optional)"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  />
+                </div>
+              </label>
+            )}
 
             <label className="support-field">
               <span>Gmail address *</span>
-              <div className="support-input-wrap">
+              <div className={`support-input-wrap ${fieldErrors.email ? 'has-err' : ''}`}>
                 <Mail size={15} />
                 <input
                   type="email"
                   placeholder="you@gmail.com"
                   value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  required
+                  onChange={(e) => { setForm((f) => ({ ...f, email: e.target.value })); setFieldErrors((x) => ({ ...x, email: '' })); }}
+                  readOnly={!!user?.email}
                 />
               </div>
+              {fieldErrors.email && <span className="support-field-err">{fieldErrors.email}</span>}
             </label>
 
             <label className="support-field">
               <span>Phone number *</span>
-              <div className="support-input-wrap">
+              <div className={`support-input-wrap ${fieldErrors.phone ? 'has-err' : ''}`}>
                 <Phone size={15} />
                 <input
                   type="tel"
-                  placeholder="Your phone number"
+                  placeholder="e.g. 0244123456"
                   value={form.phone}
-                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
-                  required
+                  onChange={(e) => { setForm((f) => ({ ...f, phone: e.target.value })); setFieldErrors((x) => ({ ...x, phone: '' })); }}
                 />
               </div>
+              {fieldErrors.phone && <span className="support-field-err">{fieldErrors.phone}</span>}
             </label>
 
             <label className="support-field">
@@ -164,19 +198,20 @@ export default function SupportWidget() {
               <textarea
                 placeholder="Tell us what's wrong..."
                 value={form.message}
-                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                rows={5}
-                required
+                onChange={(e) => { setForm((f) => ({ ...f, message: e.target.value })); setFieldErrors((x) => ({ ...x, message: '' })); }}
+                rows={4}
+                className={fieldErrors.message ? 'has-err' : ''}
               />
+              {fieldErrors.message && <span className="support-field-err">{fieldErrors.message}</span>}
             </label>
 
             {error && <p className="support-error" role="alert">{error}</p>}
-            {sent && <p className="support-success">Message sent successfully. We may get back to you shortly.</p>}
+            {sent && <p className="support-success">Message sent! We will get back to you shortly.</p>}
 
             <button
               type="submit"
               className="btn btn-primary support-submit"
-              disabled={sending || !form.email.trim() || !form.phone.trim() || !form.message.trim()}
+              disabled={sending}
             >
               {sending ? <Loader2 size={18} className="spin" /> : <Send size={18} />}
               <span>{sending ? 'Sending…' : 'Send Message'}</span>

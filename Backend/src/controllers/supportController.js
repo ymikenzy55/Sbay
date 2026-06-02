@@ -5,6 +5,7 @@ import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { audit } from '../utils/audit.js';
 import { emitToAdmins, emitToUser } from '../socket.js';
+import { sendSupportReplyEmail } from '../utils/email.js';
 
 /* ============================================================
    Public intake — used by the customer-service chat widget.
@@ -97,6 +98,14 @@ export const replyTicket = asyncHandler(async (req, res) => {
 
   // Notify the user if they're connected.
   if (ticket.user) emitToUser(ticket.user.toString(), 'support:reply', { ticketId: ticket._id });
+
+  // Send email reply to the ticket's email address (non-blocking).
+  sendSupportReplyEmail({
+    toEmail: ticket.email,
+    toName:  ticket.name,
+    adminReply: body.trim(),
+    ticketSubject: ticket.subject,
+  }).catch(() => { /* swallow email failures — reply is already saved */ });
 
   res.json({ ticket });
 });

@@ -5,6 +5,7 @@ import {
   ArrowLeft, BadgeCheck, ShieldOff, ShieldCheck, Trash2, Mail, MapPin,
   Package, ShoppingBag, MessageSquare, BarChart3,
 } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Seller deep-dive — everything an admin needs to know about a single seller:
@@ -20,6 +21,7 @@ import {
 export default function AdminSellerDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm, prompt, alert } = useAdminConfirm();
   const [seller, setSeller] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -73,10 +75,11 @@ export default function AdminSellerDetail() {
   if (!seller) return <p className="muted">Seller not found.</p>;
 
   // ---------- Actions ----------
+
   const verify = async (decision) => {
     let reason;
     if (decision === 'rejected') {
-      reason = window.prompt('Why are you rejecting verification?');
+      reason = await prompt('Why are you rejecting verification?', { title: 'Reject Verification', placeholder: 'Enter reason…' });
       if (reason === null) return;
     }
     await adminApi.post(`/users/${seller._id}/verify`, { decision, reason });
@@ -84,21 +87,21 @@ export default function AdminSellerDetail() {
   };
   const restrict = async () => {
     if (seller.restricted) {
-      if (!confirm(`Lift restriction on ${seller.email}?`)) return;
+      if (!(await confirm(`Lift restriction on ${seller.email}?`))) return;
       await adminApi.post(`/users/${seller._id}/restrict`, { restricted: false });
     } else {
-      const reason = window.prompt(`Why are you restricting ${seller.email}?`);
+      const reason = await prompt(`Why are you restricting ${seller.email}?`, { title: 'Restrict Seller', placeholder: 'Enter reason…' });
       if (!reason) return;
       await adminApi.post(`/users/${seller._id}/restrict`, { restricted: true, reason });
     }
     load();
   };
   const remove = async () => {
-    if (!confirm(`Permanently delete ${seller.email}? All their listings and history will also be archived.`)) return;
+    if (!(await confirm(`Permanently delete ${seller.email}? All their listings and history will also be archived.`))) return;
     try {
       await adminApi.delete(`/users/${seller._id}`);
       navigate('/admin/users/sellers', { replace: true });
-    } catch (e) { alert(e.message || 'Could not delete seller.'); }
+    } catch (e) { await alert(e.message || 'Could not delete seller.'); }
   };
 
   return (

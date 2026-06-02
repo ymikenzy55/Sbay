@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { Save, UserPlus, Trash2, ShieldAlert } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Platform settings + admin team management on a single page.
@@ -11,6 +12,7 @@ import { Save, UserPlus, Trash2, ShieldAlert } from 'lucide-react';
  * lightweight for now.)
  */
 export default function AdminSettings() {
+  const { confirm, alert } = useAdminConfirm();
   const [settings, setSettings] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsErr, setSettingsErr] = useState('');
@@ -37,6 +39,7 @@ export default function AdminSettings() {
       const payload = {
         platformName: settings.platformName,
         defaultEscrowFeePct: Number(settings.defaultEscrowFeePct),
+        sellerOnboardingFee: Number(settings.sellerOnboardingFee ?? 0),
         supportEmail: settings.supportEmail,
         announcement: settings.announcement,
         maintenanceMode: !!settings.maintenanceMode,
@@ -58,11 +61,11 @@ export default function AdminSettings() {
   };
 
   const removeAdmin = async (id, email) => {
-    if (!confirm(`Remove admin access from ${email}? They'll be demoted to a buyer.`)) return;
+    if (!(await confirm(`Remove admin access from ${email}? They will be demoted to a buyer.`))) return;
     try {
       await adminApi.delete(`/admins/${id}`);
       load();
-    } catch (ex) { alert(ex.message); }
+    } catch (ex) { await alert(ex.message); }
   };
 
   if (!settings) return <p className="muted">Loading settings…</p>;
@@ -84,6 +87,12 @@ export default function AdminSettings() {
               value={settings.defaultEscrowFeePct ?? 5}
               onChange={(e) => setSettings({ ...settings, defaultEscrowFeePct: e.target.value })} />
             <small className="muted">Used when a seller's plan does not override the fee.</small>
+          </label>
+          <label>Seller onboarding fee (GH₵)
+            <input type="number" min="0" step="0.01"
+              value={settings.sellerOnboardingFee ?? 0}
+              onChange={(e) => setSettings({ ...settings, sellerOnboardingFee: e.target.value })} />
+            <small className="muted">One-time fee sellers pay before they can list items. Set to 0 to disable.</small>
           </label>
           <label>Support email
             <input type="email" value={settings.supportEmail || ''}

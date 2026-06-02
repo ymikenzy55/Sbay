@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { adminApi } from '../api/client';
 import { LifeBuoy, Mail, Phone, Search, Send, User } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Customer-support inbox.
@@ -12,6 +13,7 @@ import { useSocket } from '../hooks/useSocket';
  * yet available.
  */
 export default function AdminSupport() {
+  const { confirm, alert } = useAdminConfirm();
   const [tickets, setTickets] = useState([]);
   const [active, setActive]   = useState(null);
   const [reply, setReply]     = useState('');
@@ -55,15 +57,15 @@ export default function AdminSupport() {
       await adminApi.post(`/support/tickets/${active._id}/reply`, { body: reply.trim() });
       setReply('');
       load();
-    } catch (e) { alert(e.message || 'Could not send reply.'); }
+    } catch (e) { await alert(e.message || 'Could not send reply.'); }
   };
 
   const close = async (t) => {
-    if (!confirm('Mark this ticket as resolved?')) return;
+    if (!(await confirm('Mark this ticket as resolved?', { title: 'Resolve Ticket', danger: false }))) return;
     try {
       await adminApi.post(`/support/tickets/${t._id}/close`);
       load();
-    } catch (e) { alert(e.message || 'Could not close ticket.'); }
+    } catch (e) { await alert(e.message || 'Could not close ticket.'); }
   };
 
   return (

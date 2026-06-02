@@ -15,6 +15,7 @@ export const publicSettings = asyncHandler(async (_req, res) => {
     settings: {
       platformName: s.platformName,
       defaultEscrowFeePct: s.defaultEscrowFeePct,
+      sellerOnboardingFee: s.sellerOnboardingFee,
       supportEmail: s.supportEmail,
       announcement: s.announcement,
       maintenanceMode: s.maintenanceMode,

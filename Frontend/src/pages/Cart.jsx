@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, ShoppingBag, XCircle } from 'lucide-react';
@@ -6,6 +7,7 @@ import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
 import { useCart } from '../store/CartContext';
 import { useConfirm } from '../store/ConfirmContext';
+import { sbay } from '../api/client';
 import './pages.css';
 import './Cart.css';
 
@@ -13,7 +15,13 @@ export default function Cart() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const { items, updateQty, removeItem, clear, subtotal } = useCart();
-  const fee = items.length ? 15 : 0;
+  const [feePct, setFeePct] = useState(5);
+  useEffect(() => {
+    sbay.getPublicSettings().then((s) => {
+      if (s?.defaultEscrowFeePct != null) setFeePct(Number(s.defaultEscrowFeePct));
+    }).catch(() => {});
+  }, []);
+  const fee = items.length ? Math.round(subtotal * feePct / 100) : 0;
 
   const onClear = async () => {
     const ok = await confirm({
@@ -95,7 +103,7 @@ export default function Cart() {
 
             <section className="cart-summary card">
               <div className="row"><span>Subtotal</span><strong>GH₵ {subtotal.toLocaleString()}</strong></div>
-              <div className="row"><span>Service fee</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
+              <div className="row"><span>Service fee ({feePct}%)</span><strong>GH₵ {fee.toLocaleString()}</strong></div>
               <div className="divider" />
               <div className="row total"><span>Total</span><strong>GH₵ {(subtotal + fee).toLocaleString()}</strong></div>
               <button className="btn btn-primary" style={{ width: '100%', marginTop: 12 }} onClick={onCheckout}>

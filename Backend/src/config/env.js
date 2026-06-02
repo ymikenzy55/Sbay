@@ -54,6 +54,7 @@ export const env = Object.freeze({
 
   PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY || '',
   PAYSTACK_CALLBACK_URL: process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5173/payment-success',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 
   // Email configuration
   EMAIL_USER: process.env.EMAIL_USER || '',

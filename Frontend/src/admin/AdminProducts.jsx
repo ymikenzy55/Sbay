@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { Search, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Moderation surface for every product on the platform. Hide takes
@@ -8,6 +9,7 @@ import { Search, Eye, EyeOff, Trash2 } from 'lucide-react';
  * documented reason that's stored on the document for compliance.
  */
 export default function AdminProducts() {
+  const { prompt } = useAdminConfirm();
   const [items, setItems] = useState([]);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
@@ -33,7 +35,7 @@ export default function AdminProducts() {
   const act = async (id, action) => {
     let reason;
     if (action === 'remove') {
-      reason = window.prompt('Reason for removing this listing (visible to the seller):');
+      reason = await prompt('Reason for removing this listing (visible to the seller):', { title: 'Remove Listing', placeholder: 'Enter reason…' });
       if (!reason) return;
     }
     await adminApi.post(`/products/${id}/moderate`, { action, reason });

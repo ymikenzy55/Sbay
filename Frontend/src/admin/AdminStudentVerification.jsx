@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { adminApi } from '../api/client';
 import { IdCard, Check, X as XIcon, Eye, Search } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 /**
  * Student-ID verification queue.
@@ -11,6 +12,7 @@ import { IdCard, Check, X as XIcon, Eye, Search } from 'lucide-react';
  * `verified` flag on the user document.
  */
 export default function AdminStudentVerification() {
+  const { prompt, alert } = useAdminConfirm();
   const [items, setItems] = useState([]);
   const [busy, setBusy]   = useState(false);
   const [err, setErr]     = useState('');
@@ -37,13 +39,13 @@ export default function AdminStudentVerification() {
   const decide = async (id, decision) => {
     let reason;
     if (decision === 'rejected') {
-      reason = window.prompt('Why is this ID being rejected? (sent to the student)');
+      reason = await prompt('Why is this ID being rejected? (sent to the student)', { title: 'Reject ID', placeholder: 'Enter reason…' });
       if (reason === null) return;
     }
     try {
       await adminApi.post(`/verification/students/${id}/decide`, { decision, reason });
       load();
-    } catch (e) { alert(e.message || 'Could not update verification.'); }
+    } catch (e) { await alert(e.message || 'Could not update verification.'); }
   };
 
   const isNew = (date) => date && Date.now() - new Date(date).getTime() < 24 * 3600 * 1000;

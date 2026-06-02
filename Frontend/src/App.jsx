@@ -4,6 +4,7 @@ import { CartProvider } from './store/CartContext';
 import { AuthProvider } from './store/AuthContext';
 import { ConfirmProvider } from './store/ConfirmContext';
 import { OrdersProvider } from './store/OrdersContext';
+import { LocationProvider } from './store/LocationContext';
 import RequireAuth from './components/RequireAuth';
 import ScrollToTop from './components/ScrollToTop';
 import FloatingCart from './components/FloatingCart';
@@ -79,6 +80,7 @@ export default function App() {
       <ConfirmProvider>
         <CartProvider>
           <OrdersProvider>
+            <LocationProvider>
             <BrowserRouter>
               <ScrollToTop />
               <DesktopNav />
@@ -159,6 +161,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes>
             </BrowserRouter>
+            </LocationProvider>
           </OrdersProvider>
         </CartProvider>
       </ConfirmProvider>

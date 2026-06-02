@@ -119,6 +119,9 @@ const userSchema = new mongoose.Schema(
     sellerProfile: sellerProfileSchema,
     payout: payoutSchema,
     subscription:  { type: subscriptionSchema, default: () => ({ plan: 'free', status: 'active' }) },
+    onboardingFeePaid: { type: Boolean, default: false },
+    onboardingPaidAt:  Date,
+    onboardingRef:     String,
 
     // Saved payment methods (mock). The real implementation would
     // tokenise these via a PSP — we never store full PANs.

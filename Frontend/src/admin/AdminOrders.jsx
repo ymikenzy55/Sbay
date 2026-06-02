@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
+import { useAdminConfirm } from './AdminConfirmContext';
 import {
   Search, Banknote, Undo2, X, Package, User, Store, MapPin,
   Calendar, Hash, ArrowRight, ClipboardList,
@@ -13,6 +14,7 @@ import {
  * - "Refund" cancels the order, restores stock, and refunds the buyer.
  */
 export default function AdminOrders() {
+  const { confirm, prompt } = useAdminConfirm();
   const [items, setItems]         = useState([]);
   const [q, setQ]                 = useState('');
   const [status, setStatus]       = useState('');
@@ -44,7 +46,7 @@ export default function AdminOrders() {
   useEffect(() => { load(); }, [load]);
 
   const release = async (id) => {
-    if (!confirm('Release escrow funds to the seller? This cannot be undone.')) return;
+    if (!(await confirm('Release escrow funds to the seller? This cannot be undone.'))) return;
     await adminApi.post(`/orders/${id}/release-escrow`);
     load();
     // If the detail panel is open for this order, refresh it
@@ -55,7 +57,7 @@ export default function AdminOrders() {
   };
 
   const refund = async (id) => {
-    const reason = window.prompt('Reason for refund (will be saved on the order):');
+    const reason = await prompt('Reason for refund (will be saved on the order):', { title: 'Refund Order', placeholder: 'Enter reason…' });
     if (!reason) return;
     await adminApi.post(`/orders/${id}/refund-escrow`, { reason });
     load();
@@ -261,29 +263,40 @@ export default function AdminOrders() {
               </span>
             </div>
 
-            {/* Product image + title */}
-            {detail.product && (
-              <div style={{
-                display: 'flex', gap: 14, alignItems: 'center',
-                background: 'var(--a-bg)', borderRadius: 12, padding: '12px 14px',
-                border: '1px solid var(--a-border)',
-              }}>
-                {detail.product.images?.[0] && (
-                  <img
-                    src={detail.product.images[0]}
-                    alt={detail.product.title}
-                    style={{
-                      width: 72, height: 72, borderRadius: 10,
-                      objectFit: 'cover', flexShrink: 0,
-                    }}
-                  />
-                )}
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '.95rem' }}>{detail.product?.title}</div>
-                  <div style={{ color: 'var(--a-muted)', fontSize: '.82rem', marginTop: 3 }}>
-                    Qty: {detail.quantity ?? 1}
+            {/* Order items */}
+            {(detail.items?.length > 0 || detail.product) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <h4 style={{ margin: 0, fontSize: '.78rem', fontWeight: 700, color: 'var(--a-muted)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                  Items ordered ({detail.items?.length || 1})
+                </h4>
+                {(detail.items?.length ? detail.items : [{ product: detail.product, qty: detail.quantity ?? 1, price: detail.subtotal }]).map((item, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 12, alignItems: 'center',
+                    background: 'var(--a-bg)', borderRadius: 10, padding: '10px 12px',
+                    border: '1px solid var(--a-border)',
+                  }}>
+                    {item.product?.images?.[0] && (
+                      <img
+                        src={item.product.images[0]}
+                        alt={item.product.title}
+                        style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.product?.title || '—'}
+                      </div>
+                      <div style={{ color: 'var(--a-muted)', fontSize: '.8rem', marginTop: 2 }}>
+                        Qty: {item.qty ?? 1} &nbsp;·&nbsp; GH₵ {Number(item.price ?? 0).toLocaleString()} each
+                      </div>
+                      {item.product?.category && (
+                        <div style={{ fontSize: '.75rem', color: 'var(--a-primary)', marginTop: 2 }}>
+                          {item.product.category}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             )}
 

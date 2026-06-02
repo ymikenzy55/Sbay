@@ -364,3 +364,44 @@ export const paystackWebhook = asyncHandler(async (req, res) => {
     await PaymentSession.findOneAndUpdate({ reference }, { $set: { status: 'pending' } });
   }
 });
+
+/* --- Seller onboarding fee ----------------------------------- */
+
+export const initializeOnboardingFee = asyncHandler(async (req, res) => {
+  const settings = await Settings.getSingleton();
+  const feeGhs = Number(settings.sellerOnboardingFee || 0);
+  if (feeGhs <= 0) throw new HttpError(400, 'No onboarding fee is currently configured.');
+  if (req.user.onboardingFeePaid) throw new HttpError(409, 'Onboarding fee already paid.');
+
+  const reference = `SBAY-OB-${req.user._id}-${Date.now()}`;
+  const paystackRes = await paystackPost('/transaction/initialize', {
+    email: req.user.email,
+    amount: Math.round(feeGhs * 100),
+    reference,
+    currency: 'GHS',
+    callback_url: `${env.FRONTEND_URL || 'https://sbaygh.com'}/sell?onboarding_ref=${reference}`,
+    metadata: { type: 'onboarding_fee', userId: req.user._id.toString() },
+  });
+  res.json({ authorization_url: paystackRes.data.authorization_url, reference });
+});
+
+export const verifyOnboardingFee = asyncHandler(async (req, res) => {
+  const { reference } = req.body;
+  if (!reference) throw new HttpError(400, 'Payment reference is required.');
+
+  const result = await paystackGet(`/transaction/verify/${encodeURIComponent(reference)}`);
+  if (!result.status || result.data?.status !== 'success') {
+    throw new HttpError(402, 'Payment was not successful. Please try again.');
+  }
+  const meta = result.data?.metadata || {};
+  if (meta.type !== 'onboarding_fee' || meta.userId !== req.user._id.toString()) {
+    throw new HttpError(403, 'Payment reference does not match your account.');
+  }
+  if (!req.user.onboardingFeePaid) {
+    req.user.onboardingFeePaid = true;
+    req.user.onboardingPaidAt  = new Date();
+    req.user.onboardingRef     = reference;
+    await req.user.save();
+  }
+  res.json({ user: req.user });
+});

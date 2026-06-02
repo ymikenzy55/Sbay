@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../api/client';
 import { Plus, Save, Trash2 } from 'lucide-react';
+import { useAdminConfirm } from './AdminConfirmContext';
 
 const blank = {
   code: '', name: '', tag: '',
@@ -17,6 +18,7 @@ const blank = {
  * uses to compute every order's service fee on checkout.
  */
 export default function AdminPlans() {
+  const { confirm } = useAdminConfirm();
   const [plans, setPlans] = useState([]);
   const [draft, setDraft] = useState(blank);
   const [err, setErr] = useState('');
@@ -55,7 +57,7 @@ export default function AdminPlans() {
   };
 
   const remove = async (id, name) => {
-    if (!confirm(`Delete plan "${name}"? Existing subscribers stay on it until renewal.`)) return;
+    if (!(await confirm(`Delete plan "${name}"? Existing subscribers stay on it until renewal.`))) return;
     await adminApi.delete(`/plans/${id}`);
     load();
   };

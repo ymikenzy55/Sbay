@@ -1,19 +1,42 @@
 /**
- * Register service worker for PWA functionality
+ * Register service worker for PWA functionality.
+ * Checks for updates every 60s and auto-applies them so users
+ * always get the latest version without manually refreshing.
  */
 export function registerServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('[PWA] Service Worker registered:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('[PWA] Service Worker registration failed:', error);
+  if (!('serviceWorker' in navigator)) return;
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('[PWA] Service Worker registered:', registration.scope);
+
+      // Check for updates every 60 seconds
+      setInterval(() => { registration.update().catch(() => {}); }, 60_000);
+
+      // When a new SW is found installing, wait for it then activate
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version ready — tell it to take over immediately
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
         });
-    });
-  }
+      });
+
+      // When the controlling SW changes, reload to get fresh assets
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    } catch (error) {
+      console.error('[PWA] Service Worker registration failed:', error);
+    }
+  });
 }
 
 /**

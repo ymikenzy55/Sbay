@@ -160,7 +160,14 @@ export default function ProductDetail() {
         <section>
           <div className="pdp-titlerow">
             <h1 className="pdp-title">{product.title}</h1>
-            <span className="pdp-price">GH₵ {product.price.toLocaleString()}</span>
+            <span className="pdp-price">
+              GH₵ {product.price.toLocaleString()}
+              {product.discountPrice && product.discountPrice > product.price && (
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: 8, fontWeight: 400 }}>
+                  GH₵ {product.discountPrice.toLocaleString()}
+                </span>
+              )}
+            </span>
           </div>
           <div className="pdp-meta">
             <span className="badge-soft"><Check size={12} /> {product.condition || 'Brand New'}</span>
@@ -218,7 +225,14 @@ export default function ProductDetail() {
                   />
                   <div className="pdp-similar-body">
                     <h4>{s.title}</h4>
-                    <span className="price">GH₵ {s.price.toLocaleString()}</span>
+                    <span className="price">
+                      GH₵ {s.price.toLocaleString()}
+                      {s.discountPrice && s.discountPrice > s.price && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: 4 }}>
+                          GH₵ {s.discountPrice.toLocaleString()}
+                        </span>
+                      )}
+                    </span>
                     {(s.school || s.city) && (
                       <p className="pdp-similar-loc">
                         <MapPin size={12} />
@@ -249,7 +263,14 @@ export default function ProductDetail() {
                   />
                   <div className="pdp-similar-body">
                     <h4>{s.title}</h4>
-                    <span className="price">GH₵ {s.price.toLocaleString()}</span>
+                    <span className="price">
+                      GH₵ {s.price.toLocaleString()}
+                      {s.discountPrice && s.discountPrice > s.price && (
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: 4 }}>
+                          GH₵ {s.discountPrice.toLocaleString()}
+                        </span>
+                      )}
+                    </span>
                     {(s.school || s.city) && (
                       <p className="pdp-similar-loc">
                         <MapPin size={12} />

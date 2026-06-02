@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { MapPin, X, ChevronDown, Navigation } from 'lucide-react';
+import { MapPin, X, ChevronDown, Navigation, Loader2 } from 'lucide-react';
 import { useLocation } from '../store/LocationContext';
 import './CampusBanner.css';
 
 /**
- * Thin campus-selection bar shown at the top of the home/trending pages.
- * - If no campus is set: shows "Set your campus" prompt.
- * - If campus is set: shows the campus name with a change button.
- * The picker is a slide-up sheet on mobile / popover on desktop.
+ * Thin campus bar:
+ * - No campus + idle/denied: shows "Allow location" button that triggers geolocation.
+ * - No campus + prompting: shows "Detecting…" spinner.
+ * - Campus set: shows campus name with change/clear options.
+ * "Change" opens a manual picker sheet as fallback.
  */
 export default function CampusBanner() {
-  const { campus, setCampus, clearCampus, schools, loading } = useLocation();
+  const { campus, setCampus, clearCampus, schools, loading, locStatus, autoDetect } = useLocation();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
 
@@ -42,11 +43,21 @@ export default function CampusBanner() {
               <X size={12} />
             </button>
           </>
+        ) : locStatus === 'prompting' ? (
+          <span className="campus-bar-detecting">
+            <Loader2 size={13} className="spin" />
+            Detecting your location…
+          </span>
         ) : (
-          <button className="campus-bar-set" onClick={() => setOpen(true)}>
-            <Navigation size={13} />
-            Set your campus to see local deals
-          </button>
+          <div className="campus-bar-actions">
+            <button className="campus-bar-set" onClick={autoDetect}>
+              <Navigation size={13} />
+              Allow location for local deals
+            </button>
+            <button className="campus-bar-set campus-bar-manual" onClick={() => setOpen(true)}>
+              or pick manually
+            </button>
+          </div>
         )}
       </div>
 

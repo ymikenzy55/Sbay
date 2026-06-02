@@ -99,12 +99,25 @@ export const sendMessage = asyncHandler(async (req, res) => {
  * Will fail unless the buyer has at least one order with that seller.
  */
 export const startChat = asyncHandler(async (req, res) => {
-  const { sellerId } = req.body;
+  const { sellerId } = req.body; // "sellerId" is the target user ID
+
+  // When a seller calls this they are messaging a buyer — handle both directions.
+  if (req.user.role === 'seller') {
+    const buyer = await User.findById(sellerId);
+    if (!buyer) throw new HttpError(404, 'Buyer not found');
+    await assertCanChat(buyer._id, req.user._id);
+    const chat = await Chat.findOneAndUpdate(
+      { buyer: buyer._id, seller: req.user._id },
+      { $setOnInsert: { buyer: buyer._id, seller: req.user._id } },
+      { upsert: true, new: true }
+    );
+    return res.json({ chat });
+  }
+
+  // Default: buyer-initiated chat with a seller.
   const seller = await User.findOne({ _id: sellerId, role: 'seller' });
   if (!seller) throw new HttpError(404, 'Seller not found');
-
   await assertCanChat(req.user._id, seller._id);
-
   const chat = await Chat.findOneAndUpdate(
     { buyer: req.user._id, seller: seller._id },
     { $setOnInsert: { buyer: req.user._id, seller: seller._id } },

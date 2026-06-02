@@ -7,6 +7,7 @@ import {
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
+import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
 import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
@@ -96,16 +97,25 @@ export default function SellerSettings() {
     if (ok) { logout(); navigate('/'); }
   };
 
+  const [delErr, setDelErr] = useState('');
   const onDeleteAccount = async () => {
+    setDelErr('');
     const ok = await confirm({
       title: 'Delete account?',
-      body: 'This permanently removes your store, listings and chat history. This cannot be undone.',
+      body: user?.role === 'seller'
+        ? 'This permanently removes your store, listings and chat history. You must have no pending orders. This cannot be undone.'
+        : 'This permanently removes your account, order history and chat history. This cannot be undone.',
       confirmLabel: 'Delete account',
       danger: true,
     });
     if (!ok) return;
-    logout();
-    navigate('/', { replace: true });
+    try {
+      await sbay.deleteMe();
+      logout();
+      navigate('/', { replace: true });
+    } catch (e) {
+      setDelErr(e.response?.data?.message || e.message || 'Could not delete account. Please try again.');
+    }
   };
 
   const verificationStatus = user?.verification?.status || (user?.verified ? 'verified' : 'unverified');
@@ -313,6 +323,7 @@ export default function SellerSettings() {
           <button className="btn btn-ghost danger-text" onClick={onDeleteAccount}>
             <Trash2 size={16} /> Delete account
           </button>
+          {delErr && <p style={{ color: 'var(--error)', fontSize: '.84rem', margin: '8px 0 0' }}>{delErr}</p>}
         </section>
       </main>
 

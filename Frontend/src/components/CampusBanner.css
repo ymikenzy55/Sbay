@@ -63,6 +63,19 @@
 }
 .campus-bar-clear:hover { background: var(--border); color: var(--text); }
 
+.campus-bar-detecting {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.campus-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .campus-bar-set {
   display: inline-flex;
   align-items: center;
@@ -78,6 +91,13 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+.campus-bar-manual {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.campus-bar-manual:hover { color: var(--primary); }
 
 /* ── Overlay + sheet ── */
 .campus-overlay {

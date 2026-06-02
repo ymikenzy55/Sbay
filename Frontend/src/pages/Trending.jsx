@@ -104,7 +104,14 @@ export default function Trending() {
                 </div>
                 <div className="result-body">
                   <h4 className="prod-title">{p.title}</h4>
-                  <span className="price">GH₵ {p.price.toLocaleString()}</span>
+                  <span className="price">
+                    GH₵ {p.price.toLocaleString()}
+                    {p.discountPrice && p.discountPrice > p.price && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: 4, fontWeight: 400 }}>
+                        GH₵ {p.discountPrice.toLocaleString()}
+                      </span>
+                    )}
+                  </span>
                   {(p.school || p.city) && (
                     <p className="prod-loc">
                       <MapPin size={12} />

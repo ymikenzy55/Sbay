@@ -191,7 +191,14 @@ export default function Home() {
                       <div className="trend-body">
                         <div className="trend-row">
                           <h3 className="prod-title">{p.title}</h3>
-                          <span className="price">GH₵ {p.price.toLocaleString()}</span>
+                          <span className="price">
+                            GH₵ {p.price.toLocaleString()}
+                            {p.discountPrice && p.discountPrice > p.price && (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'line-through', marginLeft: 4 }}>
+                                GH₵ {p.discountPrice.toLocaleString()}
+                              </span>
+                            )}
+                          </span>
                         </div>
                         <p className="prod-meta">
                           <MapPin size={12} /> {p.school}{p.city ? `, ${p.city}` : ''}
@@ -314,6 +321,11 @@ function ProductCard({ p, i, saved, toggleSave, onClick }) {
         <h4 className="prod-title">{p.title}</h4>
         <div className="recent-row">
           <span className="price">GH₵ {p.price.toLocaleString()}</span>
+          {p.discountPrice && p.discountPrice > p.price && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+              GH₵ {p.discountPrice.toLocaleString()}
+            </span>
+          )}
         </div>
         <p className="prod-loc">
           <MapPin size={12} />

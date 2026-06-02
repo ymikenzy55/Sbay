@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Camera, Lock, MapPin } from 'lucide-react';
+import { ArrowLeft, Check, Camera, Lock, MapPin, LogOut, Trash2 } from 'lucide-react';
 import TopBar from '../components/TopBar';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
+import { sbay } from '../api/client';
 import { useAuth } from '../store/AuthContext';
+import { useConfirm } from '../store/ConfirmContext';
 import './pages.css';
 import './Profile.css';
+import './SellerSettings.css';
 
 export default function ProfileSettings() {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const confirm = useConfirm();
+  const { user, updateUser, logout } = useAuth();
   const [settings, setSettings] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -139,6 +143,31 @@ export default function ProfileSettings() {
             <Check size={16} /> Save changes
           </button>
         </form>
+
+        <section className="card danger-zone">
+          <h3 className="page-h2">Danger zone</h3>
+          <button className="btn btn-ghost danger-text" onClick={() => { logout(); navigate('/'); }}>
+            <LogOut size={16} /> Sign out
+          </button>
+          <button className="btn btn-ghost danger-text" onClick={async () => {
+            const ok = await confirm({
+              title: 'Delete account?',
+              body: 'This permanently removes your account, order history and chat history. This cannot be undone.',
+              confirmLabel: 'Delete account',
+              danger: true,
+            });
+            if (!ok) return;
+            try {
+              await sbay.deleteMe();
+              logout();
+              navigate('/', { replace: true });
+            } catch (e) {
+              alert(e.response?.data?.message || e.message || 'Could not delete account.');
+            }
+          }}>
+            <Trash2 size={16} /> Delete account
+          </button>
+        </section>
       </main>
       <Footer />
       <BottomNav />

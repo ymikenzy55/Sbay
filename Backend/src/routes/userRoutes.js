@@ -3,7 +3,7 @@ import { body, param } from 'express-validator';
 import {
   updateMe, becomeSeller, getSellerById,
   addPaymentMethod, removePaymentMethod, myNotifications,
-  getSellerReviews, createReview,
+  getSellerReviews, createReview, deleteMyAccount,
 } from '../controllers/userController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -24,6 +24,7 @@ router.patch(
 );
 
 router.get('/me/notifications', requireAuth, myNotifications);
+router.delete('/me', requireAuth, deleteMyAccount);
 
 router.post(
   '/me/become-seller',

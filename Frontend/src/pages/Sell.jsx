@@ -175,7 +175,8 @@ export default function Sell() {
           throw new Error(`"${file.name}" is not an image.`);
         }
         if (file.size > 4 * 1024 * 1024) {
-          throw new Error(`"${file.name}" is too large. Max 4 MB per photo.`);
+          const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+          throw new Error(`"${file.name}" is ${sizeMB} MB — the limit is 4 MB per photo. Please compress or resize it.`);
         }
         return fileToDataUrl(file);
       }));
@@ -391,6 +392,9 @@ export default function Sell() {
                 </div>
                 <p className="muted small" style={{ marginTop: 10 }}>
                   {photos.length} of 6 photos added. Tap a photo's × to remove it.
+                </p>
+                <p className="muted small" style={{ marginTop: 4, fontSize: '.76rem', lineHeight: 1.4 }}>
+                  Accepted: JPG, PNG, WebP · Max <strong>4 MB</strong> per photo · Use clear, well-lit images
                 </p>
               </>
             )}

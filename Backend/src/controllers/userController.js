@@ -343,3 +343,48 @@ export const removePaymentMethod = asyncHandler(async (req, res) => {
   await user.save();
   res.json({ user });
 });
+
+/**
+ * DELETE /api/users/me — self-delete account.
+ * Sellers can only delete if they have no pending/processing orders.
+ * Anonymises PII, hides listings, keeps data for audit trail.
+ */
+export const deleteMyAccount = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) throw new HttpError(404, 'Account not found');
+
+  if (user.role === 'seller') {
+    const pendingOrders = await Order.countDocuments({
+      seller: user._id,
+      status: { $in: ['pending', 'processing', 'shipped'] },
+    });
+    if (pendingOrders > 0) {
+      throw new HttpError(409, `You have ${pendingOrders} pending order(s). Complete or cancel them before deleting your account.`);
+    }
+    await Product.updateMany(
+      { seller: user._id, status: { $ne: 'removed' } },
+      { $set: { status: 'removed', removedReason: 'Account deleted by owner' } },
+    );
+  }
+
+  user.name = 'Deleted User';
+  user.email = `deleted_${user._id}@sbay.local`;
+  user.phone = '';
+  user.avatar = '';
+  user.location = '';
+  user.restricted = true;
+  user.restrictReason = 'Self-deleted';
+  user.restrictedAt = new Date();
+  user.paymentMethods = [];
+  if (user.sellerProfile) {
+    user.sellerProfile.storeName = 'Deleted Store';
+    user.sellerProfile.bio = '';
+  }
+  if (user.payout) {
+    user.payout.account = '';
+    user.payout.accountName = '';
+  }
+  await user.save();
+
+  res.json({ ok: true, message: 'Your account has been deleted.' });
+});

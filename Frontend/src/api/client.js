@@ -332,6 +332,10 @@ export const authApi = {
     const { data } = await api.patch('/users/me', patch);
     return adaptUser(data.user);
   },
+  async deleteMe() {
+    const { data } = await api.delete('/users/me');
+    return data;
+  },
   async becomeSeller(payload) {
     const { data } = await api.post('/users/me/become-seller', payload);
     return adaptUser(data.user);

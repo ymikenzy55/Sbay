@@ -51,4 +51,9 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ title: 'text', description: 'text', category: 'text' });
 
+// Compound indexes for common query patterns (speeds up sorted listing pages)
+productSchema.index({ status: 1, createdAt: -1 });  // recent active products
+productSchema.index({ status: 1, views: -1 });      // popular active products
+productSchema.index({ status: 1, school: 1, category: 1 }); // category page filtering
+
 export const Product = mongoose.model('Product', productSchema);

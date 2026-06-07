@@ -100,12 +100,22 @@ export const adminApi = makeClient(ADMIN_URL);
 
 const NOTIFICATIONS = { Today: [], Yesterday: [] };
 const cache = new Map();
+const inflight = new Map(); // deduplicate concurrent requests for same key
 const cached = async (key, ttlMs, fetcher, { force = false } = {}) => {
   const hit = cache.get(key);
   if (!force && hit && Date.now() - hit.at < ttlMs) return hit.value;
-  const value = await fetcher();
-  cache.set(key, { at: Date.now(), value });
-  return value;
+  // Deduplicate: if the same key is already being fetched, await that promise
+  if (inflight.has(key)) return inflight.get(key);
+  const promise = fetcher().then((value) => {
+    cache.set(key, { at: Date.now(), value });
+    inflight.delete(key);
+    return value;
+  }).catch((err) => {
+    inflight.delete(key);
+    throw err;
+  });
+  inflight.set(key, promise);
+  return promise;
 };
 
 /* ------------------------------------------------------------------

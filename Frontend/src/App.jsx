@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { CartProvider } from './store/CartContext';
 import { AuthProvider } from './store/AuthContext';
 import { ConfirmProvider } from './store/ConfirmContext';
@@ -14,58 +14,70 @@ import NetworkBanner from './components/NetworkBanner';
 import InstallPrompt from './components/InstallPrompt';
 import { registerServiceWorker, setupInstallPrompt } from './utils/pwa';
 
-import Splash          from './pages/Splash';
-import Home            from './pages/Home';
-import SearchPage      from './pages/Search';
-import ProductDetail   from './pages/ProductDetail';
-import SellerProfile   from './pages/SellerProfile';
-import Cart            from './pages/Cart';
-import Checkout        from './pages/Checkout';
-import PaymentSuccess  from './pages/PaymentSuccess';
-import PaymentFailed   from './pages/PaymentFailed';
-import Notifications   from './pages/Notifications';
-import ChatList        from './pages/ChatList';
-import IndividualChat  from './pages/IndividualChat';
-import Sell            from './pages/Sell';
-import Profile         from './pages/Profile';
-import ProfileOrders   from './pages/ProfileOrders';
-import ProfileWishlist from './pages/ProfileWishlist';
-import ProfileSettings from './pages/ProfileSettings';
-import Login           from './pages/Login';
-import Signup          from './pages/Signup';
-import ForgotPassword  from './pages/ForgotPassword';
-import BecomeSeller    from './pages/BecomeSeller';
-import SellerDashboard    from './pages/SellerDashboard';
-import SellerListings    from './pages/SellerListings';
-import SellerSales       from './pages/SellerSales';
-import SellerPurchases   from './pages/SellerPurchases';
-import SellerMessages    from './pages/SellerMessages';
-import Terms             from './pages/Terms';
-import SellerSubscription from './pages/SellerSubscription';
-import SellerSettings  from './pages/SellerSettings';
-import SellerVerification from './pages/SellerVerification';
-import EditListing    from './pages/EditListing';
-import Categories      from './pages/Categories';
-import Trending        from './pages/Trending';
+// Lazy-load all pages for code splitting — only the active route's JS loads
+const Splash          = lazy(() => import('./pages/Splash'));
+const Home            = lazy(() => import('./pages/Home'));
+const SearchPage      = lazy(() => import('./pages/Search'));
+const ProductDetail   = lazy(() => import('./pages/ProductDetail'));
+const SellerProfile   = lazy(() => import('./pages/SellerProfile'));
+const Cart            = lazy(() => import('./pages/Cart'));
+const Checkout        = lazy(() => import('./pages/Checkout'));
+const PaymentSuccess  = lazy(() => import('./pages/PaymentSuccess'));
+const PaymentFailed   = lazy(() => import('./pages/PaymentFailed'));
+const Notifications   = lazy(() => import('./pages/Notifications'));
+const ChatList        = lazy(() => import('./pages/ChatList'));
+const IndividualChat  = lazy(() => import('./pages/IndividualChat'));
+const Sell            = lazy(() => import('./pages/Sell'));
+const Profile         = lazy(() => import('./pages/Profile'));
+const ProfileOrders   = lazy(() => import('./pages/ProfileOrders'));
+const ProfileWishlist = lazy(() => import('./pages/ProfileWishlist'));
+const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
+const Login           = lazy(() => import('./pages/Login'));
+const Signup          = lazy(() => import('./pages/Signup'));
+const ForgotPassword  = lazy(() => import('./pages/ForgotPassword'));
+const BecomeSeller    = lazy(() => import('./pages/BecomeSeller'));
+const SellerDashboard    = lazy(() => import('./pages/SellerDashboard'));
+const SellerListings    = lazy(() => import('./pages/SellerListings'));
+const SellerSales       = lazy(() => import('./pages/SellerSales'));
+const SellerPurchases   = lazy(() => import('./pages/SellerPurchases'));
+const SellerMessages    = lazy(() => import('./pages/SellerMessages'));
+const Terms             = lazy(() => import('./pages/Terms'));
+const SellerSubscription = lazy(() => import('./pages/SellerSubscription'));
+const SellerSettings  = lazy(() => import('./pages/SellerSettings'));
+const SellerVerification = lazy(() => import('./pages/SellerVerification'));
+const EditListing    = lazy(() => import('./pages/EditListing'));
+const Categories      = lazy(() => import('./pages/Categories'));
+const Trending        = lazy(() => import('./pages/Trending'));
 
+const AdminLayout      = lazy(() => import('./admin/AdminLayout'));
+const AdminDashboard   = lazy(() => import('./admin/AdminDashboard'));
+const AdminUsers       = lazy(() => import('./admin/AdminUsers'));
+const AdminBuyers      = lazy(() => import('./admin/AdminBuyers'));
+const AdminSellers     = lazy(() => import('./admin/AdminSellers'));
+const AdminAdmins      = lazy(() => import('./admin/AdminAdmins'));
+const AdminSellerDetail = lazy(() => import('./admin/AdminSellerDetail'));
+const AdminUserDetail   = lazy(() => import('./admin/AdminUserDetail'));
+const AdminProducts    = lazy(() => import('./admin/AdminProducts'));
+const AdminOrders      = lazy(() => import('./admin/AdminOrders'));
+const AdminPlans       = lazy(() => import('./admin/AdminPlans'));
+const AdminSettings    = lazy(() => import('./admin/AdminSettings'));
+const AdminAudit       = lazy(() => import('./admin/AdminAudit'));
+const AdminChats       = lazy(() => import('./admin/AdminChats'));
+const AdminStudentVerification = lazy(() => import('./admin/AdminStudentVerification'));
+const AdminSellerVerification  = lazy(() => import('./admin/AdminSellerVerification'));
+const AdminSupport     = lazy(() => import('./admin/AdminSupport'));
+
+// AdminProvider stays eager since it wraps a route group
 import { AdminProvider } from './admin/AdminContext';
-import AdminLayout      from './admin/AdminLayout';
-import AdminDashboard   from './admin/AdminDashboard';
-import AdminUsers       from './admin/AdminUsers';
-import AdminBuyers      from './admin/AdminBuyers';
-import AdminSellers     from './admin/AdminSellers';
-import AdminAdmins      from './admin/AdminAdmins';
-import AdminSellerDetail from './admin/AdminSellerDetail';
-import AdminUserDetail   from './admin/AdminUserDetail';
-import AdminProducts    from './admin/AdminProducts';
-import AdminOrders      from './admin/AdminOrders';
-import AdminPlans       from './admin/AdminPlans';
-import AdminSettings    from './admin/AdminSettings';
-import AdminAudit       from './admin/AdminAudit';
-import AdminChats       from './admin/AdminChats';
-import AdminStudentVerification from './admin/AdminStudentVerification';
-import AdminSellerVerification  from './admin/AdminSellerVerification';
-import AdminSupport     from './admin/AdminSupport';
+
+// Minimal loading fallback
+function PageLoader() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+    </div>
+  );
+}
 
 export default function App() {
   useEffect(() => {
@@ -88,6 +100,7 @@ export default function App() {
               <FloatingCart />
               <SupportWidget />
               <InstallPrompt />
+              <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public — anyone can browse */}
                 <Route path="/"             element={<Splash />} />
@@ -160,6 +173,7 @@ export default function App() {
 
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes>
+              </Suspense>
             </BrowserRouter>
             </LocationProvider>
           </OrdersProvider>

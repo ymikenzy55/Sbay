@@ -27,7 +27,7 @@ export default defineConfig({
       output: {
         // Split vendor libraries into separate chunks for better long-term caching
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
             return 'vendor';
           }
           if (id.includes('node_modules/framer-motion')) {
@@ -39,6 +39,10 @@ export default defineConfig({
           if (id.includes('node_modules/axios')) {
             return 'http';
           }
+          // Group admin pages into one chunk (rarely used)
+          if (id.includes('/src/admin/')) {
+            return 'admin';
+          }
         },
       },
     },
@@ -48,5 +52,7 @@ export default defineConfig({
     cssMinify: true,
     // Target modern browsers for smaller output
     target: 'es2020',
+    // Enable CSS code splitting so each lazy route loads its own CSS
+    cssCodeSplit: true,
   },
 })

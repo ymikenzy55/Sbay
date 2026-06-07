@@ -10,7 +10,7 @@
  * To force an update: change SW_VERSION below. The new SW will install,
  * purge old caches, and take over immediately.
  */
-const SW_VERSION = 'v-1780855685845';
+const SW_VERSION = 'v-1780856419565';
 const CACHE_NAME = `sbay-${SW_VERSION}`;
 const OFFLINE_URLS = ['/', '/index.html', '/favicon.svg', '/logo.png'];
 
@@ -66,17 +66,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // JS/CSS assets (hashed filenames) — network-first with cache fallback
+  // JS/CSS assets (hashed filenames) — cache-first (immutable, instant on repeat visits)
   if (request.destination === 'script' || request.destination === 'style' ||
       url.pathname.startsWith('/assets/')) {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           return response;
-        })
-        .catch(() => caches.match(request))
+        });
+      })
     );
     return;
   }

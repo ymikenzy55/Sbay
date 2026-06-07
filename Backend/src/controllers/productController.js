@@ -74,6 +74,7 @@ async function findDuplicateListing(sellerId, candidate, excludeId) {
 export const listCatalogMeta = asyncHandler(async (_req, res) => {
   // Serve from cache if fresh
   if (catalogCache.data && Date.now() - catalogCache.at < CATALOG_CACHE_TTL) {
+    res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
     return res.json(catalogCache.data);
   }
 
@@ -141,6 +142,7 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
 
   // Store in cache
   catalogCache = { data: result, at: Date.now() };
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
   res.json(result);
 });
 
@@ -188,10 +190,12 @@ export const listProducts = asyncHandler(async (req, res) => {
     Product.find(filter)
       .sort(sortMap[sort] || sortMap.recent)
       .skip(skip).limit(lim)
-      .populate('seller', 'name avatar sellerProfile verified location'),
+      .populate('seller', 'name avatar sellerProfile verified location')
+      .lean(),
     Product.countDocuments(filter),
   ]);
 
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
   res.json({ items, total, page: Number(page), limit: lim });
 });
 

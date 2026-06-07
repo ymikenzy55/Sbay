@@ -55,8 +55,12 @@ export function buildApp() {
       return cb(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   };
   app.use(cors(corsOptions));
+  // Explicitly handle preflight for all routes
+  app.options('*', cors(corsOptions));
 
   if (!isProd) app.use(morgan('dev'));
 

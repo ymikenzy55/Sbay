@@ -1,9 +1,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { readFileSync, writeFileSync } from 'fs'
+import { resolve } from 'path'
+
+// Stamp SW_VERSION with build timestamp so PWA users always get updates
+function stampServiceWorker() {
+  return {
+    name: 'stamp-sw-version',
+    buildStart() {
+      const swPath = resolve(__dirname, 'public/sw.js')
+      let content = readFileSync(swPath, 'utf-8')
+      const stamped = content.replace(
+        /const SW_VERSION = '[^']*';/,
+        `const SW_VERSION = 'v-${Date.now()}';`
+      )
+      if (stamped !== content) writeFileSync(swPath, stamped, 'utf-8')
+    },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), stampServiceWorker()],
   build: {
     rollupOptions: {
       output: {

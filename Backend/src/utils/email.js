@@ -27,6 +27,17 @@ function getTransporter() {
     },
   });
 
+  // Verify credentials on first init so bad config surfaces immediately.
+  transporter.verify().then(() => {
+    // eslint-disable-next-line no-console
+    console.log('[email] SMTP transporter verified — ready to send.');
+  }).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error('[email] SMTP verification failed:', err.message);
+    // eslint-disable-next-line no-console
+    console.error('[email] Ensure EMAIL_USER is a Gmail address and EMAIL_PASS is a Google App Password (not your login password).');
+  });
+
   return transporter;
 }
 

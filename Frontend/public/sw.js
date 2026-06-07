@@ -10,7 +10,7 @@
  * To force an update: change SW_VERSION below. The new SW will install,
  * purge old caches, and take over immediately.
  */
-const SW_VERSION = '2025-06-02-v2';
+const SW_VERSION = 'v-1749318120';
 const CACHE_NAME = `sbay-${SW_VERSION}`;
 const OFFLINE_URLS = ['/', '/index.html', '/favicon.svg', '/logo.png'];
 
@@ -42,6 +42,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+
+  // Skip cross-origin requests entirely (API calls, CDN, etc.)
+  // Letting the browser handle them avoids CORS / preflight issues.
+  if (url.origin !== self.location.origin) return;
 
   // API calls — always network, never cache
   if (url.pathname.startsWith('/api/')) {

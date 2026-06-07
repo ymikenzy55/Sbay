@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Search, X, MapPin, Building2, ChevronRight,
-  ShoppingBag, GraduationCap, Store, Tag,
+  Search, X, MapPin, ChevronRight, ChevronLeft,
+  ShoppingBag, GraduationCap, Store, Tag, Layers,
 } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import Footer from '../components/Footer';
@@ -11,13 +11,14 @@ import './pages.css';
 import './Categories.css';
 
 /**
- * Categories / Schools browse page — Redesigned.
+ * Categories page — Redesigned with two-level sidebar navigation.
  *
- * Left sidebar: dynamic list of campuses from sellers (no "All Schools").
- *               "Others / Off Campus" appears last for non-student sellers.
- * Right pane:   when a campus is selected, shows categories grouped as
- *               sections with an "All Products" link + product thumbnails
- *               per category (like Jumia's category browse).
+ * 1. User lands → sees ALL categories (all products grid).
+ * 2. Sidebar shows list of schools/campuses.
+ * 3. Clicking a school slides open a sub-panel WITHIN the sidebar
+ *    showing that school's categories.
+ * 4. Selecting a category from the sub-panel filters the main grid.
+ * 5. "All items" option in sub-panel shows all products for that school.
  */
 export default function Categories() {
   const navigate  = useNavigate();
@@ -25,28 +26,40 @@ export default function Categories() {
 
   /* ── data ── */
   const [schools,       setSchools]       = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [schoolLoading, setSchoolLoading] = useState(true);
-  const [selectedId,    setSelectedId]    = useState(catId || null);
   const [products,      setProducts]      = useState([]);
   const [prodLoading,   setProdLoading]   = useState(false);
+
+  /* ── sidebar state ── */
+  const [activeSchool, setActiveSchool]     = useState(null); // school object or null
+  const [activeCat,    setActiveCat]        = useState(null); // category id or null
+  const [sidebarView,  setSidebarView]      = useState('schools'); // 'schools' | 'categories'
 
   /* ── search ── */
   const [query, setQuery] = useState('');
   const prodInputRef = useRef(null);
 
-  /* ── load schools from API (no "All Schools") ── */
+  /* ── load schools from API ── */
   useEffect(() => {
     let alive = true;
     sbay.getSchoolTree()
       .then((tree) => {
         if (!alive) return;
-        // Move "others" to the end; rename it
         const others = tree.filter((s) => s.id === 'others').map((s) => ({ ...s, label: 'Others / Off Campus' }));
         const rest   = tree.filter((s) => s.id !== 'others');
         const sorted = [...rest, ...others];
         setSchools(sorted);
-        // Auto-select first school if nothing from URL
-        if (!catId && sorted.length > 0) setSelectedId(sorted[0].id);
+        // Collect all unique categories across all schools
+        const catMap = new Map();
+        for (const s of sorted) {
+          for (const c of (s.categories || [])) {
+            const existing = catMap.get(c.id);
+            if (existing) existing.count += c.count;
+            else catMap.set(c.id, { ...c });
+          }
+        }
+        setAllCategories(Array.from(catMap.values()).sort((a, b) => b.count - a.count));
         setSchoolLoading(false);
       })
       .catch(() => {
@@ -55,58 +68,107 @@ export default function Categories() {
         setSchoolLoading(false);
       });
     return () => { alive = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── sync URL param → state ── */
-  useEffect(() => {
-    if (catId && catId !== selectedId) setSelectedId(catId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catId]);
-
-  /* ── fetch products when school changes ── */
-  const fetchProducts = useCallback((schoolId) => {
-    if (!schoolId) return;
+  /* ── fetch products based on current filters ── */
+  const fetchProducts = useCallback((schoolId, categoryId) => {
     setProdLoading(true);
     setQuery('');
-    sbay.getProductsByScope({ schoolId })
+    const scope = {};
+    if (schoolId) scope.schoolId = schoolId;
+    if (categoryId) scope.categoryId = categoryId;
+
+    const fetcher = schoolId
+      ? sbay.getProductsByScope(scope)
+      : categoryId
+        ? sbay.getProductsByCategory(categoryId)
+        : sbay.getAllProducts({ limit: 60 });
+
+    fetcher
       .then((items) => { setProducts(items); setProdLoading(false); })
       .catch(() => { setProducts([]); setProdLoading(false); });
   }, []);
 
-  useEffect(() => { if (selectedId) fetchProducts(selectedId); }, [selectedId, fetchProducts]);
+  /* ── initial load: show all products ── */
+  useEffect(() => {
+    if (!schoolLoading && !catId) {
+      fetchProducts(null, null);
+    }
+  }, [schoolLoading, catId, fetchProducts]);
 
-  /* ── navigation ── */
-  const selectSchool = (id) => {
-    setSelectedId(id);
+  /* ── sync URL param ── */
+  useEffect(() => {
+    if (catId && schools.length) {
+      // catId could be a school id or category id
+      const school = schools.find((s) => s.id === catId);
+      if (school) {
+        setActiveSchool(school);
+        setSidebarView('categories');
+        setActiveCat(null);
+        fetchProducts(school.id, null);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catId, schools]);
+
+  /* ── sidebar actions ── */
+  const openSchool = (school) => {
+    setActiveSchool(school);
+    setSidebarView('categories');
+    setActiveCat(null);
     setQuery('');
-    navigate(`/category/${id}`, { replace: true });
+    fetchProducts(school.id, null);
+    navigate(`/category/${school.id}`, { replace: true });
+  };
+
+  const selectCategory = (catId) => {
+    setActiveCat(catId);
+    setQuery('');
+    fetchProducts(activeSchool?.id || null, catId);
+  };
+
+  const selectAllInSchool = () => {
+    setActiveCat(null);
+    setQuery('');
+    fetchProducts(activeSchool?.id || null, null);
+  };
+
+  const goBackToSchools = () => {
+    setSidebarView('schools');
+    setActiveSchool(null);
+    setActiveCat(null);
+    setQuery('');
+    fetchProducts(null, null);
+    navigate('/categories', { replace: true });
   };
 
   /* ── derived ── */
-  const activeSchool = schools.find((s) => s.id === selectedId);
+  const filteredProducts = useMemo(() => {
+    if (!query.trim()) return products;
+    const q = query.toLowerCase();
+    return products.filter((p) =>
+      p.title.toLowerCase().includes(q) ||
+      (p.category || '').toLowerCase().includes(q)
+    );
+  }, [products, query]);
 
   // Group products by category for the main pane
   const categoryGroups = useMemo(() => {
-    let list = products;
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter((p) =>
-        p.title.toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q)
-      );
-    }
     const groups = new Map();
-    for (const p of list) {
+    for (const p of filteredProducts) {
       const cat = p.category || 'Uncategorized';
       if (!groups.has(cat)) groups.set(cat, []);
       groups.get(cat).push(p);
     }
     return Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length);
-  }, [products, query]);
+  }, [filteredProducts]);
 
-  const totalCount = categoryGroups.reduce((sum, [, items]) => sum + items.length, 0);
-  const title = activeSchool?.label || 'Campus';
+  const totalCount = filteredProducts.length;
+  const title = activeCat
+    ? (activeSchool?.categories?.find((c) => c.id === activeCat)?.label || activeCat)
+    : activeSchool
+      ? activeSchool.label
+      : 'All Categories';
 
   return (
     <div className="cat-page">
@@ -116,7 +178,7 @@ export default function Categories() {
           <Search size={16} className="cat-search-ic" />
           <input
             type="text"
-            placeholder={`Search in ${title}…`}
+            placeholder={`Search products…`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search products"
@@ -131,65 +193,126 @@ export default function Categories() {
       </div>
 
       <div className="cat-layout">
-        {/* ── Sidebar: campus list ── */}
+        {/* ── Sidebar ── */}
         <aside className="cat-sidebar">
-          <div className="cat-sidebar-hd">
-            <GraduationCap size={15} />
-            <span>Campuses</span>
-          </div>
+          {sidebarView === 'schools' ? (
+            <>
+              <div className="cat-sidebar-hd">
+                <GraduationCap size={15} />
+                <span>Campuses</span>
+              </div>
 
-          {schoolLoading ? (
-            <div className="cat-list-skel">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div key={i} className="cat-item" style={{ opacity: 0.35 }}>
-                  <div style={{ width: '65%', height: 11, background: 'var(--border)', borderRadius: 6 }} />
+              {schoolLoading ? (
+                <div className="cat-list-skel">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} className="cat-item" style={{ opacity: 0.35 }}>
+                      <div style={{ width: '65%', height: 11, background: 'var(--border)', borderRadius: 6 }} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <ul className="cat-list" role="listbox" aria-label="Campuses">
-              {schools.map((school) => {
-                const isOthers = school.id === 'others';
-                const active   = selectedId === school.id;
-                return (
-                  <li key={school.id}>
-                    <button
-                      className={`cat-item ${active ? 'active' : ''}`}
-                      onClick={() => selectSchool(school.id)}
-                      role="option"
-                      aria-selected={active}
-                    >
-                      <span className="cat-item-ic">
-                        {isOthers ? <Store size={14} /> : <GraduationCap size={14} />}
-                      </span>
-                      <span className="cat-label-wrap">
-                        <span className="cat-label">{school.label}</span>
-                        {school.city && !isOthers && (
-                          <span className="cat-city">
-                            <MapPin size={10} />{school.city}
+              ) : (
+                <ul className="cat-list" role="listbox" aria-label="Campuses">
+                  {schools.map((school) => {
+                    const isOthers = school.id === 'others';
+                    return (
+                      <li key={school.id}>
+                        <button
+                          className="cat-item"
+                          onClick={() => openSchool(school)}
+                          role="option"
+                          aria-selected={false}
+                        >
+                          <span className="cat-item-ic">
+                            {isOthers ? <Store size={14} /> : <GraduationCap size={14} />}
                           </span>
-                        )}
-                      </span>
-                      <ChevronRight size={13} className={`cat-chev ${active ? 'active' : ''}`} />
+                          <span className="cat-label-wrap">
+                            <span className="cat-label">{school.label}</span>
+                            {school.city && !isOthers && (
+                              <span className="cat-city">
+                                <MapPin size={10} />{school.city}
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRight size={13} className="cat-chev" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {schools.length === 0 && (
+                    <li className="cat-empty">No campuses with listings yet</li>
+                  )}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Sub-panel: categories within the selected school */}
+              <div className="cat-sidebar-hd cat-sidebar-back">
+                <button className="cat-back-btn" onClick={goBackToSchools}>
+                  <ChevronLeft size={16} />
+                  <span>Back</span>
+                </button>
+              </div>
+
+              <div className="cat-school-title">
+                <GraduationCap size={14} />
+                <span>{activeSchool?.label}</span>
+                {activeSchool?.city && (
+                  <span className="cat-school-city"><MapPin size={9} />{activeSchool.city}</span>
+                )}
+              </div>
+
+              <ul className="cat-list" role="listbox" aria-label="Categories">
+                {/* "All items" option */}
+                <li>
+                  <button
+                    className={`cat-sub-item ${!activeCat ? 'active' : ''}`}
+                    onClick={selectAllInSchool}
+                    role="option"
+                    aria-selected={!activeCat}
+                  >
+                    <Layers size={13} />
+                    <span>All Items</span>
+                    <span className="cat-sub-count">
+                      {(activeSchool?.categories || []).reduce((s, c) => s + c.count, 0)}
+                    </span>
+                  </button>
+                </li>
+                {(activeSchool?.categories || []).map((cat) => (
+                  <li key={cat.id}>
+                    <button
+                      className={`cat-sub-item ${activeCat === cat.id ? 'active' : ''}`}
+                      onClick={() => selectCategory(cat.id)}
+                      role="option"
+                      aria-selected={activeCat === cat.id}
+                    >
+                      <Tag size={13} />
+                      <span>{cat.label}</span>
+                      <span className="cat-sub-count">{cat.count}</span>
                     </button>
                   </li>
-                );
-              })}
-              {schools.length === 0 && (
-                <li className="cat-empty">No campuses with listings yet</li>
-              )}
-            </ul>
+                ))}
+                {(activeSchool?.categories || []).length === 0 && (
+                  <li className="cat-empty">No categories yet</li>
+                )}
+              </ul>
+            </>
           )}
         </aside>
 
-        {/* ── Main content: category sections ── */}
+        {/* ── Main content ── */}
         <main className="cat-main">
           {/* Toolbar */}
           <div className="cat-toolbar">
             <div className="cat-toolbar-left">
               <h1 className="cat-title">{title}</h1>
-              {activeSchool?.city && (
-                <p className="cat-subtitle">📍 {activeSchool.city}</p>
+              {activeSchool && activeCat && (
+                <p className="cat-subtitle">
+                  {activeSchool.label}
+                  <button className="cat-clear-cat" onClick={selectAllInSchool} aria-label="Clear category filter">
+                    <X size={10} />
+                  </button>
+                </p>
               )}
             </div>
             {!prodLoading && (
@@ -226,32 +349,18 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-          ) : !selectedId || schools.length === 0 ? (
-            <div className="cat-panel" style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: 12,
-              padding: '64px 24px', textAlign: 'center',
-            }}>
-              <GraduationCap size={48} color="var(--border-strong)" />
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Select a campus</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '.88rem', margin: 0, maxWidth: 320 }}>
-                Choose a campus from the sidebar to browse products.
-              </p>
-            </div>
-          ) : categoryGroups.length === 0 ? (
-            <div className="cat-panel" style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: 12,
-              padding: '64px 24px', textAlign: 'center',
-            }}>
-              <Building2 size={48} color="var(--border-strong)" />
-              <h3 style={{ margin: 0, fontSize: '1.05rem' }}>
-                {query ? `No results for "${query}"` : `No products at ${title} yet`}
+          ) : filteredProducts.length === 0 ? (
+            <div className="cat-panel cat-empty-state">
+              <ShoppingBag size={48} color="var(--border-strong)" />
+              <h3>
+                {query ? `No results for "${query}"` : 'No products found'}
               </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '.88rem', margin: 0, maxWidth: 320 }}>
+              <p>
                 {query
-                  ? 'Try a different search term or browse another campus.'
-                  : 'Sellers from this campus will list their items here soon.'}
+                  ? 'Try a different search term.'
+                  : activeSchool
+                    ? `No sellers have listed items${activeCat ? ' in this category' : ''} at ${activeSchool.label} yet.`
+                    : 'Browse a campus from the sidebar to discover products.'}
               </p>
               {query && (
                 <button className="btn btn-ghost" onClick={() => setQuery('')}>
@@ -261,22 +370,11 @@ export default function Categories() {
             </div>
           ) : (
             <div className="cat-panel cat-sections">
-              {/* "All Products" link at top */}
-              <div className="cat-section-hd">
-                <h2>All Products</h2>
-                <button
-                  className="cat-see-all"
-                  onClick={() => navigate(`/category/${selectedId}`)}
-                >
-                  {totalCount} items <ChevronRight size={14} />
-                </button>
-              </div>
-
               {categoryGroups.map(([catName, items]) => (
                 <section key={catName} className="cat-section">
                   <div className="cat-section-hd">
                     <h2><Tag size={14} /> {catName}</h2>
-                    <span className="cat-see-all-label">{items.length} items</span>
+                    <span className="cat-see-all-label">{items.length} item{items.length !== 1 ? 's' : ''}</span>
                   </div>
                   <div className="cat-section-grid">
                     {items.slice(0, 6).map((p) => (

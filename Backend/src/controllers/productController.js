@@ -3,6 +3,11 @@ import { User } from '../models/User.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+// In-memory cache for catalog meta (schools + categories). Avoids full-scan on every request.
+let catalogCache = { data: null, at: 0 };
+const CATALOG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+export function invalidateCatalogCache() { catalogCache = { data: null, at: 0 }; }
+
 function toTitleCase(value) {
   const text = String(value || '').trim();
   if (!text) return '';
@@ -67,6 +72,11 @@ async function findDuplicateListing(sellerId, candidate, excludeId) {
 
 /** GET /api/products/catalog — DB-driven categories and school groups. */
 export const listCatalogMeta = asyncHandler(async (_req, res) => {
+  // Serve from cache if fresh
+  if (catalogCache.data && Date.now() - catalogCache.at < CATALOG_CACHE_TTL) {
+    return res.json(catalogCache.data);
+  }
+
   const items = await Product.find({ status: 'active' })
     .select('school city category seller')
     .populate('seller', 'verification.university')
@@ -117,7 +127,7 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
     schools.set(schoolKey, currentSchool);
   }
 
-  res.json({
+  const result = {
     total: items.length,
     categories: Array.from(categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
     schools: Array.from(schools.values()).map((school) => ({
@@ -127,7 +137,11 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
       count: school.count,
       categories: Array.from(school.categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
     })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-  });
+  };
+
+  // Store in cache
+  catalogCache = { data: result, at: Date.now() };
+  res.json(result);
 });
 
 /** GET /api/products — public list with filters, search, pagination. */
@@ -232,6 +246,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     city,
   });
 
+  invalidateCatalogCache();
   res.status(201).json({ product });
 });
 
@@ -267,6 +282,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (product.stock > 0 && product.status === 'sold_out') product.status = 'active';
   await product.save();
 
+  invalidateCatalogCache();
   res.json({ product });
 });
 
@@ -279,6 +295,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   }
   product.status = 'removed';
   await product.save();
+  invalidateCatalogCache();
   res.json({ ok: true });
 });
 

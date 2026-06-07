@@ -7,7 +7,7 @@
   background: var(--bg);
   display: flex;
   flex-direction: column;
-  padding-bottom: 100px; /* room for BottomNav on mobile */
+  padding-bottom: 100px;
 }
 
 /* ── Mobile top bar ─────────────────────────────────────────── */
@@ -64,27 +64,50 @@
   flex-shrink: 0;
 }
 
-/* Sidebar search */
-.cat-sidebar-search {
+/* Back button header in sub-panel */
+.cat-sidebar-back {
+  padding: 10px 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.cat-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  transition: background 0.12s;
+}
+.cat-back-btn:hover { background: var(--primary-50); }
+
+/* School title inside sub-panel */
+.cat-school-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.cat-sidebar-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font: inherit;
-  font-size: 0.8rem;
+  gap: 7px;
+  padding: 10px 14px 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
   color: var(--text);
-  outline: none;
-  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
 }
-.cat-sidebar-search input::placeholder { color: var(--text-muted); }
+.cat-school-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: auto;
+}
 
 /* Skeleton placeholder */
 .cat-list-skel {
@@ -113,6 +136,7 @@
   text-align: left;
   cursor: pointer;
   position: relative;
+  font-family: inherit;
   transition: background 0.12s ease;
 }
 .cat-item:hover { background: var(--surface-2); }
@@ -178,37 +202,24 @@
 .cat-chev {
   flex-shrink: 0;
   color: var(--text-muted);
-  opacity: 0;
+  opacity: 0.4;
   transition: opacity 0.12s, color 0.12s, transform 0.12s;
 }
 .cat-item:hover .cat-chev { opacity: 1; }
 .cat-item.active .cat-chev { opacity: 1; color: var(--primary); transform: translateX(2px); }
 
-/* ── Two-level sidebar: category sub-items ─────────────────── */
-.cat-sub-list {
-  list-style: none;
-  margin: 0;
-  padding: 2px 0 6px 14px;
-  border-left: 2px solid var(--primary-50);
-  margin-left: 20px;
-  animation: catSubSlide 0.18s ease;
-}
-@keyframes catSubSlide {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* ── Category sub-items in sidebar ─────────────────────────── */
 .cat-sub-item {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 10px;
+  padding: 9px 14px;
   background: none;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   text-align: left;
   transition: background 0.1s, color 0.1s;
@@ -219,12 +230,12 @@
   color: var(--primary);
   font-weight: 700;
 }
-.cat-sub-item span:first-of-type { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-sub-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cat-sub-count {
   background: var(--surface-2);
   color: var(--text-muted);
   border-radius: 10px;
-  padding: 1px 7px;
+  padding: 2px 8px;
   font-size: 0.72rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -234,15 +245,7 @@
   color: var(--primary);
 }
 
-/* Active category inline badge in toolbar title */
-.cat-active-cat {
-  font-size: 0.7em;
-  color: var(--primary);
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
+/* Clear category badge in toolbar */
 .cat-clear-cat {
   background: var(--primary-50);
   border: none;
@@ -254,6 +257,7 @@
   cursor: pointer;
   color: var(--primary);
   padding: 0;
+  margin-left: 6px;
   vertical-align: middle;
 }
 .cat-clear-cat:hover { background: var(--primary); color: #fff; }
@@ -321,7 +325,7 @@
   border-bottom: 1px solid var(--border);
   padding: 12px 18px 10px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
@@ -330,7 +334,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .cat-title {
   font-size: 1.1rem;
@@ -345,6 +349,9 @@
   font-size: 0.78rem;
   color: var(--text-muted);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 .cat-count {
   font-size: 0.78rem;
@@ -352,34 +359,6 @@
   color: var(--text-muted);
   white-space: nowrap;
   align-self: center;
-}
-
-/* Category chips under school name */
-.cat-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 4px;
-}
-.cat-chip-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 9px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-.cat-chip-count {
-  background: var(--primary-50);
-  color: var(--primary);
-  border-radius: 10px;
-  padding: 0 5px;
-  font-size: 0.65rem;
-  font-weight: 800;
 }
 
 /* Desktop search inside toolbar */
@@ -478,7 +457,27 @@
   pointer-events: none;
 }
 
-/* ── Category sections (redesigned main pane) ──────────────── */
+/* ── Empty state ───────────────────────────────────────────── */
+.cat-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+}
+.cat-empty-state h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.cat-empty-state p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* ── Category sections (main pane) ─────────────────────────── */
 .cat-sections {
   display: flex;
   flex-direction: column;
@@ -585,7 +584,7 @@
    Responsive
    ================================================================ */
 
-/* Mobile: sidebar as narrow vertical strip on left (Jumia-style) */
+/* Mobile: sidebar as narrow vertical strip on left */
 @media (max-width: 640px) {
   .cat-layout { flex-direction: row; min-height: calc(100svh - 52px); }
 
@@ -599,7 +598,10 @@
     border-bottom: none;
   }
   .cat-sidebar-hd { display: none; }
-  .cat-sidebar-search { display: none; }
+  .cat-sidebar-back { display: flex; padding: 8px 6px; }
+  .cat-back-btn { font-size: 0.72rem; padding: 4px 6px; }
+  .cat-school-title { font-size: 0.72rem; padding: 6px 8px; flex-direction: column; gap: 2px; }
+  .cat-school-city { margin-left: 0; }
 
   .cat-list {
     display: flex;
@@ -628,6 +630,9 @@
   .cat-city { display: none; }
   .cat-chev { display: none; }
 
+  .cat-sub-item { padding: 8px 8px; font-size: 0.72rem; gap: 5px; }
+  .cat-sub-count { font-size: 0.65rem; padding: 1px 5px; }
+
   .cat-toolbar { flex-direction: column; gap: 8px; padding: 10px 12px 8px; }
   .cat-main-search { display: none; }
   .cat-panel { padding: 10px 10px; }
@@ -640,31 +645,42 @@
 /* Tablet */
 @media (min-width: 641px) and (max-width: 960px) {
   .cat-top { display: none; }
-  .cat-sidebar { width: 180px; top: 0; }
+  .cat-sidebar { width: 200px; top: 0; }
   .cat-section-grid { grid-template-columns: repeat(3, 1fr); }
   .panel-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* Desktop */
-@media (min-width: 961px) {
+/* Desktop: 961px – 1199px (medium desktop / large tablet) */
+@media (min-width: 961px) and (max-width: 1199px) {
   .cat-page { padding-bottom: 0; }
   .cat-top { display: none; }
   .cat-sidebar {
-    width: 240px;
+    width: 220px;
+    top: 68px;
+    height: calc(100svh - 68px);
+  }
+  .cat-toolbar { padding: 14px 20px 12px; }
+  .cat-panel { padding: 14px 20px 30px; }
+  .panel-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cat-section-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .cat-title { font-size: 1.15rem; }
+  .cat-main-search { flex: 0 0 180px; max-width: 200px; }
+}
+
+/* Large desktop: 1200px+ */
+@media (min-width: 1200px) {
+  .cat-page { padding-bottom: 0; }
+  .cat-top { display: none; }
+  .cat-sidebar {
+    width: 260px;
     top: 68px;
     height: calc(100svh - 68px);
   }
   .cat-toolbar { padding: 16px 28px 14px; }
   .cat-panel { padding: 18px 28px 40px; }
-  .panel-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .cat-section-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .panel-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .cat-section-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .cat-title { font-size: 1.25rem; }
-}
-
-@media (min-width: 1200px) {
-  .cat-sidebar { width: 260px; }
-  .panel-grid { grid-template-columns: repeat(4, 1fr); }
-  .cat-section-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 @media (min-width: 1600px) {

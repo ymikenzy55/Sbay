@@ -154,17 +154,40 @@
     border: 2px solid var(--primary);
   }
 
-  /* Collapse brand nav on medium screens */
-  @media (max-width: 1200px) {
-    .dnav-search { display: none; }
-    .dnav-inner { grid-template-columns: auto 1fr auto; }
-  }
-  @media (max-width: 1050px) {
-    .dnav-link span { display: none; }
-    .dnav-link { padding: 10px; }
-  }
 }
 
+/* ── Medium desktop: 961px – 1200px ─────────────────────────── */
+@media (min-width: 961px) and (max-width: 1200px) {
+  .dnav-inner {
+    padding: 0 16px;
+    gap: 12px;
+    grid-template-columns: auto auto 1fr auto;
+  }
+
+  .dnav-link span { display: none; }
+  .dnav-link { padding: 10px; border-radius: 10px; }
+
+  .dnav-search-form {
+    max-width: 280px;
+    height: 40px;
+    padding: 0 12px;
+  }
+  .dnav-search-input { font-size: 0.84rem; }
+
+  .dnav-actions { gap: 6px; }
+  .dnav-sell {
+    padding: 8px 14px;
+    font-size: 0.84rem;
+  }
+  .dnav-sell span { display: none; }
+  .dnav-signin {
+    padding: 8px 14px;
+    font-size: 0.84rem;
+  }
+  .dnav .icon-btn { width: 36px; height: 36px; }
+}
+
+/* ── Large desktop: 1400px+ ──────────────────────────────────── */
 @media (min-width: 1400px) {
   .dnav-inner { max-width: 1600px; padding: 0 48px; }
 }

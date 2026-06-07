@@ -445,6 +445,20 @@
   .seller-avatar.xl { width: 72px; height: 72px; }
 }
 
+/* Medium desktop: 961px – 1199px — tighter but not cramped */
+@media (min-width: 961px) and (max-width: 1199px) {
+  .home-main { padding: 24px 24px 48px; gap: 32px; }
+  .uni-chips { padding: 0 24px; }
+  .trend-scroller { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .trend-scroller .trend-card { flex: unset; }
+  .trend-img { height: 170px; }
+  .recent-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .recent-grid > * { flex: unset; }
+  .recent-img { height: 150px; }
+  .sellers-featured { gap: 12px; }
+  .seller-big { padding: 14px 16px; }
+}
+
 @media (min-width: 1200px) {
   .home-main { padding: 28px 60px 60px; }
   /* Trending: 4 columns on very wide screens */

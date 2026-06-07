@@ -45,6 +45,8 @@ export default function ProductDetail() {
   const [shareOpen, setShareOpen] = useState(false);
   const [similar, setSimilar] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchEndX, setTouchEndX] = useState(null);
 
   useEffect(() => {
     sbay.getProduct(id).then((p) => {
@@ -133,8 +135,8 @@ export default function ProductDetail() {
 
   return (
     <div className="page pdp">
-      {/* Image carousel */}
-      <div className="pdp-hero" style={{ backgroundImage: `url(${product.images[activeImg]})` }}>
+      {/* Image gallery */}
+      <div className="pdp-hero">
         <div className="pdp-hero-bar">
           <button className="round-btn" onClick={() => navigate(-1)}><ArrowLeft size={20} /></button>
           <div className="pdp-hero-actions">
@@ -144,6 +146,32 @@ export default function ProductDetail() {
             <button className="round-btn" onClick={() => setShareOpen(true)} aria-label="Share"><Share2 size={18} /></button>
           </div>
         </div>
+        <div
+          className="pdp-hero-main"
+          style={{ backgroundImage: `url(${product.images[activeImg]})` }}
+          onTouchStart={(e) => setTouchStartX(e.targetTouches[0].clientX)}
+          onTouchMove={(e) => setTouchEndX(e.targetTouches[0].clientX)}
+          onTouchEnd={() => {
+            if (touchStartX === null || touchEndX === null) return;
+            const diff = touchStartX - touchEndX;
+            if (diff > 50 && activeImg < product.images.length - 1) setActiveImg(activeImg + 1);
+            if (diff < -50 && activeImg > 0) setActiveImg(activeImg - 1);
+            setTouchStartX(null);
+            setTouchEndX(null);
+          }}
+        />
+        {product.images.length > 1 && (
+          <div className="pdp-dots">
+            {product.images.map((_, i) => (
+              <button
+                key={i}
+                className={`pdp-dot ${i === activeImg ? 'active' : ''}`}
+                onClick={() => setActiveImg(i)}
+                aria-label={`Image ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
         <div className="pdp-thumbs">
           {product.images.map((img, i) => (
             <button
@@ -185,7 +213,13 @@ export default function ProductDetail() {
             className="card seller-row"
             onClick={() => navigate(`/seller/${seller.id}`)}
           >
-            <div className="seller-avatar lg" style={{ backgroundImage: `url(${seller.avatar})` }} />
+            {seller.avatar ? (
+              <div className="seller-avatar lg" style={{ backgroundImage: `url(${seller.avatar})` }} />
+            ) : (
+              <div className="seller-avatar lg seller-avatar-fallback">
+                {(seller.name || 'S').charAt(0).toUpperCase()}
+              </div>
+            )}
             <div style={{ flex: 1 }}>
               <h4>
                 {seller.name}
@@ -196,8 +230,13 @@ export default function ProductDetail() {
                 )}
               </h4>
               <p className="muted" style={{ fontSize: '.85rem' }}>
-                <Star size={12} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews}) · {seller.university}
+                <Star size={12} fill="#F5A623" color="#F5A623" /> {seller.rating} ({seller.reviews})
               </p>
+              {(seller.location || seller.university) && (
+                <p className="muted" style={{ fontSize: '.82rem', marginTop: 2 }}>
+                  <MapPin size={12} style={{ verticalAlign: 'middle' }} /> {seller.location || seller.university}
+                </p>
+              )}
             </div>
             <button
               className="btn btn-ghost"

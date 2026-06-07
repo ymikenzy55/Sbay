@@ -56,7 +56,7 @@ export default function Home() {
     );
   }, [q, trending, recent]);
 
-  const featuredSellers = sellers.slice(0, 2);
+  const featuredSellers = sellers.filter((s) => s.verified);
   const noListingsYet = !loading && trending.length === 0 && recent.length === 0 && sellers.length === 0;
 
   // Local products — filter by campus when one is selected
@@ -138,7 +138,7 @@ export default function Home() {
                     </button>
                   )}
                 </div>
-                <div className="recent-grid">
+                <div className="recent-grid-2col">
                   {localVisible.map((p, i) => (
                     <ProductCard
                       key={p.id}
@@ -217,14 +217,14 @@ export default function Home() {
 
               {loading ? (
                 <Skeleton h={140} r={16} />
-              ) : sellers.length === 0 ? (
+              ) : featuredSellers.length === 0 ? (
                 <div className="empty">
                   <div className="emo"><Shield size={44} /></div>
                   <h3>No sellers featured yet</h3>
                   <p className="muted">Seller profiles will appear here after listings are posted.</p>
                 </div>
               ) : (
-                <div className="sellers-featured">
+                <div className="sellers-scroller">
                   {featuredSellers.map((s) => (
                     <article
                       key={s.id}
@@ -272,7 +272,7 @@ export default function Home() {
                   <p className="muted">As soon as sellers publish new listings, they’ll appear here.</p>
                 </div>
               ) : (
-                <div className="recent-grid">
+                <div className="recent-grid-2col">
                   {recent.map((p, i) => (
                     <ProductCard
                       key={p.id}

@@ -598,9 +598,9 @@
     border-bottom: none;
   }
   .cat-sidebar-hd { display: none; }
-  .cat-sidebar-back { display: flex; padding: 8px 6px; }
-  .cat-back-btn { font-size: 0.72rem; padding: 4px 6px; }
-  .cat-school-title { font-size: 0.72rem; padding: 6px 8px; flex-direction: column; gap: 2px; }
+  .cat-sidebar-back { display: flex; padding: 6px 4px; }
+  .cat-back-btn { font-size: 0.7rem; padding: 3px 5px; }
+  .cat-school-title { font-size: 0.7rem; padding: 5px 6px; flex-direction: column; gap: 2px; }
   .cat-school-city { margin-left: 0; }
 
   .cat-list {
@@ -608,6 +608,8 @@
     flex-direction: column;
     padding: 0;
     gap: 0;
+    overflow-y: auto;
+    flex: 1;
   }
   .cat-item {
     flex-direction: column;
@@ -630,8 +632,18 @@
   .cat-city { display: none; }
   .cat-chev { display: none; }
 
-  .cat-sub-item { padding: 8px 8px; font-size: 0.72rem; gap: 5px; }
-  .cat-sub-count { font-size: 0.65rem; padding: 1px 5px; }
+  .cat-sub-item {
+    padding: 9px 6px;
+    font-size: 0.72rem;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .cat-sub-item span {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.25;
+  }
+  .cat-sub-count { font-size: 0.62rem; padding: 1px 5px; }
 
   .cat-toolbar { flex-direction: column; gap: 8px; padding: 10px 12px 8px; }
   .cat-main-search { display: none; }

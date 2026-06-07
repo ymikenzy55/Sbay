@@ -565,3 +565,114 @@
   padding: 2px 7px; border-radius: 999px;
   background: #d8f1e2; color: var(--a-primary);
 }
+
+/* ============================================================
+   Mobile Admin Overrides (≤720px)
+   ============================================================ */
+@media (max-width: 720px) {
+  .admin-top {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .admin-top-title h2 { font-size: 0.92rem; }
+  .admin-top-title .small { font-size: .68rem; }
+
+  .admin-main {
+    padding: 14px 12px 80px;
+  }
+  .admin-main h1 { font-size: 1.2rem; }
+  .admin-main h2 { font-size: 0.95rem; margin: 14px 0 10px; }
+
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 12px 0 18px;
+  }
+  .admin-stat {
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+  .admin-stat h3 { font-size: 1.3rem; margin: 4px 0 2px; }
+  .admin-stat span { font-size: .68rem; }
+  .admin-stat small { font-size: .72rem; }
+
+  .admin-card {
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+
+  .admin-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .admin-toolbar input {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  .admin-toolbar select {
+    width: 100%;
+  }
+
+  /* Make tables horizontally scrollable */
+  .admin-card:has(.admin-table) {
+    padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .admin-table {
+    font-size: .8rem;
+    min-width: 600px;
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 10px;
+    white-space: nowrap;
+  }
+
+  .admin-actions { gap: 4px; }
+  .admin-actions .btn { padding: 5px 10px; font-size: .75rem; }
+
+  .admin-detail-h {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .admin-detail-h .avatar { width: 44px; height: 44px; font-size: 1.1rem; }
+
+  .admin-tabs {
+    gap: 0;
+    margin-bottom: 14px;
+  }
+  .admin-tabs button {
+    padding: 8px 12px;
+    font-size: .82rem;
+  }
+
+  .admin-form { gap: 10px; }
+  .admin-form input, .admin-form textarea, .admin-form select {
+    padding: 9px 10px;
+    font-size: .88rem;
+  }
+
+  .plan-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .admin-bell-pop {
+    width: calc(100vw - 16px);
+    right: -60px;
+  }
+
+  .admin-chip { padding: 3px 6px 3px 3px; }
+  .admin-chip-av { width: 26px; height: 26px; font-size: .72rem; }
+}
+
+/* Tablet admin fixes (721-960px) */
+@media (min-width: 721px) and (max-width: 960px) {
+  .admin-main { padding: 22px 20px 60px; }
+  .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}

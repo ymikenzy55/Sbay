@@ -230,28 +230,26 @@ export const deleteUser = asyncHandler(async (req, res) => {
     if (remaining < 1) throw new HttpError(400, 'Cannot delete the last admin.');
   }
 
-  // Hide all of the seller's listings so buyers can't browse a ghost store.
-  if (target.role === 'seller') {
-    await Product.updateMany({ seller: target._id, status: { $ne: 'removed' } }, {
-      $set: { status: 'removed', removedReason: 'Account deleted', removedBy: req.user._id },
-    });
+  // CASCADE DELETE: remove everything belonging to this user
+  // 1. Delete all their products (hard delete)
+  await Product.deleteMany({ seller: target._id });
+
+  // 2. Delete all orders where they are buyer or seller
+  await Order.deleteMany({ $or: [{ buyer: target._id }, { seller: target._id }] });
+
+  // 3. Delete all chats and messages involving them
+  const chats = await Chat.find({ $or: [{ buyer: target._id }, { seller: target._id }] }).select('_id');
+  const chatIds = chats.map((c) => c._id);
+  if (chatIds.length > 0) {
+    await Message.deleteMany({ chat: { $in: chatIds } });
+    await Chat.deleteMany({ _id: { $in: chatIds } });
   }
 
-  const stamp = Date.now();
-  target.name        = 'Deleted user';
-  target.email       = `deleted-${stamp}-${target._id}@sbay.invalid`;
-  target.phone       = undefined;
-  target.avatar      = undefined;
-  target.location    = undefined;
-  target.restricted  = true;
-  target.restrictReason = 'Account deleted';
-  target.restrictedAt   = new Date();
-  target.restrictedBy   = req.user._id;
-  target.passwordHash   = await User.hashPassword(`__deleted_${stamp}__`);
-  await target.save();
+  // 4. Delete the user document itself
+  await User.deleteOne({ _id: target._id });
 
-  audit(req, 'user.delete', { kind: 'user', id: target._id });
-  res.json({ ok: true });
+  audit(req, 'user.delete', { kind: 'user', id: target._id, email: target.email, role: target.role });
+  res.json({ ok: true, message: `User ${target.email} and all associated data permanently deleted.` });
 });
 
 /* ----------------------- Student Verification Queue ------------------------ */

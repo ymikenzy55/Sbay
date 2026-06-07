@@ -25,7 +25,13 @@ export default function Trending() {
       if (!active) return;
       const trending = t.status === 'fulfilled' ? t.value : [];
       const recent = r.status === 'fulfilled' ? r.value : [];
-      setItems([...trending, ...recent]);
+      // Deduplicate by product id
+      const seen = new Set();
+      const merged = [];
+      for (const p of [...trending, ...recent]) {
+        if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
+      }
+      setItems(merged);
       setLoading(false);
     });
     return () => { active = false; };
@@ -99,9 +105,7 @@ export default function Trending() {
                 transition={{ delay: i * 0.03 }}
                 onClick={() => navigate(`/product/${p.id}`)}
               >
-                <div className="result-img" style={{ backgroundImage: `url(${p.image})` }}>
-                  <span className="rank">#{i + 1}</span>
-                </div>
+                <div className="result-img" style={{ backgroundImage: `url(${p.image})` }} />
                 <div className="result-body">
                   <h4 className="prod-title">{p.title}</h4>
                   <span className="price">

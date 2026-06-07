@@ -271,7 +271,6 @@ export default function Categories() {
                     role="option"
                     aria-selected={!activeCat}
                   >
-                    <Layers size={13} />
                     <span>All Items</span>
                     <span className="cat-sub-count">
                       {(activeSchool?.categories || []).reduce((s, c) => s + c.count, 0)}
@@ -286,7 +285,6 @@ export default function Categories() {
                       role="option"
                       aria-selected={activeCat === cat.id}
                     >
-                      <Tag size={13} />
                       <span>{cat.label}</span>
                       <span className="cat-sub-count">{cat.count}</span>
                     </button>

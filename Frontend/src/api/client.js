@@ -151,7 +151,21 @@ export const sbay = {
     ];
   },
 
+  async getHomeFeed() {
+    return cached('home-feed', 600_000, async () => {
+      const { data } = await api.get('/products/home');
+      return {
+        trending: data.trending.map(adaptProduct),
+        recent: data.recent.map(adaptProduct),
+        sellers: data.sellers.map(adaptSeller),
+      };
+    });
+  },
+
   async getTrending() {
+    // Try home feed cache first to avoid a separate call
+    const hit = cache.get('home-feed');
+    if (hit && Date.now() - hit.at < 600_000) return hit.value.trending;
     return cached('products-trending', 600_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'popular', limit: 12 } });
       return data.items.map(adaptProduct);
@@ -159,6 +173,9 @@ export const sbay = {
   },
 
   async getRecent() {
+    // Try home feed cache first to avoid a separate call
+    const hit = cache.get('home-feed');
+    if (hit && Date.now() - hit.at < 600_000) return hit.value.recent;
     return cached('products-recent', 600_000, async () => {
       const { data } = await api.get('/products', { params: { sort: 'recent', limit: 12 } });
       return data.items.map(adaptProduct);
@@ -182,8 +199,10 @@ export const sbay = {
   },
 
   async getSellers() {
-    // No public "list of all sellers" endpoint — derive one from the
-    // latest popular listings so the home page stays alive.
+    // Try home feed cache first — avoids a redundant product fetch
+    const hit = cache.get('home-feed');
+    if (hit && Date.now() - hit.at < 600_000) return hit.value.sellers;
+    // Fallback: derive from popular listings
     const { data } = await api.get('/products', { params: { sort: 'popular', limit: 30 } });
     const seen = new Set();
     const sellers = [];
@@ -216,31 +235,46 @@ export const sbay = {
         icon: 'Tag',
         count: c.count,
       })),
+      locations: school.locations?.map((loc) => ({
+        id: loc.id,
+        label: loc.label,
+        count: loc.count,
+        categories: loc.categories.map((c) => ({
+          id: c.id,
+          label: c.label,
+          icon: 'Tag',
+          count: c.count,
+        })),
+      })) || undefined,
     }));
     if (meta.categories.length) {
       const known = new Set(schools.flatMap((school) => school.categories.map((c) => c.id)));
       const uncategorized = meta.categories.filter((c) => !known.has(c.id));
       if (uncategorized.length) {
-        schools.push({
-          id: 'others',
-          label: 'Others',
-          city: '',
-          categories: uncategorized.map((c) => ({
-            id: c.id,
-            label: c.label,
-            icon: 'Tag',
-            count: c.count,
-          })),
-        });
+        // Check if "others" already exists in schools
+        const othersIdx = schools.findIndex(s => s.id === 'others');
+        if (othersIdx === -1) {
+          schools.push({
+            id: 'others',
+            label: 'Others',
+            city: '',
+            categories: uncategorized.map((c) => ({
+              id: c.id,
+              label: c.label,
+              icon: 'Tag',
+              count: c.count,
+            })),
+          });
+        }
       }
     }
     return schools;
   },
 
-  async getProductsByScope({ schoolId, categoryId } = {}) {
+  async getProductsByScope({ schoolId, location, categoryId } = {}) {
     const params = {};
 
-    if (schoolId === 'others') {
+    if (schoolId === 'others' && !location) {
       // "Others" = sellers who left school blank or set city/school as empty
       // We pass a special flag; the backend returns products with no school set.
       // If the backend doesn't support 'school=__none__', we do client-side filtering.
@@ -255,10 +289,17 @@ export const sbay = {
       return items;
     }
 
-    if (schoolId && schoolId !== 'all') {
+    if (schoolId && schoolId !== 'all' && schoolId !== 'others') {
       const meta = await this.getCatalogMeta();
       const school = meta.schools.find((s) => s.id === schoolId);
       params.school = school?.label || schoolId;
+    }
+    if (location && location !== 'all') {
+      const meta = await this.getCatalogMeta();
+      // Find the location label from the schools data
+      const othersSchool = meta.schools.find(s => s.id === 'others');
+      const loc = othersSchool?.locations?.find(l => l.id === location);
+      params.location = loc?.label || location;
     }
     if (categoryId && categoryId !== 'all') params.category = categoryId;
     const { data } = await api.get('/products', { params });

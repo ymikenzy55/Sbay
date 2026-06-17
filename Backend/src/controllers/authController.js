@@ -4,7 +4,7 @@ import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitToAdmins } from '../socket.js';
 import { env } from '../config/env.js';
-import { sendPasswordResetEmail } from '../utils/email.js';
+import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/email.js';
 import crypto from 'crypto';
 
 function hashResetToken(token) {
@@ -38,6 +38,12 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   const token = signAccessToken(user);
+
+  // Send welcome email
+  await sendWelcomeEmail(user).catch(err => {
+    console.error('Failed to send welcome email:', err);
+    // Don't fail registration if email fails
+  });
 
   emitToAdmins('user:new', {
     userId: user._id.toString(),
@@ -166,6 +172,12 @@ export const googleAuth = asyncHandler(async (req, res) => {
       avatar: picture || undefined,
       role: wantsSeller ? 'seller' : 'buyer',
     });
+    
+    // Send welcome email for new Google sign-ups
+    await sendWelcomeEmail(user).catch(err => {
+      console.error('Failed to send welcome email:', err);
+    });
+    
     emitToAdmins('user:new', {
       userId: user._id.toString(),
       name: user.name,

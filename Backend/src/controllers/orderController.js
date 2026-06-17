@@ -8,6 +8,7 @@ import { User } from '../models/User.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { emitToAdmins, emitToUser } from '../socket.js';
+import { sendOrderStatusEmail, sendNewOrderEmail, sendSMS } from '../utils/email.js';
 
 /**
  * Atomically reserve `qty` units of a product. Returns the updated
@@ -176,8 +177,46 @@ export const checkout = asyncHandler(async (req, res) => {
     total: orders.reduce((s, o) => s + (o.total || 0), 0),
     message: `${orders.length} new order${orders.length === 1 ? '' : 's'} just came in.`,
   });
+  
+  // Send emails and SMS to buyer and sellers
   for (const o of orders) {
-    if (o.seller) emitToUser(o.seller.toString(), 'order:new', { orderId: o._id });
+    if (o.seller) {
+      emitToUser(o.seller.toString(), 'order:new', { orderId: o._id });
+      
+      // Load full seller and buyer details for emails
+      const sellerUser = await User.findById(o.seller);
+      const buyerUser = await User.findById(o.buyer);
+      
+      if (sellerUser) {
+        // Email seller about new order
+        await sendNewOrderEmail(sellerUser, o).catch(err => 
+          console.error(`Failed to send new order email to seller:`, err)
+        );
+        
+        // SMS seller about new order
+        if (sellerUser.phone) {
+          await sendSMS(
+            sellerUser.phone,
+            `New order ${o.invoiceNumber}! You received GH₵ ${o.total.toLocaleString()} (held in escrow). Check sBay to process it.`
+          ).catch(err => console.error(`Failed to send SMS to seller:`, err));
+        }
+      }
+      
+      if (buyerUser) {
+        // Email buyer order confirmation
+        await sendOrderStatusEmail(buyerUser, o, 'pending').catch(err =>
+          console.error(`Failed to send order confirmation to buyer:`, err)
+        );
+        
+        // SMS buyer order confirmation
+        if (buyerUser.phone) {
+          await sendSMS(
+            buyerUser.phone,
+            `Order ${o.invoiceNumber} placed successfully! Total: GH₵ ${o.total.toLocaleString()}. Track it on sBay.`
+          ).catch(err => console.error(`Failed to send SMS to buyer:`, err));
+        }
+      }
+    }
     if (o.buyer) emitToUser(o.buyer.toString(), 'order:new', { orderId: o._id });
   }
 
@@ -241,6 +280,28 @@ export const updateStatusBySeller = asyncHandler(async (req, res) => {
   await o.save();
   await maybeCloseChat(o);
   emitToUser(o.buyer.toString(), 'order:updated', { orderId: o._id, status: o.status, href: '/profile?tab=orders' });
+  
+  // Send email and SMS notifications to buyer
+  const buyerUser = await User.findById(o.buyer);
+  if (buyerUser) {
+    await sendOrderStatusEmail(buyerUser, o, status).catch(err =>
+      console.error(`Failed to send order status email:`, err)
+    );
+    
+    if (buyerUser.phone) {
+      const statusMsg = {
+        processing: 'Your order is being prepared',
+        shipped: 'Your order has been shipped',
+        delivered: 'Your order has been delivered! Please confirm receipt on sBay',
+      }[status] || `Order status: ${status}`;
+      
+      await sendSMS(
+        buyerUser.phone,
+        `Order ${o.invoiceNumber}: ${statusMsg}`
+      ).catch(err => console.error(`Failed to send SMS:`, err));
+    }
+  }
+  
   res.json({ order: o });
 });
 
@@ -266,6 +327,22 @@ export const buyerConfirmReceipt = asyncHandler(async (req, res) => {
   await o.save();
   await maybeCloseChat(o);
   emitToUser(o.seller.toString(), 'order:updated', { orderId: o._id, status: o.status, href: '/seller-dashboard?tab=sales' });
+  
+  // Notify seller about payment release
+  const sellerUser = await User.findById(o.seller);
+  if (sellerUser) {
+    await sendOrderStatusEmail(sellerUser, o, 'completed').catch(err =>
+      console.error(`Failed to send completion email to seller:`, err)
+    );
+    
+    if (sellerUser.phone) {
+      await sendSMS(
+        sellerUser.phone,
+        `Payment released! Order ${o.invoiceNumber} completed. GH₵ ${o.total.toLocaleString()} is now available.`
+      ).catch(err => console.error(`Failed to send SMS:`, err));
+    }
+  }
+  
   res.json({ order: o });
 });
 
@@ -311,6 +388,35 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   }
 
   const result = await Order.findById(req.params.id);
+  
+  // Notify both parties about cancellation
+  const buyerUser = await User.findById(result.buyer);
+  const sellerUser = await User.findById(result.seller);
+  
+  if (buyerUser) {
+    await sendOrderStatusEmail(buyerUser, result, 'canceled').catch(err =>
+      console.error(`Failed to send cancellation email to buyer:`, err)
+    );
+    if (buyerUser.phone) {
+      await sendSMS(
+        buyerUser.phone,
+        `Order ${result.invoiceNumber} has been canceled. Your payment has been refunded.`
+      ).catch(err => console.error(`Failed to send SMS:`, err));
+    }
+  }
+  
+  if (sellerUser) {
+    await sendOrderStatusEmail(sellerUser, result, 'canceled').catch(err =>
+      console.error(`Failed to send cancellation email to seller:`, err)
+    );
+    if (sellerUser.phone) {
+      await sendSMS(
+        sellerUser.phone,
+        `Order ${result.invoiceNumber} has been canceled. Payment refunded to buyer.`
+      ).catch(err => console.error(`Failed to send SMS:`, err));
+    }
+  }
+  
   res.json({ order: result });
 });
 

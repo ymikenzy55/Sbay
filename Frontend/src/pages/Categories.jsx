@@ -33,8 +33,9 @@ export default function Categories() {
 
   /* ── sidebar state ── */
   const [activeSchool, setActiveSchool]     = useState(null); // school object or null
+  const [activeLocation, setActiveLocation] = useState(null); // location object or null (for Others)
   const [activeCat,    setActiveCat]        = useState(null); // category id or null
-  const [sidebarView,  setSidebarView]      = useState('schools'); // 'schools' | 'categories'
+  const [sidebarView,  setSidebarView]      = useState('schools'); // 'schools' | 'categories' | 'locations'
 
   /* ── search ── */
   const [query, setQuery] = useState('');
@@ -71,14 +72,15 @@ export default function Categories() {
   }, []);
 
   /* ── fetch products based on current filters ── */
-  const fetchProducts = useCallback((schoolId, categoryId) => {
+  const fetchProducts = useCallback((schoolId, locationId, categoryId) => {
     setProdLoading(true);
     setQuery('');
     const scope = {};
     if (schoolId) scope.schoolId = schoolId;
+    if (locationId) scope.location = locationId;
     if (categoryId) scope.categoryId = categoryId;
 
-    const fetcher = schoolId
+    const fetcher = schoolId || locationId
       ? sbay.getProductsByScope(scope)
       : categoryId
         ? sbay.getProductsByCategory(categoryId)
@@ -92,7 +94,7 @@ export default function Categories() {
   /* ── initial load: show all products ── */
   useEffect(() => {
     if (!schoolLoading && !catId) {
-      fetchProducts(null, null);
+      fetchProducts(null, null, null);
     }
   }, [schoolLoading, catId, fetchProducts]);
 
@@ -103,9 +105,15 @@ export default function Categories() {
       const school = schools.find((s) => s.id === catId);
       if (school) {
         setActiveSchool(school);
-        setSidebarView('categories');
+        // Check if it's "Others" school - show locations
+        if (school.id === 'others' && school.locations && school.locations.length > 0) {
+          setSidebarView('locations');
+        } else {
+          setSidebarView('categories');
+        }
         setActiveCat(null);
-        fetchProducts(school.id, null);
+        setActiveLocation(null);
+        fetchProducts(school.id, null, null);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,32 +122,55 @@ export default function Categories() {
   /* ── sidebar actions ── */
   const openSchool = (school) => {
     setActiveSchool(school);
+    setActiveLocation(null);
+    // If it's "Others", show locations view, else show categories
+    if (school.id === 'others' && school.locations && school.locations.length > 0) {
+      setSidebarView('locations');
+    } else {
+      setSidebarView('categories');
+    }
+    setActiveCat(null);
+    setQuery('');
+    fetchProducts(school.id, null, null);
+    navigate(`/category/${school.id}`, { replace: true });
+  };
+
+  const openLocation = (location) => {
+    setActiveLocation(location);
     setSidebarView('categories');
     setActiveCat(null);
     setQuery('');
-    fetchProducts(school.id, null);
-    navigate(`/category/${school.id}`, { replace: true });
+    fetchProducts(null, location.id, null);
   };
 
   const selectCategory = (catId) => {
     setActiveCat(catId);
     setQuery('');
-    fetchProducts(activeSchool?.id || null, catId);
+    fetchProducts(activeSchool?.id || null, activeLocation?.id || null, catId);
   };
 
   const selectAllInSchool = () => {
     setActiveCat(null);
     setQuery('');
-    fetchProducts(activeSchool?.id || null, null);
+    fetchProducts(activeSchool?.id || null, activeLocation?.id || null, null);
   };
 
   const goBackToSchools = () => {
     setSidebarView('schools');
     setActiveSchool(null);
+    setActiveLocation(null);
     setActiveCat(null);
     setQuery('');
-    fetchProducts(null, null);
+    fetchProducts(null, null, null);
     navigate('/categories', { replace: true });
+  };
+
+  const goBackToLocations = () => {
+    setSidebarView('locations');
+    setActiveLocation(null);
+    setActiveCat(null);
+    setQuery('');
+    fetchProducts(activeSchool?.id || null, null, null);
   };
 
   /* ── derived ── */
@@ -165,10 +196,13 @@ export default function Categories() {
 
   const totalCount = filteredProducts.length;
   const title = activeCat
-    ? (activeSchool?.categories?.find((c) => c.id === activeCat)?.label || activeCat)
-    : activeSchool
-      ? activeSchool.label
-      : 'All Categories';
+    ? (activeLocation?.categories?.find((c) => c.id === activeCat)?.label || 
+       activeSchool?.categories?.find((c) => c.id === activeCat)?.label || activeCat)
+    : activeLocation
+      ? activeLocation.label
+      : activeSchool
+        ? activeSchool.label
+        : 'All Categories';
 
   return (
     <div className="cat-page">
@@ -244,9 +278,9 @@ export default function Categories() {
                 </ul>
               )}
             </>
-          ) : (
+          ) : sidebarView === 'locations' ? (
             <>
-              {/* Sub-panel: categories within the selected school */}
+              {/* Locations panel for "Others" school */}
               <div className="cat-sidebar-hd cat-sidebar-back">
                 <button className="cat-back-btn" onClick={goBackToSchools}>
                   <ChevronLeft size={16} />
@@ -255,12 +289,79 @@ export default function Categories() {
               </div>
 
               <div className="cat-school-title">
-                <GraduationCap size={14} />
-                <span>{activeSchool?.label}</span>
-                {activeSchool?.city && (
-                  <span className="cat-school-city"><MapPin size={9} />{activeSchool.city}</span>
-                )}
+                <Store size={14} />
+                <span>{activeSchool?.label || 'Others / Off Campus'}</span>
               </div>
+
+              <ul className="cat-list" role="listbox" aria-label="Locations">
+                {/* "All items" option */}
+                <li>
+                  <button
+                    className={`cat-sub-item ${!activeLocation ? 'active' : ''}`}
+                    onClick={selectAllInSchool}
+                    role="option"
+                    aria-selected={!activeLocation}
+                  >
+                    <span>All Locations</span>
+                    <span className="cat-sub-count">
+                      {(activeSchool?.locations || []).reduce((s, c) => s + c.count, 0)}
+                    </span>
+                  </button>
+                </li>
+                {(activeSchool?.locations || []).map((loc) => (
+                  <li key={loc.id}>
+                    <button
+                      className={`cat-item ${activeLocation?.id === loc.id ? 'active' : ''}`}
+                      onClick={() => openLocation(loc)}
+                      role="option"
+                      aria-selected={activeLocation?.id === loc.id}
+                    >
+                      <span className="cat-item-ic">
+                        <MapPin size={14} />
+                      </span>
+                      <span className="cat-label-wrap">
+                        <span className="cat-label">{loc.label}</span>
+                        <span className="cat-city" style={{ fontSize: '0.65rem' }}>
+                          {loc.count} listing{loc.count !== 1 ? 's' : ''}
+                        </span>
+                      </span>
+                      <ChevronRight size={13} className="cat-chev" />
+                    </button>
+                  </li>
+                ))}
+                {(activeSchool?.locations || []).length === 0 && (
+                  <li className="cat-empty">No locations yet</li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <>
+              {/* Sub-panel: categories within the selected school or location */}
+              <div className="cat-sidebar-hd cat-sidebar-back">
+                <button className="cat-back-btn" onClick={activeLocation ? goBackToLocations : goBackToSchools}>
+                  <ChevronLeft size={16} />
+                  <span>Back</span>
+                </button>
+              </div>
+
+              {activeLocation ? (
+                <div className="cat-school-title">
+                  <MapPin size={14} />
+                  <span>{activeLocation.label}</span>
+                  <span className="cat-school-city">
+                    <Store size={9} />
+                    {activeSchool?.label || 'Others'}
+                  </span>
+                </div>
+              ) : (
+                <div className="cat-school-title">
+                  <GraduationCap size={14} />
+                  <span>{activeSchool?.label}</span>
+                  {activeSchool?.city && (
+                    <span className="cat-school-city"><MapPin size={9} />{activeSchool.city}</span>
+                  )}
+                </div>
+              )}
 
               <ul className="cat-list" role="listbox" aria-label="Categories">
                 {/* "All items" option */}
@@ -273,11 +374,13 @@ export default function Categories() {
                   >
                     <span>All Items</span>
                     <span className="cat-sub-count">
-                      {(activeSchool?.categories || []).reduce((s, c) => s + c.count, 0)}
+                      {activeLocation 
+                        ? (activeLocation.categories || []).reduce((s, c) => s + c.count, 0)
+                        : (activeSchool?.categories || []).reduce((s, c) => s + c.count, 0)}
                     </span>
                   </button>
                 </li>
-                {(activeSchool?.categories || []).map((cat) => (
+                {(activeLocation?.categories || activeSchool?.categories || []).map((cat) => (
                   <li key={cat.id}>
                     <button
                       className={`cat-sub-item ${activeCat === cat.id ? 'active' : ''}`}
@@ -290,7 +393,7 @@ export default function Categories() {
                     </button>
                   </li>
                 ))}
-                {(activeSchool?.categories || []).length === 0 && (
+                {((activeLocation?.categories || activeSchool?.categories || []).length === 0) && (
                   <li className="cat-empty">No categories yet</li>
                 )}
               </ul>
@@ -306,10 +409,15 @@ export default function Categories() {
               <h1 className="cat-title">{title}</h1>
               {activeSchool && activeCat && (
                 <p className="cat-subtitle">
-                  {activeSchool.label}
+                  {activeLocation ? `${activeLocation.label} › ${activeSchool.label}` : activeSchool.label}
                   <button className="cat-clear-cat" onClick={selectAllInSchool} aria-label="Clear category filter">
                     <X size={10} />
                   </button>
+                </p>
+              )}
+              {activeLocation && !activeCat && (
+                <p className="cat-subtitle">
+                  {activeSchool?.label || 'Others / Off Campus'}
                 </p>
               )}
             </div>

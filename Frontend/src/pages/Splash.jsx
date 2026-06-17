@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Heart, Tag, GraduationCap } from 'lucide-react';
 import logoImage from '../assets/logo.png';
+import { sbay } from '../api/client';
 import './Splash.css';
 
 const SPRING = { type: 'spring', stiffness: 120, damping: 14 };
@@ -11,6 +12,10 @@ export default function Splash() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Prefetch the Home chunk + API data while the splash animates
+    import('./Home').catch(() => {});
+    sbay.getHomeFeed().catch(() => {});
+
     const t = setTimeout(() => navigate('/home'), 2400);
     return () => clearTimeout(t);
   }, [navigate]);

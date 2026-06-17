@@ -61,7 +61,7 @@ export default function Trending() {
           <TrendingUp size={28} />
           <div>
             <h2>What’s hot on campus</h2>
-            <p className="muted small">
+            <p style={{ color: '#2A1F00', fontSize: '.85rem', fontWeight: '600' }}>
               {campus ? `Showing items near ${campus.label}` : 'Most viewed and purchased items this week'}
             </p>
           </div>

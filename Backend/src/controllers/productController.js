@@ -6,7 +6,11 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // In-memory cache for catalog meta (schools + categories). Avoids full-scan on every request.
 let catalogCache = { data: null, at: 0 };
 const CATALOG_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-export function invalidateCatalogCache() { catalogCache = { data: null, at: 0 }; }
+export function invalidateCatalogCache() { catalogCache = { data: null, at: 0 }; homeFeedCache = { data: null, at: 0 }; }
+
+// In-memory cache for the combined home feed.
+let homeFeedCache = { data: null, at: 0 };
+const HOME_FEED_CACHE_TTL = 60 * 1000; // 1 minute
 
 function toTitleCase(value) {
   const text = String(value || '').trim();
@@ -79,7 +83,7 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
   }
 
   const items = await Product.find({ status: 'active' })
-    .select('school city category seller')
+    .select('school city category seller location')
     .populate('seller', 'verification.university')
     .lean();
 
@@ -93,6 +97,7 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
     const schoolRaw = String(item.school || sellerUni || '').trim();
     const schoolKey = schoolRaw ? schoolRaw.toLowerCase() : 'others';
     const cityRaw = String(item.city || '').trim();
+    const locationRaw = String(item.location || '').trim();
 
     if (categoryRaw) {
       const currentCategory = categories.get(categoryKey) || {
@@ -110,10 +115,37 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
       city: cityRaw || '',
       count: 0,
       categories: new Map(),
+      locations: schoolKey === 'others' ? new Map() : undefined, // Track locations for "Others"
     };
 
     currentSchool.count += 1;
     if (cityRaw && !currentSchool.city) currentSchool.city = cityRaw;
+
+    // For "Others" category, track locations
+    if (schoolKey === 'others' && locationRaw) {
+      if (!currentSchool.locations) currentSchool.locations = new Map();
+      const locKey = locationRaw.toLowerCase();
+      const currentLocation = currentSchool.locations.get(locKey) || {
+        id: locKey,
+        label: toTitleCase(locationRaw),
+        count: 0,
+        categories: new Map(),
+      };
+      currentLocation.count += 1;
+      
+      // Add category to location
+      if (categoryRaw) {
+        const locCategory = currentLocation.categories.get(categoryKey) || {
+          id: categoryKey,
+          label: toTitleCase(categoryRaw),
+          count: 0,
+        };
+        locCategory.count += 1;
+        currentLocation.categories.set(categoryKey, locCategory);
+      }
+      
+      currentSchool.locations.set(locKey, currentLocation);
+    }
 
     if (categoryRaw) {
       const currentSchoolCategory = currentSchool.categories.get(categoryKey) || {
@@ -137,6 +169,14 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
       city: school.city,
       count: school.count,
       categories: Array.from(school.categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+      locations: school.locations 
+        ? Array.from(school.locations.values()).map((loc) => ({
+            id: loc.id,
+            label: loc.label,
+            count: loc.count,
+            categories: Array.from(loc.categories.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+          })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+        : undefined,
     })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
   };
 
@@ -146,10 +186,54 @@ export const listCatalogMeta = asyncHandler(async (_req, res) => {
   res.json(result);
 });
 
+/** Lightweight select list for product list queries — omit heavy fields. */
+const LIST_SELECT = '-description -removedReason -removedBy -__v';
+
+/** GET /api/products/home — combined feed: trending + recent + sellers in one call. */
+export const getHomeFeed = asyncHandler(async (_req, res) => {
+  // Serve from cache if fresh
+  if (homeFeedCache.data && Date.now() - homeFeedCache.at < HOME_FEED_CACHE_TTL) {
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+    return res.json(homeFeedCache.data);
+  }
+
+  const [trending, recent] = await Promise.all([
+    Product.find({ status: 'active' })
+      .sort({ views: -1 })
+      .limit(12)
+      .select(LIST_SELECT)
+      .populate('seller', 'name avatar sellerProfile verified location')
+      .lean(),
+    Product.find({ status: 'active' })
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .select(LIST_SELECT)
+      .populate('seller', 'name avatar sellerProfile verified location')
+      .lean(),
+  ]);
+
+  // Extract unique verified sellers from all fetched products
+  const seen = new Set();
+  const sellers = [];
+  for (const p of [...trending, ...recent]) {
+    const s = p.seller;
+    if (!s || seen.has(String(s._id))) continue;
+    seen.add(String(s._id));
+    if (s.verified) sellers.push(s);
+    if (sellers.length >= 8) break;
+  }
+
+  const result = { trending, recent, sellers };
+  homeFeedCache = { data: result, at: Date.now() };
+
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+  res.json(result);
+});
+
 /** GET /api/products — public list with filters, search, pagination. */
 export const listProducts = asyncHandler(async (req, res) => {
   const {
-    q, category, seller, school, city,
+    q, category, seller, school, city, location,
     minPrice, maxPrice, condition,
     sort = 'recent', page = 1, limit = 24,
   } = req.query;
@@ -157,6 +241,7 @@ export const listProducts = asyncHandler(async (req, res) => {
   const filter = { status: 'active' };
   if (category) filter.category = exactTextFilter(category);
   if (seller) filter.seller = seller;
+  if (location) filter.location = exactTextFilter(location);
   if (school) {
     // Match products where school field matches OR seller's university matches
     const schoolRegex = new RegExp(`^${school.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
@@ -190,6 +275,7 @@ export const listProducts = asyncHandler(async (req, res) => {
     Product.find(filter)
       .sort(sortMap[sort] || sortMap.recent)
       .skip(skip).limit(lim)
+      .select(LIST_SELECT)
       .populate('seller', 'name avatar sellerProfile verified location')
       .lean(),
     Product.countDocuments(filter),
@@ -220,6 +306,16 @@ export const createProduct = asyncHandler(async (req, res) => {
     title, description, price, discountPrice,
     stock, condition, category, images, location, school, city,
   } = req.body;
+
+  // If category is "Other" or no school is provided, location is mandatory
+  const normalizedCategory = String(category || '').trim().toLowerCase();
+  const normalizedSchool = String(school || seller.verification?.university || '').trim();
+  const isOtherCategory = normalizedCategory === 'other' || normalizedCategory === 'others';
+  const hasNoSchool = !normalizedSchool;
+
+  if ((isOtherCategory || hasNoSchool) && !location) {
+    throw new HttpError(400, 'Location is required when listing under "Other" category or without a school affiliation.');
+  }
 
   const candidate = {
     title,

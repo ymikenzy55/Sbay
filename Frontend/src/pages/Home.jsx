@@ -25,17 +25,27 @@ export default function Home() {
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([sbay.getTrending(), sbay.getRecent()])
-      .then(([trendingRes, recentRes]) => {
+    sbay.getHomeFeed()
+      .then((feed) => {
         if (!active) return;
-        setTrending(trendingRes.status === 'fulfilled' ? trendingRes.value : []);
-        setRecent(recentRes.status === 'fulfilled' ? recentRes.value : []);
+        setTrending(feed.trending);
+        setRecent(feed.recent);
+        setSellers(feed.sellers);
+      })
+      .catch(() => {
+        // Fallback: if combined endpoint fails, try individual calls
+        if (!active) return;
+        Promise.allSettled([sbay.getTrending(), sbay.getRecent()])
+          .then(([trendingRes, recentRes]) => {
+            if (!active) return;
+            setTrending(trendingRes.status === 'fulfilled' ? trendingRes.value : []);
+            setRecent(recentRes.status === 'fulfilled' ? recentRes.value : []);
+          });
+        sbay.getSellers()
+          .then((value) => { if (active) setSellers(value); })
+          .catch(() => { if (active) setSellers([]); });
       })
       .finally(() => { if (active) setLoading(false); });
-
-    sbay.getSellers()
-      .then((value) => { if (active) setSellers(value); })
-      .catch(() => { if (active) setSellers([]); });
 
     return () => {
       active = false;
@@ -177,11 +187,12 @@ export default function Home() {
                       className="trend-card"
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05, duration: 0.3 }}
+                      transition={{ delay: i * 0.02, duration: 0.25 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => navigate(`/product/${p.id}`)}
                     >
-                      <div className="trend-img" style={{ backgroundImage: `url(${p.image})` }}>
+                      <div className="trend-img">
+                        <img src={p.image} alt={p.title} loading="lazy" decoding="async" />
                         {p.badge && (
                           <span className={`pill ${p.badge === 'TRENDING' ? 'pill-gold' : 'pill-red'}`}>
                             {p.badge === 'TRENDING' ? <><Flame size={12} /> TRENDING</> : 'HOTTEST'}
@@ -303,11 +314,12 @@ function ProductCard({ p, i, saved, toggleSave, onClick }) {
       className="recent-card"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: i * 0.04, duration: 0.3 }}
+      transition={{ delay: i * 0.02, duration: 0.25 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
     >
-      <div className="recent-img" style={{ backgroundImage: `url(${p.image})` }}>
+      <div className="recent-img">
+        <img src={p.image} alt={p.title} loading="lazy" decoding="async" />
         <button
           className={`heart-btn ${saved ? 'saved' : ''}`}
           onClick={(e) => toggleSave(e, p.id)}

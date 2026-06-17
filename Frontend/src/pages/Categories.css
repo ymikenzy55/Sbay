@@ -28,6 +28,8 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  height: calc(100svh - 52px);
+  overflow: hidden;
 }
 
 /* ── Sidebar ────────────────────────────────────────────────── */
@@ -41,13 +43,22 @@
   position: sticky;
   top: 0;
   height: 100svh;
+  overflow: hidden;
+}
+
+/* Scrollable list area within sidebar */
+.cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 12px;
+  flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
-.cat-sidebar::-webkit-scrollbar { width: 4px; }
-.cat-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.cat-list::-webkit-scrollbar { width: 4px; }
+.cat-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* Section heading */
 .cat-sidebar-hd {
@@ -116,13 +127,7 @@
   flex-direction: column;
 }
 
-/* List */
-.cat-list {
-  list-style: none;
-  margin: 0;
-  padding: 6px 0 12px;
-  flex: 1;
-}
+/* List - scrolling handled above in sidebar section */
 
 /* Each school item row */
 .cat-item {
@@ -314,7 +319,13 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.cat-main::-webkit-scrollbar { width: 5px; }
+.cat-main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
 /* Toolbar inside main */
 .cat-toolbar {
@@ -586,7 +597,7 @@
 
 /* Mobile: sidebar as narrow vertical strip on left */
 @media (max-width: 640px) {
-  .cat-layout { flex-direction: row; min-height: calc(100svh - 52px); }
+  .cat-layout { flex-direction: row; height: calc(100svh - 52px); overflow: hidden; }
 
   .cat-sidebar {
     width: 100px;
@@ -658,6 +669,7 @@
 @media (min-width: 641px) and (max-width: 960px) {
   .cat-top { display: none; }
   .cat-sidebar { width: 200px; top: 0; }
+  .cat-layout { height: 100svh; }
   .cat-section-grid { grid-template-columns: repeat(3, 1fr); }
   .panel-grid { grid-template-columns: repeat(3, 1fr); }
 }
@@ -671,6 +683,7 @@
     top: 68px;
     height: calc(100svh - 68px);
   }
+  .cat-layout { height: calc(100svh - 68px); }
   .cat-toolbar { padding: 14px 20px 12px; }
   .cat-panel { padding: 14px 20px 30px; }
   .panel-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -688,6 +701,7 @@
     top: 68px;
     height: calc(100svh - 68px);
   }
+  .cat-layout { height: calc(100svh - 68px); }
   .cat-toolbar { padding: 16px 28px 14px; }
   .cat-panel { padding: 18px 28px 40px; }
   .panel-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }

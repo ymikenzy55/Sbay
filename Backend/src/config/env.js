@@ -59,6 +59,20 @@ export const env = Object.freeze({
   // Email configuration
   EMAIL_USER: process.env.EMAIL_USER || '',
   EMAIL_PASS: process.env.EMAIL_PASS || '',
+  EMAIL_HOST: process.env.EMAIL_HOST || '',
+  EMAIL_PORT: num('EMAIL_PORT', 465),
+  EMAIL_SECURE: process.env.EMAIL_SECURE !== 'false',
+
+  // SMS configuration
+  // Option 1: Twilio (Recommended - $15 free credits)
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || '',
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || '',
+  
+  // Option 2: Africa's Talking or Hubtel
+  SMS_API_KEY: process.env.SMS_API_KEY || '',
+  SMS_USERNAME: process.env.SMS_USERNAME || '',
+  SMS_SENDER_ID: process.env.SMS_SENDER_ID || 'sBay',
 });
 
 export const isProd = env.NODE_ENV === 'production';

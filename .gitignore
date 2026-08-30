@@ -1,5 +1,5 @@
-# Markdown files
-*.md
+# Markdown files (allow root README.md and documentation files)
+# *.md
 
 # Logs
 logs
